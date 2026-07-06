@@ -2,7 +2,6 @@
   <header class="app-header">
     <div class="header-left">
       <router-link to="/" class="logo">
-        <span class="logo-icon">📚</span>
         <span class="logo-text">课畅</span>
       </router-link>
     </div>
@@ -11,6 +10,9 @@
         <el-button size="small" @click="router.push('/login')">登录</el-button>
       </template>
       <template v-else>
+        <el-icon :size="20" class="header-icon" title="日历" @click="router.push('/calendar')">
+          <Calendar />
+        </el-icon>
         <el-badge :value="unreadCount" :hidden="unreadCount === 0" class="notify-badge">
           <el-icon :size="20">
             <Bell />
@@ -60,7 +62,7 @@ const fetchUnread = async () => {
 const handleCommand = async (cmd) => {
   switch (cmd) {
     case 'profile':
-      router.push('/dashboard')
+      router.push('/profile')
       break
     case 'password':
       try {
@@ -141,5 +143,14 @@ onMounted(() => { fetchUnread(); setInterval(fetchUnread, 30000) })
 .notify-badge {
   margin-right: 4px;
   cursor: pointer;
+}
+
+.header-icon {
+  cursor: pointer;
+  color: #606266;
+}
+
+.header-icon:hover {
+  color: #1890ff;
 }
 </style>

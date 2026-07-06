@@ -1,66 +1,69 @@
 <template>
-  <div class="course-detail">
-    <div class="page-header">
-      <h2>📚 {{ course.courseName || '课程详情' }}</h2>
+  <div class="page-shell">
+    <div class="page-title-bar">
+      <h2 class="page-title">📚 {{ course.courseName || '课程详情' }}</h2>
       <el-button @click="router.back()">返回</el-button>
     </div>
 
-    <el-tabs v-model="activeTab" type="border-card">
-      <el-tab-pane label="课程信息" name="info">
-        <el-descriptions :column="2" border>
-          <el-descriptions-item label="课程名称">{{ course.courseName }}</el-descriptions-item>
-          <el-descriptions-item label="授课教师">{{ course.teacherName }}</el-descriptions-item>
-          <el-descriptions-item label="开始日期">{{ course.startDate }}</el-descriptions-item>
-          <el-descriptions-item label="结束日期">{{ course.endDate }}</el-descriptions-item>
-          <el-descriptions-item label="选课人数">{{ course.studentCount }}人</el-descriptions-item>
-          <el-descriptions-item label="状态">
-            <el-tag :type="course.status === '进行中' ? 'success' : 'info'">{{ course.status }}</el-tag>
-          </el-descriptions-item>
-          <el-descriptions-item label="课程简介" :span="2">{{ course.description }}</el-descriptions-item>
-        </el-descriptions>
-      </el-tab-pane>
+    <div class="panel">
+      <el-tabs v-model="activeTab">
+        <el-tab-pane label="课程信息" name="info">
+          <el-descriptions :column="2" border>
+            <el-descriptions-item label="课程名称">{{ course.courseName }}</el-descriptions-item>
+            <el-descriptions-item label="授课教师">{{ course.teacherName }}</el-descriptions-item>
+            <el-descriptions-item label="开始日期">{{ course.startDate }}</el-descriptions-item>
+            <el-descriptions-item label="结束日期">{{ course.endDate }}</el-descriptions-item>
+            <el-descriptions-item label="选课人数">{{ course.studentCount }}人</el-descriptions-item>
+            <el-descriptions-item label="状态">
+              <el-tag :type="course.status === '进行中' ? 'success' : 'info'">{{ course.status }}</el-tag>
+            </el-descriptions-item>
+            <el-descriptions-item label="课程简介" :span="2">{{ course.description }}</el-descriptions-item>
+          </el-descriptions>
+        </el-tab-pane>
 
-      <el-tab-pane label="章节管理" name="chapters">
-        <el-button type="primary" size="small" @click="showChapterDialog = true" style="margin-bottom:12px">+ 添加章节</el-button>
-        <el-table :data="chapters" border stripe>
-          <el-table-column prop="sortOrder" label="序号" width="60" />
-          <el-table-column prop="chapterName" label="章节名称" />
-          <el-table-column prop="resourceCount" label="资源数" width="80" />
-          <el-table-column label="操作" width="160">
-            <template #default="{ row }">
-              <el-button size="small" @click="editChapter(row)">编辑</el-button>
-              <el-button size="small" type="danger" @click="deleteChapter(row.id)">删除</el-button>
-            </template>
-          </el-table-column>
-        </el-table>
-      </el-tab-pane>
+        <el-tab-pane label="章节管理" name="chapters">
+          <el-button type="primary" size="small" @click="showChapterDialog = true" style="margin-bottom:12px">+
+            添加章节</el-button>
+          <el-table :data="chapters" border stripe>
+            <el-table-column prop="sortOrder" label="序号" width="60" />
+            <el-table-column prop="chapterName" label="章节名称" />
+            <el-table-column prop="resourceCount" label="资源数" width="80" />
+            <el-table-column label="操作" width="160">
+              <template #default="{ row }">
+                <el-button size="small" @click="editChapter(row)">编辑</el-button>
+                <el-button size="small" type="danger" @click="deleteChapter(row.id)">删除</el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+        </el-tab-pane>
 
-      <el-tab-pane label="资源管理" name="resources">
-        <el-upload action="#" :http-request="uploadResource" :show-file-list="false">
-          <el-button type="primary">上传资源</el-button>
-        </el-upload>
-        <p style="color:#909399;margin-top:12px">支持视频、PDF、PPT等格式</p>
-      </el-tab-pane>
+        <el-tab-pane label="资源管理" name="resources">
+          <el-upload action="#" :http-request="uploadResource" :show-file-list="false">
+            <el-button type="primary">上传资源</el-button>
+          </el-upload>
+          <p style="color:#909399;margin-top:12px">支持视频、PDF、PPT等格式</p>
+        </el-tab-pane>
 
-      <el-tab-pane label="学生管理" name="students">
-        <el-table :data="students" border stripe>
-          <el-table-column prop="studentNo" label="学号" width="120" />
-          <el-table-column prop="realName" label="姓名" width="100" />
-          <el-table-column prop="major" label="专业" />
-          <el-table-column prop="className" label="班级" width="100" />
-        </el-table>
-      </el-tab-pane>
+        <el-tab-pane label="学生管理" name="students">
+          <el-table :data="students" border stripe>
+            <el-table-column prop="studentNo" label="学号" width="120" />
+            <el-table-column prop="realName" label="姓名" width="100" />
+            <el-table-column prop="major" label="专业" />
+            <el-table-column prop="className" label="班级" width="100" />
+          </el-table>
+        </el-tab-pane>
 
-      <el-tab-pane label="作业" name="assignments">
-        <el-empty description="请在作业管理页面查看" />
-      </el-tab-pane>
-      <el-tab-pane label="考试" name="exams">
-        <el-empty description="请在考试管理页面查看" />
-      </el-tab-pane>
-      <el-tab-pane label="成绩" name="grades">
-        <el-empty description="请在成绩管理页面查看" />
-      </el-tab-pane>
-    </el-tabs>
+        <el-tab-pane label="作业" name="assignments">
+          <el-empty description="请在作业管理页面查看" />
+        </el-tab-pane>
+        <el-tab-pane label="考试" name="exams">
+          <el-empty description="请在考试管理页面查看" />
+        </el-tab-pane>
+        <el-tab-pane label="成绩" name="grades">
+          <el-empty description="请在成绩管理页面查看" />
+        </el-tab-pane>
+      </el-tabs>
+    </div>
 
     <!-- 添加章节弹窗 -->
     <el-dialog v-model="showChapterDialog" title="添加章节" width="400px">
@@ -132,6 +135,30 @@ const uploadResource = async ({ file }) => {
 </script>
 
 <style scoped>
-.page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-.page-header h2 { color: #303133; }
+.page-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.page-title-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.page-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #303133;
+  margin: 0;
+}
+
+.panel {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  padding: 24px;
+}
 </style>

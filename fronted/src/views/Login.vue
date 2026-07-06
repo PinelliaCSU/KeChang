@@ -4,16 +4,7 @@
         <div class="login-left">
             <div class="brand-content">
                 <div class="brand-logo">
-                    <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
-                        <rect width="64" height="64" rx="16" fill="url(#logoGrad)" />
-                        <path d="M20 22h24v4H20zM20 30h24v4H20zM20 38h16v4H20z" fill="#fff" opacity="0.9" />
-                        <defs>
-                            <linearGradient id="logoGrad" x1="0" y1="0" x2="64" y2="64">
-                                <stop offset="0%" stop-color="#20c997" />
-                                <stop offset="100%" stop-color="#35495e" />
-                            </linearGradient>
-                        </defs>
-                    </svg>
+                    <img src="@/img/logo.png" alt="课畅" class="login-logo-img" />
                 </div>
                 <h1 class="brand-title">课畅</h1>
                 <p class="brand-desc">智能教学平台 · 让知识流动起来</p>
@@ -143,6 +134,12 @@ const goRegister = () => {
 .brand-logo {
     margin-bottom: 24px;
     display: inline-block;
+}
+
+.login-logo-img {
+    width: 72px;
+    height: 72px;
+    background: transparent;
 }
 
 .brand-title {

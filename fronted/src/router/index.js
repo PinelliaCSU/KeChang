@@ -17,6 +17,22 @@ const routes = [
     meta: { title: '课畅 - 仪表盘', requiresAuth: true }
   },
 
+  // ==================== 日历 ====================
+  {
+    path: '/calendar',
+    name: 'Calendar',
+    component: () => import('@/views/Calendar.vue'),
+    meta: { title: '日历 - 课畅', requiresAuth: true }
+  },
+
+  // ==================== 个人中心 ====================
+  {
+    path: '/profile',
+    name: 'Profile',
+    component: () => import('@/views/Profile.vue'),
+    meta: { title: '个人中心 - 课畅', requiresAuth: true }
+  },
+
   // ==================== 登录 ====================
   {
     path: '/login',

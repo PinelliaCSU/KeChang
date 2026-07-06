@@ -1,26 +1,24 @@
 <template>
-  <div class="student-exam-take" v-if="exam">
-    <div class="exam-header">
+  <div class="page-shell" v-if="exam">
+    <div class="exam-top-bar">
       <div class="exam-info">
-        <h2>📏 {{ exam.examName }}</h2>
+        <h2 class="exam-title">📏 {{ exam.examName }}</h2>
+        <span class="exam-course">{{ exam.courseName || '' }}</span>
       </div>
-      <div class="exam-timer">
+      <div class="exam-actions">
         <el-tag type="danger" size="large">⏰ 剩余 {{ formatTime(remaining) }}</el-tag>
       </div>
     </div>
 
     <div class="exam-body">
-      <!-- 题目索引 -->
-      <div class="question-index">
-        <el-card shadow="hover">
-          <template #header>题目索引</template>
+      <div class="exam-sidebar">
+        <div class="panel index-panel">
+          <h4 class="section-title">题目索引</h4>
           <div class="index-grid">
-            <span v-for="(q, i) in questions" :key="q.id"
-                  :class="['index-item',
-                    currentIndex === i ? 'current' : '',
-                    answers[q.id] ? 'answered' : '',
-                    markedQuestions.has(q.id) ? 'marked' : '']"
-                  @click="currentIndex = i">
+            <span v-for="(q, i) in questions" :key="q.id" :class="['index-item',
+              currentIndex === i ? 'current' : '',
+              answers[q.id] ? 'answered' : '',
+              markedQuestions.has(q.id) ? 'marked' : '']" @click="currentIndex = i">
               {{ i + 1 }}
             </span>
           </div>
@@ -29,40 +27,37 @@
             <span><span class="dot current-dot"></span> 当前</span>
             <span><span class="dot marked-dot"></span> 标记</span>
           </div>
-        </el-card>
+          <el-button type="danger" style="width:100%;margin-top:16px" @click="confirmSubmit">📝 交卷</el-button>
+        </div>
       </div>
 
-      <!-- 答题区 -->
-      <div class="answer-area">
-        <el-card shadow="hover" v-if="currentQuestion">
-          <template #header>
-            <div class="question-header">
-              <span>第 {{ currentIndex + 1 }} 题（{{ typeLabel(currentQuestion.questionType) }}）</span>
-              <el-button size="small" :type="markedQuestions.has(currentQuestion.id) ? 'warning' : 'default'"
-                         @click="toggleMark(currentQuestion.id)">
-                {{ markedQuestions.has(currentQuestion.id) ? '🏷 已标记' : '💡 标记本题' }}
-              </el-button>
-            </div>
-          </template>
+      <div class="exam-main">
+        <div class="panel" v-if="currentQuestion">
+          <div class="question-header">
+            <span class="q-number">第 {{ currentIndex + 1 }} 题（{{ typeLabel(currentQuestion.questionType) }}）</span>
+            <el-button size="small" :type="markedQuestions.has(currentQuestion.id) ? 'warning' : 'default'"
+              @click="toggleMark(currentQuestion.id)">
+              {{ markedQuestions.has(currentQuestion.id) ? '🏷 已标记' : '💡 标记本题' }}
+            </el-button>
+          </div>
 
           <div class="question-content">
             <p class="q-text">{{ currentQuestion.content }}</p>
-            <!-- 选项 -->
             <div class="options">
               <template v-if="['SINGLE', 'JUDGE'].includes(currentQuestion.questionType)">
                 <el-radio-group v-model="answers[currentQuestion.id]" class="option-group">
-                  <el-radio v-for="(opt, oi) in parseOptions(currentQuestion.options)" :key="oi"
-                            :value="opt.key" class="option-item">{{ opt.key }}. {{ opt.value }}</el-radio>
+                  <el-radio v-for="(opt, oi) in parseOptions(currentQuestion.options)" :key="oi" :value="opt.key"
+                    class="option-item">{{ opt.key }}. {{ opt.value }}</el-radio>
                 </el-radio-group>
               </template>
               <template v-else-if="currentQuestion.questionType === 'MULTI'">
                 <el-checkbox-group v-model="multiAnswers[currentQuestion.id]" class="option-group">
-                  <el-checkbox v-for="(opt, oi) in parseOptions(currentQuestion.options)" :key="oi"
-                               :value="opt.key" class="option-item">{{ opt.key }}. {{ opt.value }}</el-checkbox>
+                  <el-checkbox v-for="(opt, oi) in parseOptions(currentQuestion.options)" :key="oi" :value="opt.key"
+                    class="option-item">{{ opt.key }}. {{ opt.value }}</el-checkbox>
                 </el-checkbox-group>
               </template>
               <template v-else-if="currentQuestion.questionType === 'FILL'">
-                <el-input v-model="answers[currentQuestion.id]" placeholder="请输入答案" />
+                <el-input v-model="answers[currentQuestion.id]" placeholder="请输入答案" size="large" />
               </template>
               <template v-else>
                 <el-input v-model="answers[currentQuestion.id]" type="textarea" :rows="5" placeholder="请输入作答内容" />
@@ -73,10 +68,8 @@
           <div class="q-actions">
             <el-button :disabled="currentIndex === 0" @click="currentIndex--">上一题</el-button>
             <el-button :disabled="currentIndex >= questions.length - 1" @click="currentIndex++">下一题</el-button>
-            <el-button type="warning" @click="toggleMark(currentQuestion.id)">标记</el-button>
-            <el-button type="danger" @click="confirmSubmit">📝 交卷</el-button>
           </div>
-        </el-card>
+        </div>
       </div>
     </div>
   </div>
@@ -157,7 +150,7 @@ function toggleMark(qid) {
 
 function formatTime(sec) {
   const h = Math.floor(sec / 3600); const m = Math.floor((sec % 3600) / 60); const s = sec % 60
-  return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
 }
 
 async function confirmSubmit() {
@@ -183,21 +176,175 @@ async function submitExam() {
 </script>
 
 <style scoped>
-.exam-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding: 16px 24px; background: #fff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
-.exam-body { display: flex; gap: 20px; }
-.question-index { width: 180px; flex-shrink: 0; }
-.index-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
-.index-item { width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; border-radius: 4px; font-size: 13px; cursor: pointer; background: #f0f0f0; color: #909399; transition: all 0.2s; }
-.index-item.answered { background: #f6ffed; color: #52c41a; border: 2px solid #52c41a; }
-.index-item.current { background: #e6f7ff; color: #1890ff; border: 2px solid #1890ff; }
-.index-item.marked { background: #fff7e6; color: #faad14; border: 2px solid #faad14; }
-.index-legend { display: flex; gap: 12px; margin-top: 12px; font-size: 12px; }
-.dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 4px; }
-.answered-dot { background: #52c41a; } .current-dot { background: #1890ff; } .marked-dot { background: #faad14; }
-.answer-area { flex: 1; }
-.question-header { display: flex; justify-content: space-between; align-items: center; }
-.q-text { font-size: 16px; line-height: 1.8; margin-bottom: 20px; color: #303133; }
-.option-group { display: flex; flex-direction: column; gap: 12px; }
-.option-item { margin: 0; padding: 10px 16px; background: #fafafa; border-radius: 6px; transition: all 0.2s; }
-.q-actions { display: flex; gap: 12px; margin-top: 24px; justify-content: center; }
+.page-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.exam-top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  padding: 20px 24px;
+}
+
+.exam-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #303133;
+  margin: 0;
+}
+
+.exam-course {
+  font-size: 13px;
+  color: #909399;
+  margin-top: 4px;
+  display: block;
+}
+
+.exam-body {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+}
+
+.exam-sidebar {
+  width: 200px;
+  flex-shrink: 0;
+}
+
+.exam-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.panel {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  padding: 24px;
+}
+
+.section-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #303133;
+  margin: 0 0 14px 0;
+}
+
+.index-panel {
+  position: sticky;
+  top: 84px;
+}
+
+.index-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+}
+
+.index-item {
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+  background: #f5f5f5;
+  color: #909399;
+  transition: all 0.2s;
+  font-weight: 500;
+}
+
+.index-item.answered {
+  background: #f6ffed;
+  color: #52c41a;
+  border: 2px solid #52c41a;
+}
+
+.index-item.current {
+  background: #e6f7ff;
+  color: #1890ff;
+  border: 2px solid #1890ff;
+}
+
+.index-item.marked {
+  background: #fff7e6;
+  color: #faad14;
+  border: 2px solid #faad14;
+}
+
+.index-legend {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+  font-size: 12px;
+  color: #909399;
+  flex-wrap: wrap;
+}
+
+.dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-right: 3px;
+}
+
+.answered-dot {
+  background: #52c41a;
+}
+
+.current-dot {
+  background: #1890ff;
+}
+
+.marked-dot {
+  background: #faad14;
+}
+
+.question-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.q-number {
+  font-size: 15px;
+  font-weight: 600;
+  color: #303133;
+}
+
+.q-text {
+  font-size: 16px;
+  line-height: 1.8;
+  margin-bottom: 24px;
+  color: #303133;
+}
+
+.option-group {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.option-item {
+  font-size: 15px;
+}
+
+.q-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid #f0f0f0;
+  justify-content: center;
+}
 </style>
