@@ -1,9 +1,7 @@
 <template>
     <div class="dashboard-shell">
-        <!-- ==================== 1. 共享顶部导航栏 ==================== -->
         <DashboardHeader />
 
-        <!-- ==================== 2. 主体区域 ==================== -->
         <div class="main-body">
             <!-- 左侧边栏 -->
             <aside class="left-sidebar">
@@ -32,7 +30,6 @@
                         </svg><span>我的资源</span>
                     </a>
                 </nav>
-                <div class="sidebar-footer"><span class="old-version">切换旧版本</span></div>
             </aside>
 
             <!-- ========== 3. 主内容区 ========== -->

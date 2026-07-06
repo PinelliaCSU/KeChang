@@ -227,8 +227,6 @@ onMounted(() => { fetchEvents() })
     background: #67c23a;
 }
 
-.events-panel {}
-
 .panel-title {
     font-size: 16px;
     font-weight: 600;

@@ -4,7 +4,7 @@
         <div class="login-left">
             <div class="brand-content">
                 <div class="brand-logo">
-                    <img src="@/img/logo.png" alt="课畅" class="login-logo-img" />
+                    <img src="@/img/logo.jpg" alt="课畅" class="login-logo-img" />
                 </div>
                 <h1 class="brand-title">课畅</h1>
                 <p class="brand-desc">智能教学平台 · 让知识流动起来</p>

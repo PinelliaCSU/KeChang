@@ -2,7 +2,7 @@
     <header class="top-header">
         <div class="header-left">
             <div class="logo-area" @click="router.push('/dashboard')" style="cursor:pointer">
-                <img src="@/img/logo.png" alt="Logo" class="logo-img" />
+                <img src="@/img/logo.jpg" alt="Logo" class="logo-img" />
             </div>
             <nav class="top-nav">
                 <a href="javascript:;" class="nav-item" :class="{ active: topNavActive === 'courses' }"
