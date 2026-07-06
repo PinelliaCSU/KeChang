@@ -18,7 +18,8 @@
 
         <!-- 右侧登录表单 -->
         <div class="login-right">
-            <div class="login-card">
+            <!-- 登录表单 -->
+            <div class="login-card" v-if="!isRegisterMode">
                 <h2 class="login-title">欢迎回来</h2>
                 <p class="login-subtitle">登录您的课畅账号</p>
 
@@ -48,7 +49,45 @@
                 </div>
 
                 <div class="login-footer-text">
-                    还没有账号？<a href="javascript:;" class="register-link" @click="goRegister">立即注册</a>
+                    还没有账号？<a href="javascript:;" class="register-link" @click="isRegisterMode = true">立即注册</a>
+                </div>
+            </div>
+
+            <!-- 注册表单 -->
+            <div class="login-card" v-else>
+                <h2 class="login-title">创建账号</h2>
+                <p class="login-subtitle">加入课畅，开启学习之旅</p>
+
+                <el-form ref="registerFormRef" :model="registerForm" :rules="registerRules" size="large"
+                    class="login-form">
+                    <el-form-item prop="email">
+                        <el-input v-model="registerForm.email" placeholder="请输入邮箱" :prefix-icon="Message" clearable />
+                    </el-form-item>
+
+                    <el-form-item prop="nickname">
+                        <el-input v-model="registerForm.nickname" placeholder="请输入昵称（选填）" :prefix-icon="User"
+                            clearable />
+                    </el-form-item>
+
+                    <el-form-item prop="password">
+                        <el-input v-model="registerForm.password" type="password" placeholder="请设置密码（至少6位）"
+                            :prefix-icon="Lock" show-password />
+                    </el-form-item>
+
+                    <el-form-item prop="confirmPassword">
+                        <el-input v-model="registerForm.confirmPassword" type="password" placeholder="请再次输入密码"
+                            :prefix-icon="Lock" show-password @keyup.enter="handleRegister" />
+                    </el-form-item>
+
+                    <el-form-item>
+                        <el-button type="primary" class="login-btn" :loading="loading" @click="handleRegister">
+                            {{ loading ? '注册中...' : '注 册' }}
+                        </el-button>
+                    </el-form-item>
+                </el-form>
+
+                <div class="login-footer-text">
+                    已有账号？<a href="javascript:;" class="register-link" @click="isRegisterMode = false">立即登录</a>
                 </div>
             </div>
         </div>
@@ -59,24 +98,57 @@
 import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { User, Lock } from '@element-plus/icons-vue'
+import { User, Lock, Message } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 import { authApi } from '@/api'
 
 const router = useRouter()
 const userStore = useUserStore()
 const formRef = ref(null)
+const registerFormRef = ref(null)
 const loading = ref(false)
 const rememberMe = ref(false)
+const isRegisterMode = ref(false)
 
 const form = reactive({
     username: '',
     password: ''
 })
 
+const registerForm = reactive({
+    email: '',
+    nickname: '',
+    password: '',
+    confirmPassword: ''
+})
+
 const rules = {
     username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
     password: [{ required: true, message: '请输入密码', trigger: 'blur' }]
+}
+
+const validateConfirmPassword = (rule, value, callback) => {
+    if (value === '') {
+        callback(new Error('请再次输入密码'))
+    } else if (value !== registerForm.password) {
+        callback(new Error('两次输入的密码不一致'))
+    } else {
+        callback()
+    }
+}
+
+const registerRules = {
+    email: [
+        { required: true, message: '请输入邮箱', trigger: 'blur' },
+        { type: 'email', message: '请输入正确的邮箱格式', trigger: 'blur' }
+    ],
+    password: [
+        { required: true, message: '请设置密码', trigger: 'blur' },
+        { min: 6, message: '密码长度至少6位', trigger: 'blur' }
+    ],
+    confirmPassword: [
+        { required: true, validator: validateConfirmPassword, trigger: 'blur' }
+    ]
 }
 
 const handleLogin = async () => {
@@ -103,9 +175,32 @@ const handleLogin = async () => {
     }
 }
 
-const goRegister = () => {
-    router.push('/')
+const handleRegister = async () => {
+    const valid = await registerFormRef.value.validate().catch(() => false)
+    if (!valid) return
+
+    loading.value = true
+    try {
+        const res = await authApi.register({
+            email: registerForm.email,
+            password: registerForm.password,
+            confirmPassword: registerForm.confirmPassword,
+            nickname: registerForm.nickname || undefined
+        })
+        if (res.data.code === 200) {
+            ElMessage.success('注册成功，已自动登录！')
+            userStore.setLoginData(res.data.data)
+            router.push('/dashboard')
+        } else {
+            ElMessage.error(res.data.message || '注册失败')
+        }
+    } catch (e) {
+        ElMessage.error(e.response?.data?.message || '注册失败，请检查网络连接')
+    } finally {
+        loading.value = false
+    }
 }
+
 </script>
 
 <style scoped>
