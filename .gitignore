@@ -1,1 +1,30 @@
-document
+# 开发工具
+.idea/
+*.iml
+.vscode/
+*.swp
+*.swo
+
+# 后端
+backend/target/
+backend/uploads/
+backend/*.log
+
+# 前端
+fronted/node_modules/
+fronted/dist/
+fronted/.vite/
+
+# 文档
+document/
+
+# 数据库
+database/*.sqlite
+database/data/
+
+# Docker
+docker-compose.override.yml
+
+# OS
+.DS_Store
+Thumbs.db
