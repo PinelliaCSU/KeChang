@@ -2,12 +2,27 @@ import { createRouter, createWebHistory } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 
 const routes = [
-  // ==================== 门户 ====================
+  // ==================== 根路径（由路由守卫处理重定向） ====================
   {
     path: '/',
-    name: 'PortalHome',
-    component: () => import('@/views/portal/PortalHome.vue'),
-    meta: { title: '课畅 - 首页' }
+    name: 'Root',
+    meta: { title: '课畅' }
+  },
+
+  // ==================== 系统仪表盘（登录后主页面） ====================
+  {
+    path: '/dashboard',
+    name: 'Dashboard',
+    component: () => import('@/views/Dashboard.vue'),
+    meta: { title: '课畅 - 仪表盘', requiresAuth: true }
+  },
+
+  // ==================== 登录 ====================
+  {
+    path: '/login',
+    name: 'Login',
+    component: () => import('@/views/Login.vue'),
+    meta: { title: '登录 - 课畅' }
   },
 
   // ==================== 教师端 ====================
@@ -67,22 +82,33 @@ router.beforeEach((to, from, next) => {
 
   const userStore = useUserStore()
   const requiredRole = to.meta.role || to.matched.find(r => r.meta.role)?.meta?.role
+  const requiresAuth = to.meta.requiresAuth
+
+  // 访问根路径 / ：已登录→仪表盘，未登录→登录页
+  if (to.path === '/') {
+    next(userStore.token ? '/dashboard' : '/login')
+    return
+  }
+
+  // 需要登录的页面
+  if (requiresAuth && !userStore.token) {
+    next('/login')
+    return
+  }
+
+  // 已登录用户访问登录页，重定向到仪表盘
+  if (to.path === '/login' && userStore.token) {
+    next('/dashboard')
+    return
+  }
 
   if (requiredRole) {
     if (!userStore.token) {
-      // 未登录，跳转首页并提示登录
-      next('/')
+      next('/login')
       return
     }
     if (userStore.roleCode !== requiredRole) {
-      // 角色不匹配，跳转到对应的 dashboard
-      if (userStore.roleCode === 'ROLE_TEACHER') {
-        next('/teacher/dashboard')
-      } else if (userStore.roleCode === 'ROLE_STUDENT') {
-        next('/student/dashboard')
-      } else {
-        next('/')
-      }
+      next('/dashboard')
       return
     }
   }

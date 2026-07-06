@@ -8,20 +8,21 @@
     </div>
     <div class="header-right">
       <template v-if="!userStore.isLoggedIn">
-        <el-button type="primary" size="small" @click="$emit('go-teacher')">进入教师端</el-button>
-        <el-button type="success" size="small" @click="$emit('go-student')">进入学生端</el-button>
-        <el-button size="small" @click="$emit('show-login')">登录</el-button>
-        <el-button size="small" @click="$emit('show-register')">注册</el-button>
+        <el-button size="small" @click="router.push('/login')">登录</el-button>
       </template>
       <template v-else>
         <el-badge :value="unreadCount" :hidden="unreadCount === 0" class="notify-badge">
-          <el-icon :size="20"><Bell /></el-icon>
+          <el-icon :size="20">
+            <Bell />
+          </el-icon>
         </el-badge>
         <el-dropdown trigger="click" @command="handleCommand">
           <span class="user-info">
             <el-avatar :size="32" :src="userStore.avatar">{{ userStore.nickname?.charAt(0) }}</el-avatar>
             <span class="username">{{ userStore.nickname }}</span>
-            <el-icon><ArrowDown /></el-icon>
+            <el-icon>
+              <ArrowDown />
+            </el-icon>
           </span>
           <template #dropdown>
             <el-dropdown-menu>
@@ -43,7 +44,7 @@ import { useUserStore } from '@/stores/user'
 import { notificationApi } from '@/api'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
-const emit = defineEmits(['go-teacher', 'go-student', 'show-login', 'show-register'])
+
 const router = useRouter()
 const userStore = useUserStore()
 const unreadCount = ref(0)
@@ -59,7 +60,7 @@ const fetchUnread = async () => {
 const handleCommand = async (cmd) => {
   switch (cmd) {
     case 'profile':
-      router.push(userStore.isTeacher ? '/teacher/dashboard' : '/student/dashboard')
+      router.push('/dashboard')
       break
     case 'password':
       try {
@@ -93,16 +94,52 @@ onMounted(() => { fetchUnread(); setInterval(fetchUnread, 30000) })
   align-items: center;
   justify-content: space-between;
   padding: 0 24px;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
   position: sticky;
   top: 0;
   z-index: 100;
 }
-.logo { display: flex; align-items: center; text-decoration: none; gap: 8px; }
-.logo-icon { font-size: 28px; }
-.logo-text { font-size: 22px; font-weight: bold; color: #1890ff; }
-.header-right { display: flex; align-items: center; gap: 12px; }
-.user-info { display: flex; align-items: center; gap: 6px; cursor: pointer; }
-.username { color: #303133; max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.notify-badge { margin-right: 4px; cursor: pointer; }
+
+.logo {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  gap: 8px;
+}
+
+.logo-icon {
+  font-size: 28px;
+}
+
+.logo-text {
+  font-size: 22px;
+  font-weight: bold;
+  color: #1890ff;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.username {
+  color: #303133;
+  max-width: 100px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.notify-badge {
+  margin-right: 4px;
+  cursor: pointer;
+}
 </style>
