@@ -32,25 +32,25 @@ class TrainingController {
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('ROLE_TEACHER')")
+    @PreAuthorize("hasAuthority('ROLE_TEACHER')")
     public Result<Void> createProject(@RequestBody TrainingProject p) {
         p.setCreateBy(uid());
         trainingService.createProject(p);
-        return Result.success("创建成功");
+        return Result.success();
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ROLE_TEACHER')")
+    @PreAuthorize("hasAuthority('ROLE_TEACHER')")
     public Result<Void> updateProject(@PathVariable Long id, @RequestBody TrainingProject p) {
         trainingService.updateProject(id, p);
-        return Result.success("更新成功");
+        return Result.success();
     }
 
     @PostMapping("/{id}/tasks")
-    @PreAuthorize("hasRole('ROLE_TEACHER')")
+    @PreAuthorize("hasAuthority('ROLE_TEACHER')")
     public Result<Void> createTask(@RequestBody TrainingTask t) {
         trainingService.createTask(t);
-        return Result.success("任务添加成功");
+        return Result.success();
     }
 
     @GetMapping("/{id}/tasks")
@@ -59,23 +59,23 @@ class TrainingController {
     }
 
     @PostMapping("/tasks/{taskId}/report")
-    @PreAuthorize("hasRole('ROLE_STUDENT')")
+    @PreAuthorize("hasAuthority('ROLE_STUDENT')")
     public Result<Void> submitReport(@PathVariable Long taskId, @RequestParam(required = false) String content, @RequestParam(required = false) String attachmentUrl) {
         trainingService.submitReport(taskId, uid(), content, attachmentUrl);
-        return Result.success("报告提交成功");
+        return Result.success();
     }
 
     @GetMapping("/tasks/{taskId}/reports")
-    @PreAuthorize("hasRole('ROLE_TEACHER')")
+    @PreAuthorize("hasAuthority('ROLE_TEACHER')")
     public Result<PageResult<TrainingReport>> listReports(@PathVariable Long taskId, @RequestParam(defaultValue = "1") int page, @RequestParam(defaultValue = "10") int size) {
         return Result.success(trainingService.listReports(taskId, page, size));
     }
 
     @PutMapping("/reports/{reportId}/grade")
-    @PreAuthorize("hasRole('ROLE_TEACHER')")
+    @PreAuthorize("hasAuthority('ROLE_TEACHER')")
     public Result<Void> gradeReport(@PathVariable Long reportId, @RequestParam Double score, @RequestParam(required = false) String comment) {
         trainingService.gradeReport(reportId, score, comment);
-        return Result.success("评分成功");
+        return Result.success();
     }
 }
 
@@ -98,11 +98,11 @@ class QAController {
     }
 
     @PostMapping("/posts")
-    @PreAuthorize("hasRole('ROLE_STUDENT')")
+    @PreAuthorize("hasAuthority('ROLE_STUDENT')")
     public Result<Void> createPost(@RequestBody QuestionPost post) {
         post.setCreateBy(uid());
         qaService.createPost(post);
-        return Result.success("发布成功");
+        return Result.success();
     }
 
     @GetMapping("/posts/{id}")
@@ -113,7 +113,7 @@ class QAController {
     @PostMapping("/posts/{id}/answer")
     public Result<Void> createAnswer(@PathVariable Long id, @RequestParam String content) {
         qaService.createAnswer(id, content, uid());
-        return Result.success("回答成功");
+        return Result.success();
     }
 
     @PostMapping("/posts/{id}/answer/ai")
@@ -122,16 +122,16 @@ class QAController {
     }
 
     @PutMapping("/answers/{id}/accept")
-    @PreAuthorize("hasAnyRole('ROLE_STUDENT','ROLE_TEACHER')")
+    @PreAuthorize("hasAnyAuthority('ROLE_STUDENT','ROLE_TEACHER')")
     public Result<Void> acceptAnswer(@PathVariable Long id) {
         qaService.acceptAnswer(id);
-        return Result.success("已采纳");
+        return Result.success();
     }
 
     @PostMapping("/answers/{id}/comment")
     public Result<Void> addComment(@PathVariable Long id, @RequestParam String content) {
         qaService.createComment("ANSWER", id, content, uid());
-        return Result.success("评论成功");
+        return Result.success();
     }
 
     @GetMapping("/posts/{id}/answers")
@@ -158,21 +158,21 @@ class EvaluationController {
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('ROLE_TEACHER')")
+    @PreAuthorize("hasAuthority('ROLE_TEACHER')")
     public Result<Void> create(@RequestBody Evaluation e) {
         evalService.create(e);
-        return Result.success("创建成功");
+        return Result.success();
     }
 
     @PostMapping("/{id}/submit")
     public Result<Void> submit(@PathVariable Long id, @RequestBody EvaluationResult r) {
         r.setEvaluatorId(uid());
         evalService.submitResult(r);
-        return Result.success("提交成功");
+        return Result.success();
     }
 
     @GetMapping("/{id}/results")
-    @PreAuthorize("hasRole('ROLE_TEACHER')")
+    @PreAuthorize("hasAuthority('ROLE_TEACHER')")
     public Result<List<EvaluationResult>> results(@PathVariable Long id) {
         return Result.success(evalService.getResults(id));
     }
@@ -196,19 +196,19 @@ class SurveyController {
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('ROLE_TEACHER')")
+    @PreAuthorize("hasAuthority('ROLE_TEACHER')")
     public Result<Void> create(@RequestBody Survey s) {
         s.setCreateBy(uid());
         surveyService.create(s);
-        return Result.success("创建成功");
+        return Result.success();
     }
 
     @PostMapping("/{id}/submit")
-    @PreAuthorize("hasRole('ROLE_STUDENT')")
+    @PreAuthorize("hasAuthority('ROLE_STUDENT')")
     public Result<Void> submit(@PathVariable Long id, @RequestBody SurveyResponse r) {
         r.setRespondentId(uid());
         surveyService.submitResponse(r);
-        return Result.success("提交成功");
+        return Result.success();
     }
 
     @GetMapping("/{id}/questions")
@@ -217,7 +217,7 @@ class SurveyController {
     }
 
     @GetMapping("/{id}/stats")
-    @PreAuthorize("hasRole('ROLE_TEACHER')")
+    @PreAuthorize("hasAuthority('ROLE_TEACHER')")
     public Result<List<SurveyResponse>> stats(@PathVariable Long id) {
         return Result.success(surveyService.getStats(id));
     }
@@ -246,46 +246,46 @@ class KnowledgeController {
     }
 
     @PostMapping("/knowledge/articles")
-    @PreAuthorize("hasRole('ROLE_TEACHER')")
+    @PreAuthorize("hasAuthority('ROLE_TEACHER')")
     public Result<Void> createArticle(@RequestBody KnowledgeArticle a) {
         a.setCreateBy(uid());
         knowledgeService.createArticle(a);
-        return Result.success("发布成功");
+        return Result.success();
     }
 
     @GetMapping("/notes")
-    @PreAuthorize("hasRole('ROLE_STUDENT')")
+    @PreAuthorize("hasAuthority('ROLE_STUDENT')")
     public Result<PageResult<LearningNote>> listNotes(@RequestParam(defaultValue = "1") int page, @RequestParam(defaultValue = "10") int size) {
         return Result.success(knowledgeService.listNotes(uid(), page, size));
     }
 
     @PostMapping("/notes")
-    @PreAuthorize("hasRole('ROLE_STUDENT')")
+    @PreAuthorize("hasAuthority('ROLE_STUDENT')")
     public Result<Void> createNote(@RequestBody LearningNote n) {
         n.setStudentId(uid());
         knowledgeService.createNote(n);
-        return Result.success("笔记创建成功");
+        return Result.success();
     }
 
     @PutMapping("/notes/{id}")
-    @PreAuthorize("hasRole('ROLE_STUDENT')")
+    @PreAuthorize("hasAuthority('ROLE_STUDENT')")
     public Result<Void> updateNote(@PathVariable Long id, @RequestBody LearningNote n) {
         knowledgeService.updateNote(id, n);
-        return Result.success("更新成功");
+        return Result.success();
     }
 
     @DeleteMapping("/notes/{id}")
-    @PreAuthorize("hasRole('ROLE_STUDENT')")
+    @PreAuthorize("hasAuthority('ROLE_STUDENT')")
     public Result<Void> deleteNote(@PathVariable Long id) {
         knowledgeService.deleteNote(id);
-        return Result.success("已删除");
+        return Result.success();
     }
 
     @PutMapping("/notes/{id}/public")
-    @PreAuthorize("hasRole('ROLE_STUDENT')")
+    @PreAuthorize("hasAuthority('ROLE_STUDENT')")
     public Result<Void> togglePublic(@PathVariable Long id) {
         knowledgeService.togglePublic(id);
-        return Result.success("切换成功");
+        return Result.success();
     }
 }
 
@@ -314,20 +314,20 @@ class NotificationController {
     @PutMapping("/{id}/read")
     public Result<Void> markRead(@PathVariable Long id) {
         notifService.markRead(id, uid());
-        return Result.success("已标为已读");
+        return Result.success();
     }
 
     @PutMapping("/read-all")
     public Result<Void> markAllRead() {
         notifService.markAllRead(uid());
-        return Result.success("全部已读");
+        return Result.success();
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ROLE_TEACHER','ROLE_ADMIN')")
+    @PreAuthorize("hasAnyAuthority('ROLE_TEACHER','ROLE_ADMIN')")
     public Result<Void> send(@RequestBody Notification n) {
         n.setSenderId(uid());
         notifService.send(n);
-        return Result.success("通知已发送");
+        return Result.success();
     }
 }

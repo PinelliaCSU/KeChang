@@ -5,6 +5,7 @@ import com.kechang.common.Result;
 import com.kechang.dto.ExamSubmitDTO;
 import com.kechang.dto.PaperCreateDTO;
 import com.kechang.entity.Exam;
+import com.kechang.entity.ExamPaper;
 import com.kechang.entity.ExamRecord;
 import com.kechang.entity.ExamRecordAnswer;
 import com.kechang.entity.Question;
@@ -30,7 +31,7 @@ public class ExamController {
 
     // ==================== 试题库 ====================
     @GetMapping("/api/questions")
-    @PreAuthorize("hasRole('ROLE_TEACHER')")
+    @PreAuthorize("hasAuthority('ROLE_TEACHER')")
     public Result<PageResult<Question>> listQuestions(@RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) String questionType,
@@ -41,45 +42,45 @@ public class ExamController {
     }
 
     @PostMapping("/api/questions")
-    @PreAuthorize("hasRole('ROLE_TEACHER')")
+    @PreAuthorize("hasAuthority('ROLE_TEACHER')")
     public Result<Void> createQuestion(@RequestBody Question question) {
         question.setCreateBy(getUserId());
         examService.createQuestion(question);
-        return Result.success("试题添加成功");
+        return Result.success();
     }
 
     @PutMapping("/api/questions/{id}")
-    @PreAuthorize("hasRole('ROLE_TEACHER')")
+    @PreAuthorize("hasAuthority('ROLE_TEACHER')")
     public Result<Void> updateQuestion(@PathVariable Long id, @RequestBody Question question) {
         examService.updateQuestion(id, question);
-        return Result.success("试题更新成功");
+        return Result.success();
     }
 
     @DeleteMapping("/api/questions/{id}")
-    @PreAuthorize("hasRole('ROLE_TEACHER')")
+    @PreAuthorize("hasAuthority('ROLE_TEACHER')")
     public Result<Void> deleteQuestion(@PathVariable Long id) {
         examService.deleteQuestion(id);
-        return Result.success("试题已删除");
+        return Result.success();
     }
 
     // ==================== 试卷 ====================
     @GetMapping("/api/papers")
-    @PreAuthorize("hasRole('ROLE_TEACHER')")
-    public Result<PageResult<Exam>> listPapers(@RequestParam(defaultValue = "1") int page,
+    @PreAuthorize("hasAuthority('ROLE_TEACHER')")
+    public Result<PageResult<ExamPaper>> listPapers(@RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) Long courseId) {
         return Result.success(examService.getPaperList(page, size, courseId));
     }
 
     @PostMapping("/api/papers")
-    @PreAuthorize("hasRole('ROLE_TEACHER')")
+    @PreAuthorize("hasAuthority('ROLE_TEACHER')")
     public Result<Void> createPaper(@RequestBody PaperCreateDTO dto) {
         examService.createPaper(dto, getUserId());
-        return Result.success("试卷创建成功");
+        return Result.success();
     }
 
     @PostMapping("/api/papers/ai-generate")
-    @PreAuthorize("hasRole('ROLE_TEACHER')")
+    @PreAuthorize("hasAuthority('ROLE_TEACHER')")
     public Result<Map<String, Object>> aiGenerate(@RequestParam(required = false) String knowledgePoints,
             @RequestParam(required = false) String difficulty,
             @RequestParam(required = false) String types) {
@@ -92,10 +93,10 @@ public class ExamController {
     }
 
     @DeleteMapping("/api/papers/{id}")
-    @PreAuthorize("hasRole('ROLE_TEACHER')")
+    @PreAuthorize("hasAuthority('ROLE_TEACHER')")
     public Result<Void> deletePaper(@PathVariable Long id) {
         examService.deletePaper(id);
-        return Result.success("试卷已删除");
+        return Result.success();
     }
 
     // ==================== 考试安排 ====================
@@ -107,17 +108,17 @@ public class ExamController {
     }
 
     @PostMapping("/api/exams")
-    @PreAuthorize("hasRole('ROLE_TEACHER')")
+    @PreAuthorize("hasAuthority('ROLE_TEACHER')")
     public Result<Void> createExam(@RequestBody Exam exam) {
         examService.createExam(exam);
-        return Result.success("考试创建成功");
+        return Result.success();
     }
 
     @PutMapping("/api/exams/{id}")
-    @PreAuthorize("hasRole('ROLE_TEACHER')")
+    @PreAuthorize("hasAuthority('ROLE_TEACHER')")
     public Result<Void> updateExam(@PathVariable Long id, @RequestBody Exam exam) {
         examService.updateExam(id, exam);
-        return Result.success("考试更新成功");
+        return Result.success();
     }
 
     @GetMapping("/api/exams/{id}")
@@ -128,20 +129,20 @@ public class ExamController {
 
     // ==================== 考试作答 ====================
     @PostMapping("/api/exams/{id}/start")
-    @PreAuthorize("hasRole('ROLE_STUDENT')")
+    @PreAuthorize("hasAuthority('ROLE_STUDENT')")
     public Result<ExamVO> startExam(@PathVariable Long id) {
         return Result.success(examService.startExam(id, getUserId()));
     }
 
     @PostMapping("/api/exams/{id}/submit")
-    @PreAuthorize("hasRole('ROLE_STUDENT')")
+    @PreAuthorize("hasAuthority('ROLE_STUDENT')")
     public Result<Void> submitExam(@PathVariable Long id, @RequestBody ExamSubmitDTO dto) {
         examService.submitExam(id, getUserId(), dto);
-        return Result.success("交卷成功");
+        return Result.success();
     }
 
     @GetMapping("/api/exams/{id}/records")
-    @PreAuthorize("hasRole('ROLE_TEACHER')")
+    @PreAuthorize("hasAuthority('ROLE_TEACHER')")
     public Result<List<ExamRecord>> getExamRecords(@PathVariable Long id) {
         return Result.success(examService.getExamRecords(id));
     }
@@ -152,11 +153,11 @@ public class ExamController {
     }
 
     @PutMapping("/api/exams/records/{recordId}/mark")
-    @PreAuthorize("hasRole('ROLE_TEACHER')")
+    @PreAuthorize("hasAuthority('ROLE_TEACHER')")
     public Result<Void> markSubjective(@PathVariable Long recordId,
             @RequestParam Long questionId,
             @RequestParam Double score) {
         examService.markSubjective(recordId, questionId, score, getUserId());
-        return Result.success("批阅成功");
+        return Result.success();
     }
 }

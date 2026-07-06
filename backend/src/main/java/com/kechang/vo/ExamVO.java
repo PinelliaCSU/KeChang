@@ -29,17 +29,3 @@ public class ExamVO {
     // 教师视角：返回完整题目含答案
     private List<QuestionVO> questions;
 }
-
-@Data
-class QuestionVO {
-
-    private Long id;
-    private String questionType;
-    private String content;
-    private String options;        // JSON
-    private String answer;         // 学生端不返回
-    private String analysis;
-    private Double score;
-    private Integer difficulty;
-    private String knowledgePoint;
-}

@@ -31,10 +31,10 @@ public class AssignmentController {
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('ROLE_TEACHER')")
+    @PreAuthorize("hasAuthority('ROLE_TEACHER')")
     public Result<Void> create(@Valid @RequestBody AssignmentDTO dto) {
         assignmentService.create(dto, getUserId());
-        return Result.success("作业布置成功");
+        return Result.success();
     }
 
     @GetMapping("/{id}")
@@ -43,29 +43,29 @@ public class AssignmentController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ROLE_TEACHER')")
+    @PreAuthorize("hasAuthority('ROLE_TEACHER')")
     public Result<Void> update(@PathVariable Long id, @Valid @RequestBody AssignmentDTO dto) {
         assignmentService.update(id, dto);
-        return Result.success("作业更新成功");
+        return Result.success();
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ROLE_TEACHER')")
+    @PreAuthorize("hasAuthority('ROLE_TEACHER')")
     public Result<Void> delete(@PathVariable Long id) {
         assignmentService.delete(id);
-        return Result.success("作业已删除");
+        return Result.success();
     }
 
     @PostMapping("/{id}/submit")
-    @PreAuthorize("hasRole('ROLE_STUDENT')")
+    @PreAuthorize("hasAuthority('ROLE_STUDENT')")
     public Result<Void> submit(@PathVariable Long id, @RequestParam(required = false) String content,
             @RequestParam(required = false) String attachmentUrl) {
         assignmentService.submit(id, getUserId(), content, attachmentUrl);
-        return Result.success("提交成功");
+        return Result.success();
     }
 
     @GetMapping("/{id}/submits")
-    @PreAuthorize("hasRole('ROLE_TEACHER')")
+    @PreAuthorize("hasAuthority('ROLE_TEACHER')")
     public Result<PageResult<AssignmentSubmit>> submits(@PathVariable Long id,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size) {
@@ -73,10 +73,10 @@ public class AssignmentController {
     }
 
     @PutMapping("/submits/{submitId}/grade")
-    @PreAuthorize("hasRole('ROLE_TEACHER')")
+    @PreAuthorize("hasAuthority('ROLE_TEACHER')")
     public Result<Void> grade(@PathVariable Long submitId, @RequestParam Double score,
             @RequestParam(required = false) String comment) {
         assignmentService.grade(submitId, score, comment, getUserId());
-        return Result.success("评分成功");
+        return Result.success();
     }
 }

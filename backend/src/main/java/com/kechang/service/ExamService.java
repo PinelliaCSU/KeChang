@@ -9,6 +9,7 @@ import com.kechang.dto.PaperCreateDTO;
 import com.kechang.entity.*;
 import com.kechang.mapper.*;
 import com.kechang.vo.ExamVO;
+import com.kechang.vo.QuestionVO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -131,11 +132,11 @@ public class ExamService {
         List<ExamPaperQuestion> pqs = paperQuestionMapper.selectList(
                 new LambdaQueryWrapper<ExamPaperQuestion>().eq(ExamPaperQuestion::getPaperId, paperId)
                         .orderByAsc(ExamPaperQuestion::getSortOrder));
-        List<ExamVO.QuestionVO> questions = new ArrayList<>();
+        List<QuestionVO> questions = new ArrayList<>();
         for (ExamPaperQuestion pq : pqs) {
             Question q = questionMapper.selectById(pq.getQuestionId());
             if (q != null) {
-                ExamVO.QuestionVO qv = new ExamVO.QuestionVO();
+                QuestionVO qv = new QuestionVO();
                 qv.setId(q.getId());
                 qv.setQuestionType(q.getQuestionType());
                 qv.setContent(q.getContent());

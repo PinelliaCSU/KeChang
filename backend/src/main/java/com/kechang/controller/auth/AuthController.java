@@ -54,7 +54,7 @@ public class AuthController {
     public Result<Void> changePassword(@Valid @RequestBody PasswordDTO dto) {
         Long userId = (Long) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         authService.changePassword(userId, dto);
-        return Result.success("密码修改成功");
+        return Result.success();
     }
 
     /**
@@ -64,6 +64,6 @@ public class AuthController {
     public Result<Void> logout(@RequestHeader("Authorization") String authHeader) {
         String token = authHeader.replace("Bearer ", "");
         authService.logout(token);
-        return Result.success("已退出登录");
+        return Result.success();
     }
 }

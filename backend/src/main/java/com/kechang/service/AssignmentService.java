@@ -117,6 +117,10 @@ public class AssignmentService {
         g.setComment(comment);
         g.setGradedBy(teacherId);
         g.setGradedTime(LocalDateTime.now());
-        gradeMapper.insertOrUpdate(g);
+        if (g.getId() == null) {
+            gradeMapper.insert(g);
+        } else {
+            gradeMapper.updateById(g);
+        }
     }
 }

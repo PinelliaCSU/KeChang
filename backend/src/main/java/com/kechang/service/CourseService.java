@@ -8,6 +8,7 @@ import com.kechang.dto.ChapterDTO;
 import com.kechang.dto.CourseDTO;
 import com.kechang.entity.*;
 import com.kechang.mapper.*;
+import com.kechang.vo.ChapterVO;
 import com.kechang.vo.CourseVO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -77,9 +78,9 @@ public class CourseService {
         List<CourseChapter> chapters = chapterMapper.selectList(
                 new LambdaQueryWrapper<CourseChapter>().eq(CourseChapter::getCourseId, courseId)
                         .orderByAsc(CourseChapter::getSortOrder));
-        List<CourseVO.ChapterVO> chapterVOs = new ArrayList<>();
+        List<ChapterVO> chapterVOs = new ArrayList<>();
         for (CourseChapter ch : chapters) {
-            CourseVO.ChapterVO cv = new CourseVO.ChapterVO();
+            ChapterVO cv = new ChapterVO();
             cv.setId(ch.getId());
             cv.setChapterName(ch.getChapterName());
             cv.setSortOrder(ch.getSortOrder());

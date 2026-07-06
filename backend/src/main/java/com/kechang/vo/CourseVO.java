@@ -27,13 +27,3 @@ public class CourseVO {
     // 学生学习进度（教师视角）
     private Double progress;
 }
-
-@Data
-class ChapterVO {
-
-    private Long id;
-    private String chapterName;
-    private Integer sortOrder;
-    private String description;
-    private Integer resourceCount;
-}

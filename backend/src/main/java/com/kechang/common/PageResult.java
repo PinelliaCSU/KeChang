@@ -1,6 +1,5 @@
 package com.kechang.common;
 
-import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -13,7 +12,6 @@ import java.util.List;
  */
 @Data
 @NoArgsConstructor
-@AllArgsConstructor
 public class PageResult<T> {
 
     /**
@@ -35,6 +33,13 @@ public class PageResult<T> {
      * 每页条数
      */
     private long size;
+
+    public PageResult(List<T> records, long total, long page, long size) {
+        this.records = records;
+        this.total = total;
+        this.page = page;
+        this.size = size;
+    }
 
     public static <T> PageResult<T> of(List<T> records, long total, long page, long size) {
         return new PageResult<>(records, total, page, size);

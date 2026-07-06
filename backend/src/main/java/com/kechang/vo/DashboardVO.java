@@ -2,7 +2,7 @@ package com.kechang.vo;
 
 import lombok.Data;
 
-import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * 仪表盘统计 VO

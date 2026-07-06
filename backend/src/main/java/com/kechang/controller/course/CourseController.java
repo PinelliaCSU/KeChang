@@ -52,71 +52,71 @@ public class CourseController {
      * 创建课程
      */
     @PostMapping
-    @PreAuthorize("hasRole('ROLE_TEACHER')")
+    @PreAuthorize("hasAuthority('ROLE_TEACHER')")
     public Result<Void> create(@Valid @RequestBody CourseDTO dto) {
         Long userId = (Long) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         courseService.createCourse(dto, userId);
-        return Result.success("课程创建成功");
+        return Result.success();
     }
 
     /**
      * 更新课程
      */
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ROLE_TEACHER')")
+    @PreAuthorize("hasAuthority('ROLE_TEACHER')")
     public Result<Void> update(@PathVariable Long id, @Valid @RequestBody CourseDTO dto) {
         Long userId = (Long) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         courseService.updateCourse(id, dto, userId);
-        return Result.success("课程更新成功");
+        return Result.success();
     }
 
     /**
      * 删除课程
      */
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ROLE_TEACHER')")
+    @PreAuthorize("hasAuthority('ROLE_TEACHER')")
     public Result<Void> delete(@PathVariable Long id) {
         Long userId = (Long) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         courseService.deleteCourse(id, userId);
-        return Result.success("课程已删除");
+        return Result.success();
     }
 
     /**
      * 添加章节
      */
     @PostMapping("/{id}/chapters")
-    @PreAuthorize("hasRole('ROLE_TEACHER')")
+    @PreAuthorize("hasAuthority('ROLE_TEACHER')")
     public Result<Void> addChapter(@PathVariable Long id, @Valid @RequestBody ChapterDTO dto) {
         courseService.addChapter(id, dto);
-        return Result.success("章节添加成功");
+        return Result.success();
     }
 
     /**
      * 更新章节
      */
     @PutMapping("/{id}/chapters/{chapterId}")
-    @PreAuthorize("hasRole('ROLE_TEACHER')")
+    @PreAuthorize("hasAuthority('ROLE_TEACHER')")
     public Result<Void> updateChapter(@PathVariable Long id, @PathVariable Long chapterId,
             @Valid @RequestBody ChapterDTO dto) {
         courseService.updateChapter(chapterId, dto);
-        return Result.success("章节更新成功");
+        return Result.success();
     }
 
     /**
      * 删除章节
      */
     @DeleteMapping("/{id}/chapters/{chapterId}")
-    @PreAuthorize("hasRole('ROLE_TEACHER')")
+    @PreAuthorize("hasAuthority('ROLE_TEACHER')")
     public Result<Void> deleteChapter(@PathVariable Long id, @PathVariable Long chapterId) {
         courseService.deleteChapter(chapterId);
-        return Result.success("章节已删除");
+        return Result.success();
     }
 
     /**
      * 上传课程资源
      */
     @PostMapping("/{id}/resources")
-    @PreAuthorize("hasRole('ROLE_TEACHER')")
+    @PreAuthorize("hasAuthority('ROLE_TEACHER')")
     public Result<Void> uploadResource(@PathVariable Long id,
             @RequestParam(required = false) Long chapterId,
             @RequestParam("file") MultipartFile file) throws IOException {
@@ -129,14 +129,14 @@ public class CourseController {
         String fileUrl = "/uploads/courses/" + id + "/" + fileName;
         String resourceType = getResourceType(file.getOriginalFilename());
         courseService.uploadResource(id, chapterId, file.getOriginalFilename(), resourceType, fileUrl, file.getSize());
-        return Result.success("资源上传成功");
+        return Result.success();
     }
 
     /**
      * 查看选课学生
      */
     @GetMapping("/{id}/students")
-    @PreAuthorize("hasRole('ROLE_TEACHER')")
+    @PreAuthorize("hasAuthority('ROLE_TEACHER')")
     public Result<PageResult<StudentProfile>> students(@PathVariable Long id,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size) {
@@ -147,22 +147,22 @@ public class CourseController {
      * 学生选课
      */
     @PostMapping("/{id}/enroll")
-    @PreAuthorize("hasRole('ROLE_STUDENT')")
+    @PreAuthorize("hasAuthority('ROLE_STUDENT')")
     public Result<Void> enroll(@PathVariable Long id) {
         Long userId = (Long) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         courseService.enrollCourse(id, userId);
-        return Result.success("选课成功");
+        return Result.success();
     }
 
     /**
      * 学生退课
      */
     @DeleteMapping("/{id}/enroll")
-    @PreAuthorize("hasRole('ROLE_STUDENT')")
+    @PreAuthorize("hasAuthority('ROLE_STUDENT')")
     public Result<Void> unenroll(@PathVariable Long id) {
         Long userId = (Long) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         courseService.unenrollCourse(id, userId);
-        return Result.success("已退课");
+        return Result.success();
     }
 
     private String getResourceType(String filename) {

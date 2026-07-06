@@ -23,31 +23,31 @@ public class GradeController {
     }
 
     @GetMapping("/student/{studentId}")
-    @PreAuthorize("hasRole('ROLE_TEACHER')")
+    @PreAuthorize("hasAuthority('ROLE_TEACHER')")
     public Result<List<GradeVO>> studentGrades(@PathVariable Long studentId) {
         return Result.success(gradeService.getStudentGrades(studentId));
     }
 
     @GetMapping("/my")
-    @PreAuthorize("hasRole('ROLE_STUDENT')")
+    @PreAuthorize("hasAuthority('ROLE_STUDENT')")
     public Result<List<GradeVO>> myGrades() {
         return Result.success(gradeService.getMyGrades(getUserId()));
     }
 
     @GetMapping("/course/{courseId}")
-    @PreAuthorize("hasRole('ROLE_TEACHER')")
+    @PreAuthorize("hasAuthority('ROLE_TEACHER')")
     public Result<List<GradeVO>> courseGrades(@PathVariable Long courseId) {
         return Result.success(gradeService.getCourseGrades(courseId));
     }
 
     @GetMapping("/course/{courseId}/stats")
-    @PreAuthorize("hasRole('ROLE_TEACHER')")
+    @PreAuthorize("hasAuthority('ROLE_TEACHER')")
     public Result<Map<String, Object>> courseStats(@PathVariable Long courseId) {
         return Result.success(gradeService.getCourseStats(courseId));
     }
 
     @GetMapping("/course/{courseId}/export")
-    @PreAuthorize("hasRole('ROLE_TEACHER')")
+    @PreAuthorize("hasAuthority('ROLE_TEACHER')")
     public Result<List<GradeVO>> exportGrades(@PathVariable Long courseId) {
         return Result.success(gradeService.exportGrades(courseId));
     }

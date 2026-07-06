@@ -22,13 +22,13 @@ public class DashboardController {
     }
 
     @GetMapping("/teacher/stats")
-    @PreAuthorize("hasRole('ROLE_TEACHER')")
+    @PreAuthorize("hasAuthority('ROLE_TEACHER')")
     public Result<DashboardVO> teacherStats() {
         return Result.success(dashboardService.getTeacherDashboard(getUserId()));
     }
 
     @GetMapping("/student/stats")
-    @PreAuthorize("hasRole('ROLE_STUDENT')")
+    @PreAuthorize("hasAuthority('ROLE_STUDENT')")
     public Result<DashboardVO> studentStats() {
         return Result.success(dashboardService.getStudentDashboard(getUserId()));
     }
