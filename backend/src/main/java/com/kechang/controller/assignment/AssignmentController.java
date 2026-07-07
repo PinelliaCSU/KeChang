@@ -4,11 +4,13 @@ import com.kechang.common.PageResult;
 import com.kechang.common.Result;
 import com.kechang.dto.AssignmentDTO;
 import com.kechang.entity.Assignment;
-import com.kechang.entity.AssignmentSubmit;
 import com.kechang.service.AssignmentService;
+import com.kechang.vo.AssignmentSubmitVO;
+import com.kechang.vo.AssignmentVO;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
@@ -24,10 +26,16 @@ public class AssignmentController {
     }
 
     @GetMapping
-    public Result<PageResult<Assignment>> list(@RequestParam(defaultValue = "1") int page,
+    public Result<PageResult<AssignmentVO>> list(@RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) Long courseId) {
-        return Result.success(assignmentService.list(page, size, courseId));
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        Long userId = (Long) authentication.getPrincipal();
+        String role = authentication.getAuthorities().stream()
+                .findFirst()
+                .map(Object::toString)
+                .orElse("");
+        return Result.success(assignmentService.list(page, size, courseId, userId, role));
     }
 
     @PostMapping
@@ -66,7 +74,7 @@ public class AssignmentController {
 
     @GetMapping("/{id}/submits")
     @PreAuthorize("hasAuthority('ROLE_TEACHER')")
-    public Result<PageResult<AssignmentSubmit>> submits(@PathVariable Long id,
+    public Result<PageResult<AssignmentSubmitVO>> submits(@PathVariable Long id,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size) {
         return Result.success(assignmentService.getSubmitList(id, page, size));
