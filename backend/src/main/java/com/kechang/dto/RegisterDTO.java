@@ -23,4 +23,9 @@ public class RegisterDTO {
     private String confirmPassword;
 
     private String nickname;
+
+    /**
+     * 角色类型: student / teacher，默认为 student
+     */
+    private String roleType;
 }

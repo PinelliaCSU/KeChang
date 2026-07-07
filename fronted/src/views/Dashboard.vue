@@ -86,7 +86,7 @@
                                     label="2025-2026 第一学期" value="2025-2026-1" />
                             </el-select>
                             <span class="sort-hint" @click="toggleCourseSort" style="cursor:pointer">{{ sortLabel
-                            }}</span>
+                                }}</span>
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#909399"
                                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="cursor:pointer"
                                 @click="toggleCourseSort">
@@ -102,7 +102,7 @@
                         <p>加载课程中...</p>
                     </div>
                     <div v-else-if="courses.length === 0" class="empty-state" style="padding:24px 0">
-                        <p class="empty-text">暂无课程，去选课吧~</p>
+                        <p class="empty-text">{{ userStore.isTeacher ? '暂无课程，去创建课程吧~' : '暂无课程，去选课吧~' }}</p>
                     </div>
                     <div v-else class="course-scroll">
                         <div class="course-card" v-for="course in courses" :key="course.id">
@@ -121,7 +121,8 @@
                                 <p class="card-student-id">{{ course.courseCode || '' }}</p>
                             </div>
                             <div class="card-footer">
-                                <button class="btn-enter" @click="enterCourse(course)">进入课程</button>
+                                <button class="btn-enter" @click="enterCourse(course)">{{ userStore.isTeacher ? '管理课程' :
+                                    '进入课程' }}</button>
                                 <el-dropdown trigger="click" @command="(cmd) => handleCourseAction(cmd, course)">
                                     <button class="btn-more" title="更多操作" @click.stop>
                                         <svg width="16" height="4" viewBox="0 0 16 4" fill="none">
@@ -132,10 +133,14 @@
                                     </button>
                                     <template #dropdown>
                                         <el-dropdown-menu>
-                                            <el-dropdown-item command="enter">📖 进入课程</el-dropdown-item>
+                                            <el-dropdown-item command="enter">
+                                                {{ userStore.isTeacher ? '📖 管理课程' : '📖进入课程' }}
+                                            </el-dropdown-item>
                                             <el-dropdown-item command="detail">ℹ️ 课程详情</el-dropdown-item>
                                             <el-dropdown-item v-if="userStore.isStudent" command="enroll">✅
                                                 选课</el-dropdown-item>
+                                            <el-dropdown-item v-if="userStore.isTeacher" command="edit">✏️
+                                                编辑课程</el-dropdown-item>
                                         </el-dropdown-menu>
                                     </template>
                                 </el-dropdown>
@@ -273,15 +278,16 @@ const progressPercent = ref(0)
 const circumference = 2 * Math.PI * 58
 
 // ==================== 计算属性 ====================
-const displayName = computed(() => userStore.nickname || userStore.username || '同学')
+const displayName = computed(() => userStore.nickname || userStore.username || (userStore.isTeacher ? '老师' : '同学'))
+const roleSuffix = computed(() => userStore.isTeacher ? '老师' : '同学')
 const greetingText = computed(() => {
-    const hour = new Date().getHours(); const name = displayName.value
-    if (hour < 6) return `夜深了，注意休息！${name}同学！`
-    if (hour < 9) return `早上好！${name}同学！`
-    if (hour < 12) return `上午好！${name}同学！`
-    if (hour < 14) return `中午好！${name}同学！`
-    if (hour < 18) return `下午好！${name}同学！`
-    return `晚上好！${name}同学！`
+    const hour = new Date().getHours(); const name = displayName.value; const suffix = roleSuffix.value
+    if (hour < 6) return `夜深了，注意休息！${name}${suffix}！`
+    if (hour < 9) return `早上好！${name}${suffix}！`
+    if (hour < 12) return `上午好！${name}${suffix}！`
+    if (hour < 14) return `中午好！${name}${suffix}！`
+    if (hour < 18) return `下午好！${name}${suffix}！`
+    return `晚上好！${name}${suffix}！`
 })
 const semesterInfo = computed(() => {
     const now = new Date(); const semesterStart = new Date(2026, 1, 23)
@@ -329,6 +335,8 @@ const handleCourseAction = (cmd, course) => {
     else if (cmd === 'detail') {
         if (userStore.isTeacher) router.push(`/teacher/courses/${course.id}`)
         else ElMessage.info('课程详情功能开发中')
+    } else if (cmd === 'edit') {
+        router.push(`/teacher/courses/${course.id}`)
     } else if (cmd === 'enroll') {
         courseApi.enroll(course.id).then(() => { ElMessage.success('选课成功'); fetchCourses() }).catch(e => ElMessage.error(e.response?.data?.message || '选课失败'))
     }

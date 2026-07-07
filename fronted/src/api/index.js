@@ -101,10 +101,40 @@ export const dashboardApi = {
   studentStats: () => request.get('/dashboard/student/stats')
 }
 
+/** 评价 API */
+export const evaluationApi = {
+  list: (params) => request.get('/evaluations', { params }),
+  create: (data) => request.post('/evaluations', data),
+  submit: (id, data) => request.post(`/evaluations/${id}/submit`, data),
+  getResults: (id) => request.get(`/evaluations/${id}/results`)
+}
+
+/** 问卷 API */
+export const surveyApi = {
+  list: (params) => request.get('/surveys', { params }),
+  create: (data) => request.post('/surveys', data),
+  submit: (id, data) => request.post(`/surveys/${id}/submit`, data),
+  getQuestions: (id) => request.get(`/surveys/${id}/questions`),
+  getStats: (id) => request.get(`/surveys/${id}/stats`)
+}
+
+/** 知识库 API */
+export const knowledgeApi = {
+  listArticles: (params) => request.get('/knowledge/articles', { params }),
+  getArticle: (id) => request.get(`/knowledge/articles/${id}`),
+  createArticle: (data) => request.post('/knowledge/articles', data),
+  listNotes: (params) => request.get('/notes', { params }),
+  createNote: (data) => request.post('/notes', data),
+  updateNote: (id, data) => request.put(`/notes/${id}`, data),
+  deleteNote: (id) => request.delete(`/notes/${id}`),
+  togglePublic: (id) => request.put(`/notes/${id}/public`)
+}
+
 /** 通知 API */
 export const notificationApi = {
   list: (params) => request.get('/notifications', { params }),
   unreadCount: () => request.get('/notifications/unread-count'),
   markRead: (id) => request.put(`/notifications/${id}/read`),
-  markAllRead: () => request.put('/notifications/read-all')
+  markAllRead: () => request.put('/notifications/read-all'),
+  send: (data) => request.post('/notifications', data)
 }

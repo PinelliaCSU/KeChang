@@ -68,10 +68,12 @@ public class AuthService {
         if (sysUserMapper.selectOne(new LambdaQueryWrapper<SysUser>().eq(SysUser::getEmail, dto.getEmail())) != null) {
             throw BusinessException.badRequest("该邮箱已被注册");
         }
-        // 获取学生角色
-        SysRole studentRole = sysRoleMapper.selectOne(
-                new LambdaQueryWrapper<SysRole>().eq(SysRole::getRoleCode, "ROLE_STUDENT"));
-        if (studentRole == null) {
+        // 判断角色类型：teacher -> ROLE_TEACHER，否则默认 ROLE_STUDENT
+        boolean isTeacher = "teacher".equalsIgnoreCase(dto.getRoleType());
+        String roleCode = isTeacher ? "ROLE_TEACHER" : "ROLE_STUDENT";
+        SysRole role = sysRoleMapper.selectOne(
+                new LambdaQueryWrapper<SysRole>().eq(SysRole::getRoleCode, roleCode));
+        if (role == null) {
             throw new BusinessException("系统角色配置异常");
         }
         // 创建用户
@@ -80,15 +82,22 @@ public class AuthService {
         user.setPassword(passwordEncoder.encode(dto.getPassword()));
         user.setEmail(dto.getEmail());
         user.setNickname(dto.getNickname() != null ? dto.getNickname() : dto.getEmail().split("@")[0]);
-        user.setRoleId(studentRole.getId());
+        user.setRoleId(role.getId());
         user.setStatus(0);
         sysUserMapper.insert(user);
-        // 生成学号并创建学生扩展信息
-        String studentNo = generateStudentNo();
-        StudentProfile profile = new StudentProfile();
-        profile.setUserId(user.getId());
-        profile.setStudentNo(studentNo);
-        studentProfileMapper.insert(profile);
+
+        // 根据角色创建对应的扩展信息
+        if (isTeacher) {
+            TeacherProfile profile = new TeacherProfile();
+            profile.setUserId(user.getId());
+            teacherProfileMapper.insert(profile);
+        } else {
+            String studentNo = generateStudentNo();
+            StudentProfile profile = new StudentProfile();
+            profile.setUserId(user.getId());
+            profile.setStudentNo(studentNo);
+            studentProfileMapper.insert(profile);
+        }
 
         return buildLoginVO(user);
     }

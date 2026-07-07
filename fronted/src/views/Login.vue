@@ -60,6 +60,21 @@
 
                 <el-form ref="registerFormRef" :model="registerForm" :rules="registerRules" size="large"
                     class="login-form">
+                    <el-form-item prop="roleType">
+                        <div class="role-selector">
+                            <div class="role-option" :class="{ active: registerForm.roleType === 'student' }"
+                                @click="registerForm.roleType = 'student'">
+                                <span class="role-icon">🎓</span>
+                                <span class="role-label">学生</span>
+                            </div>
+                            <div class="role-option" :class="{ active: registerForm.roleType === 'teacher' }"
+                                @click="registerForm.roleType = 'teacher'">
+                                <span class="role-icon">👨‍🏫</span>
+                                <span class="role-label">教师</span>
+                            </div>
+                        </div>
+                    </el-form-item>
+
                     <el-form-item prop="email">
                         <el-input v-model="registerForm.email" placeholder="请输入邮箱" :prefix-icon="Message" clearable />
                     </el-form-item>
@@ -116,6 +131,7 @@ const form = reactive({
 })
 
 const registerForm = reactive({
+    roleType: 'student',
     email: '',
     nickname: '',
     password: '',
@@ -182,6 +198,7 @@ const handleRegister = async () => {
     loading.value = true
     try {
         const res = await authApi.register({
+            roleType: registerForm.roleType,
             email: registerForm.email,
             password: registerForm.password,
             confirmPassword: registerForm.confirmPassword,
@@ -388,5 +405,52 @@ const handleRegister = async () => {
 
 .register-link:hover {
     text-decoration: underline;
+}
+
+/* 角色选择器 */
+.role-selector {
+    display: flex;
+    gap: 16px;
+    width: 100%;
+}
+
+.role-option {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 16px 8px;
+    border: 2px solid #e4e7ed;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s;
+    background: #fff;
+}
+
+.role-option:hover {
+    border-color: #409eff;
+    background: #ecf5ff;
+}
+
+.role-option.active {
+    border-color: #409eff;
+    background: #ecf5ff;
+    box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.2);
+}
+
+.role-icon {
+    font-size: 28px;
+}
+
+.role-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: #303133;
+}
+
+.role-option.active .role-label {
+    color: #409eff;
 }
 </style>
