@@ -28,4 +28,7 @@ public class Comment {
 
     @TableLogic
     private Integer isDeleted;
+
+    @TableField(exist = false)
+    private String createByName;
 }

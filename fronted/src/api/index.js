@@ -90,10 +90,17 @@ export const qaApi = {
   listPosts: (params) => request.get('/questions/posts', { params }),
   createPost: (data) => request.post('/questions/posts', data),
   getPost: (id) => request.get(`/questions/posts/${id}`),
+  deletePost: (id) => request.delete(`/questions/posts/${id}`),
   createAnswer: (id, params) => request.post(`/questions/posts/${id}/answer`, null, { params }),
+  deleteAnswer: (id) => request.delete(`/questions/answers/${id}`),
   aiAnswer: (id) => request.post(`/questions/posts/${id}/answer/ai`),
   acceptAnswer: (id) => request.put(`/questions/answers/${id}/accept`),
   addComment: (id, params) => request.post(`/questions/answers/${id}/comment`, null, { params }),
+  addPostComment: (id, params) => request.post(`/questions/posts/${id}/comment`, null, { params }),
+  listComments: (targetType, targetId, params) => {
+    const prefix = targetType === 'POST' ? 'posts' : 'answers'
+    return request.get(`/questions/${prefix}/${targetId}/comments`, { params })
+  },
   listAnswers: (id, params) => request.get(`/questions/posts/${id}/answers`, { params })
 }
 

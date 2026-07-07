@@ -91,6 +91,8 @@ class QAController {
         return (Long) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
     }
 
+    // ---------- 帖子 ----------
+
     @GetMapping("/posts")
     public Result<PageResult<QuestionPost>> listPosts(@RequestParam(defaultValue = "1") int page, @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) Long courseId, @RequestParam(defaultValue = "time") String orderBy) {
@@ -98,7 +100,7 @@ class QAController {
     }
 
     @PostMapping("/posts")
-    @PreAuthorize("hasAuthority('ROLE_STUDENT')")
+    @PreAuthorize("hasAnyAuthority('ROLE_STUDENT','ROLE_TEACHER')")
     public Result<Void> createPost(@RequestBody QuestionPost post) {
         post.setCreateBy(uid());
         qaService.createPost(post);
@@ -109,6 +111,14 @@ class QAController {
     public Result<QuestionPost> getPost(@PathVariable Long id) {
         return Result.success(qaService.getPostDetail(id));
     }
+
+    @DeleteMapping("/posts/{id}")
+    public Result<Void> deletePost(@PathVariable Long id) {
+        qaService.deletePost(id, uid());
+        return Result.success();
+    }
+
+    // ---------- 回答 ----------
 
     @PostMapping("/posts/{id}/answer")
     public Result<Void> createAnswer(@PathVariable Long id, @RequestParam String content) {
@@ -121,6 +131,17 @@ class QAController {
         return Result.success(Map.of("content", qaService.aiAnswer(id)));
     }
 
+    @GetMapping("/posts/{id}/answers")
+    public Result<PageResult<Answer>> listAnswers(@PathVariable Long id, @RequestParam(defaultValue = "1") int page, @RequestParam(defaultValue = "10") int size) {
+        return Result.success(qaService.listAnswers(id, page, size));
+    }
+
+    @DeleteMapping("/answers/{id}")
+    public Result<Void> deleteAnswer(@PathVariable Long id) {
+        qaService.deleteAnswer(id, uid());
+        return Result.success();
+    }
+
     @PutMapping("/answers/{id}/accept")
     @PreAuthorize("hasAnyAuthority('ROLE_STUDENT','ROLE_TEACHER')")
     public Result<Void> acceptAnswer(@PathVariable Long id) {
@@ -128,15 +149,28 @@ class QAController {
         return Result.success();
     }
 
+    // ---------- 评论 ----------
+
     @PostMapping("/answers/{id}/comment")
-    public Result<Void> addComment(@PathVariable Long id, @RequestParam String content) {
+    public Result<Void> addCommentToAnswer(@PathVariable Long id, @RequestParam String content) {
         qaService.createComment("ANSWER", id, content, uid());
         return Result.success();
     }
 
-    @GetMapping("/posts/{id}/answers")
-    public Result<PageResult<Answer>> listAnswers(@PathVariable Long id, @RequestParam(defaultValue = "1") int page, @RequestParam(defaultValue = "10") int size) {
-        return Result.success(qaService.listAnswers(id, page, size));
+    @PostMapping("/posts/{id}/comment")
+    public Result<Void> addCommentToPost(@PathVariable Long id, @RequestParam String content) {
+        qaService.createComment("POST", id, content, uid());
+        return Result.success();
+    }
+
+    @GetMapping("/posts/{id}/comments")
+    public Result<PageResult<Comment>> listPostComments(@PathVariable Long id, @RequestParam(defaultValue = "1") int page, @RequestParam(defaultValue = "10") int size) {
+        return Result.success(qaService.listComments("POST", id, page, size));
+    }
+
+    @GetMapping("/answers/{id}/comments")
+    public Result<PageResult<Comment>> listAnswerComments(@PathVariable Long id, @RequestParam(defaultValue = "1") int page, @RequestParam(defaultValue = "10") int size) {
+        return Result.success(qaService.listComments("ANSWER", id, page, size));
     }
 }
 

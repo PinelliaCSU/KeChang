@@ -28,4 +28,10 @@ public class Answer {
 
     @TableLogic
     private Integer isDeleted;
+
+    @TableField(exist = false)
+    private String createByName;
+
+    @TableField(exist = false)
+    private Integer commentCount;
 }
