@@ -1,0 +1,145 @@
+/* ============================================================
+   亲自然 (Biophilic) 设计主题 — 课畅 KeChang
+   绿植色盘 · 有机曲线 · 自然光感 · 疗愈氛围
+   ============================================================ */
+
+/* ---------- 设计令牌 (Design Tokens) ---------- */
+:root {
+  /* -- 主色：苔绿 / 叶绿 -- */
+  --bio-moss:       #606c38;
+  --bio-moss-light: #7a8645;
+  --bio-leaf:       #7f8c52;
+  --bio-leaf-soft:  #a3b18a;
+  --bio-sage:       #b7c9a8;
+  --bio-pale:       #dde8d0;
+
+  /* -- 大地色系 -- */
+  --bio-earth:      #9c6644;
+  --bio-earth-warm: #b08968;
+  --bio-clay:       #d4a373;
+  --bio-sand:       #eddcd2;
+
+  /* -- 天光蓝 -- */
+  --bio-sky:        #a5c4d4;
+  --bio-sky-soft:   #c5dbe8;
+  --bio-sky-pale:   #e3eef5;
+  --bio-mist:       #ecf3f6;
+
+  /* -- 中性色 / 纸纤维底色 -- */
+  --bio-cream:      #faf8f0;
+  --bio-warm-white: #fdfbf7;
+  --bio-paper:      #fefefc;
+  --bio-ink:        #2c3630;
+  --bio-ink-soft:   #4a544c;
+  --bio-ink-muted:  #7a8278;
+  --bio-ink-faint:  #b0b5ad;
+
+  /* -- 语义色 -- */
+  --bio-success:    #6b8e4e;
+  --bio-warning:    #c4956a;
+  --bio-danger:     #c4665a;
+  --bio-info:       #7a9fb5;
+
+  /* -- 形状 -- */
+  --bio-radius-sm:  8px;
+  --bio-radius-md:  14px;
+  --bio-radius-lg:  20px;
+  --bio-radius-xl:  28px;
+
+  /* -- 阴影 (柔和、自然光感) -- */
+  --bio-shadow-xs:  0 1px 3px rgba(44, 54, 48, 0.04);
+  --bio-shadow-sm:  0 2px 8px rgba(44, 54, 48, 0.06);
+  --bio-shadow-md:  0 4px 16px rgba(44, 54, 48, 0.07);
+  --bio-shadow-lg:  0 8px 28px rgba(44, 54, 48, 0.09);
+
+  /* -- 动效 -- */
+  --bio-ease-out:   cubic-bezier(0.25, 0.8, 0.25, 1);
+  --bio-dur-fast:   150ms;
+  --bio-dur-normal: 200ms;
+  --bio-dur-slow:   280ms;
+
+  /* -- 字体 -- */
+  --bio-font: 'PingFang SC', 'Microsoft YaHei', 'Hiragino Sans GB', system-ui, -apple-system, sans-serif;
+}
+
+/* ---------- 全局重置 & 纹理背景 ---------- */
+html, body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--bio-cream);
+  color: var(--bio-ink);
+  font-family: var(--bio-font);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* 淡色渐变 + 微噪点纹理背景 */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background:
+    /* 柔光渐变 */
+    radial-gradient(ellipse 80% 60% at 20% 10%, rgba(163, 177, 138, 0.10) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 70% at 80% 80%, rgba(165, 196, 212, 0.10) 0%, transparent 60%),
+    linear-gradient(175deg, #fdfbf7 0%, #faf8f0 40%, #f5f1e8 100%);
+  pointer-events: none;
+}
+
+/* ---------- 全局表单元素 ---------- */
+::selection {
+  background: var(--bio-leaf-soft);
+  color: var(--bio-ink);
+}
+
+/* 滚动条 — 自然纤细 */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--bio-sage);
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--bio-leaf-soft);
+}
+
+/* ---------- 工具类 ---------- */
+.bio-card {
+  background: var(--bio-paper);
+  border-radius: var(--bio-radius-md);
+  box-shadow: var(--bio-shadow-sm);
+  border: 1px solid rgba(163, 177, 138, 0.12);
+}
+
+.bio-btn-primary {
+  background: linear-gradient(135deg, var(--bio-moss) 0%, var(--bio-leaf) 100%);
+  color: #fff;
+  border: none;
+  border-radius: var(--bio-radius-sm);
+  padding: 10px 24px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: filter var(--bio-dur-normal) var(--bio-ease-out),
+              transform var(--bio-dur-fast) var(--bio-ease-out);
+}
+.bio-btn-primary:hover {
+  filter: brightness(1.12);
+}
+.bio-btn-primary:active {
+  transform: translateY(1px);
+  filter: brightness(0.96);
+}
+
+/* ---------- 叶脉装饰线 ---------- */
+.bio-leaf-vein {
+  position: absolute;
+  pointer-events: none;
+  opacity: 0.06;
+}

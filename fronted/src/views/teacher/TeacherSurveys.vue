@@ -1,7 +1,7 @@
 <template>
   <div class="page-shell">
     <div class="page-title-bar">
-      <h2 class="page-title">📋 问卷管理</h2>
+      <h2 class="page-title">问卷管理</h2>
       <el-button type="primary" @click="openCreateDialog">+ 创建问卷</el-button>
     </div>
 

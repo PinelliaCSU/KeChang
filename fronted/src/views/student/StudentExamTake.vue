@@ -2,11 +2,11 @@
   <div class="page-shell" v-if="exam">
     <div class="exam-top-bar">
       <div class="exam-info">
-        <h2 class="exam-title">📏 {{ exam.examName }}</h2>
+        <h2 class="exam-title">{{ exam.examName }}</h2>
         <span class="exam-course">{{ exam.courseName || '' }}</span>
       </div>
       <div class="exam-actions">
-        <el-tag type="danger" size="large">⏰ 剩余 {{ formatTime(remaining) }}</el-tag>
+        <el-tag type="danger" size="large">剩余 {{ formatTime(remaining) }}</el-tag>
       </div>
     </div>
 
@@ -27,7 +27,7 @@
             <span><span class="dot current-dot"></span> 当前</span>
             <span><span class="dot marked-dot"></span> 标记</span>
           </div>
-          <el-button type="danger" style="width:100%;margin-top:16px" @click="confirmSubmit">📝 交卷</el-button>
+          <el-button type="danger" style="width:100%;margin-top:16px" @click="confirmSubmit">交卷</el-button>
         </div>
       </div>
 
@@ -37,7 +37,7 @@
             <span class="q-number">第 {{ currentIndex + 1 }} 题（{{ typeLabel(currentQuestion.questionType) }}）</span>
             <el-button size="small" :type="markedQuestions.has(currentQuestion.id) ? 'warning' : 'default'"
               @click="toggleMark(currentQuestion.id)">
-              {{ markedQuestions.has(currentQuestion.id) ? '🏷 已标记' : '💡 标记本题' }}
+              {{ markedQuestions.has(currentQuestion.id) ? '已标记' : '标记本题' }}
             </el-button>
           </div>
 

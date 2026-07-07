@@ -1,7 +1,7 @@
 <template>
   <div class="page-shell">
     <div class="page-title-bar">
-      <h2 class="page-title">💬 互动问答</h2>
+      <h2 class="page-title">互动问答</h2>
       <el-button type="primary" size="default">+ 发布问题</el-button>
     </div>
 
@@ -15,8 +15,8 @@
             <div class="post-meta">
               <span>{{ p.createByName }}</span>
               <span>{{ p.createTime }}</span>
-              <span>💬 {{ p.replyCount || 0 }} 回复</span>
-              <span>👁 {{ p.viewCount || 0 }} 浏览</span>
+              <span>{{ p.replyCount || 0 }} 回复</span>
+              <span>{{ p.viewCount || 0 }} 浏览</span>
             </div>
           </div>
           <el-tag v-if="p.isResolved" type="success" size="small">已解决</el-tag>

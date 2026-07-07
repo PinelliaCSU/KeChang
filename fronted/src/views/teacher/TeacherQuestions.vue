@@ -1,7 +1,7 @@
 <template>
   <div class="page-shell">
     <div class="page-title-bar">
-      <h2 class="page-title">📝 试题管理</h2>
+      <h2 class="page-title">试题管理</h2>
       <div class="page-actions">
         <el-button type="primary" @click="openCreate">+ 新建试题</el-button>
         <el-input v-model="keyword" placeholder="搜索试题内容..." size="default" style="width:220px" clearable

@@ -3,7 +3,7 @@
         <DashboardHeader />
         <div class="calendar-body">
             <div class="page-title-bar">
-                <h2 class="page-title">📅 我的日历</h2>
+                <h2 class="page-title">我的日历</h2>
                 <div class="title-actions">
                     <el-tag size="small" type="success" effect="plain">学期第 {{ currentWeek }} 周</el-tag>
                     <el-button size="small" @click="date = new Date()" :icon="RefreshRight">今天</el-button>

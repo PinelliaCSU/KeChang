@@ -10,9 +10,20 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #fff;
-  border-top: 1px solid #e8e8e8;
-  color: #909399;
+  background: linear-gradient(180deg, #fdfbf7 0%, #f7f5ed 100%);
+  border-top: 1px solid rgba(163, 177, 138, 0.15);
+  color: var(--bio-ink-muted);
   font-size: 13px;
+  position: relative;
+}
+
+.app-footer::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(163, 177, 138, 0.2), transparent);
 }
 </style>

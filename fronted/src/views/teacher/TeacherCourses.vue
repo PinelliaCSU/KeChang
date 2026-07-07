@@ -1,7 +1,7 @@
 <template>
   <div class="page-shell">
     <div class="page-title-bar">
-      <h2 class="page-title">📚 课程管理</h2>
+      <h2 class="page-title">课程管理</h2>
       <el-button type="primary" @click="showCreateDialog">+ 创建课程</el-button>
     </div>
 

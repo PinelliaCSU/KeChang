@@ -1,7 +1,7 @@
 <template>
   <div class="page-shell">
     <div class="page-title-bar">
-      <h2 class="page-title">🔬 实训管理</h2>
+      <h2 class="page-title">实训管理</h2>
       <el-button type="primary" @click="openCreateProject">+ 创建实训项目</el-button>
     </div>
 
@@ -53,7 +53,7 @@
       <template #footer>
         <el-button @click="projDialogVisible = false">取消</el-button>
         <el-button type="primary" :loading="projSubmitting" @click="handleProjSubmit">{{ isEditProj ? '保存' : '创建'
-          }}</el-button>
+        }}</el-button>
       </template>
     </el-dialog>
 

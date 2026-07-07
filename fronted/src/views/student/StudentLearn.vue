@@ -1,8 +1,8 @@
 <template>
   <div class="page-shell">
     <div class="page-title-bar">
-      <h2 class="page-title">📚 在线学习</h2>
-      <el-button @click="router.push('/student/notes')">📋 查看我的笔记</el-button>
+      <h2 class="page-title">在线学习</h2>
+      <el-button @click="router.push('/student/notes')">查看我的笔记</el-button>
     </div>
 
     <div class="learn-layout">
@@ -20,7 +20,7 @@
         </div>
 
         <div class="panel">
-          <h4 class="section-title">📄 课件下载</h4>
+          <h4 class="section-title">课件下载</h4>
           <div class="resource-links">
             <el-link type="primary" :underline="false">第二章PPT.pdf</el-link>
             <el-link type="primary" :underline="false">第二章讲义.docx</el-link>
@@ -28,7 +28,7 @@
         </div>
 
         <div class="panel">
-          <h4 class="section-title">✏️ 记笔记</h4>
+          <h4 class="section-title">记笔记</h4>
           <el-input v-model="noteContent" type="textarea" :rows="3" placeholder="在此输入笔记内容..." />
           <div class="note-actions">
             <el-input v-model="timestamp" placeholder="视频时间点(如02:35)" style="width:160px" size="default" />
@@ -40,7 +40,7 @@
       <!-- 右侧：章节大纲 -->
       <div class="learn-sidebar">
         <div class="panel outline-panel">
-          <h4 class="section-title">📖 章节大纲</h4>
+          <h4 class="section-title">章节大纲</h4>
           <div class="outline-list">
             <div v-for="ch in chapters" :key="ch.id" :class="['outline-item', ch.active ? 'active' : '']">
               <span>{{ ch.sortOrder }}. {{ ch.chapterName }}</span>

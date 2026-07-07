@@ -64,12 +64,24 @@
                         <div class="role-selector">
                             <div class="role-option" :class="{ active: registerForm.roleType === 'student' }"
                                 @click="registerForm.roleType = 'student'">
-                                <span class="role-icon">🎓</span>
+                                <span class="role-icon">
+                                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+                                        <path d="M6 12v5c0 1.1 2.7 2 6 2s6-.9 6-2v-5" />
+                                    </svg>
+                                </span>
                                 <span class="role-label">学生</span>
                             </div>
                             <div class="role-option" :class="{ active: registerForm.roleType === 'teacher' }"
                                 @click="registerForm.roleType = 'teacher'">
-                                <span class="role-icon">👨‍🏫</span>
+                                <span class="role-icon">
+                                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                        <circle cx="12" cy="8" r="4" />
+                                        <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
+                                    </svg>
+                                </span>
                                 <span class="role-label">教师</span>
                             </div>
                         </div>
@@ -224,18 +236,42 @@ const handleRegister = async () => {
 .login-container {
     display: flex;
     min-height: 100vh;
-    font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    font-family: var(--bio-font);
 }
 
-/* ========== 左侧品牌区 ========== */
+/* ========== 左侧品牌区 — 森林冠层 ========== */
 .login-left {
     flex: 1;
-    background: linear-gradient(135deg, #2b3a4a 0%, #35495e 50%, #1a2a38 100%);
+    background: linear-gradient(165deg, #3b4a2e 0%, #4a5c38 30%, #5a7040 60%, #4a5c38 100%);
     display: flex;
     align-items: center;
     justify-content: center;
     position: relative;
     overflow: hidden;
+}
+
+/* 林间光斑 */
+.login-left::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+        radial-gradient(ellipse 50% 40% at 25% 30%, rgba(163, 177, 138, 0.25) 0%, transparent 60%),
+        radial-gradient(ellipse 30% 50% at 70% 60%, rgba(212, 232, 192, 0.18) 0%, transparent 55%),
+        radial-gradient(circle at 85% 15%, rgba(255, 255, 255, 0.06) 0%, transparent 40%),
+        radial-gradient(circle at 10% 80%, rgba(255, 255, 255, 0.04) 0%, transparent 35%);
+    pointer-events: none;
+}
+
+/* 叶脉装饰 SVG */
+.login-left::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 600 800'%3E%3Cpath d='M120 700 Q200 600 180 500 Q160 400 220 300 Q280 200 260 100' fill='none' stroke='rgba(180,200,150,0.1)' stroke-width='1.5'/%3E%3Cpath d='M140 680 Q210 590 190 490' fill='none' stroke='rgba(180,200,150,0.08)' stroke-width='1'/%3E%3Cpath d='M480 150 Q400 250 420 350 Q440 450 380 550 Q320 650 340 750' fill='none' stroke='rgba(180,200,150,0.1)' stroke-width='1.5'/%3E%3Cpath d='M500 170 Q430 260 450 360' fill='none' stroke='rgba(180,200,150,0.08)' stroke-width='1'/%3E%3Ccircle cx='55' cy='120' r='3' fill='rgba(210,230,190,0.12)'/%3E%3Ccircle cx='530' cy='680' r='4' fill='rgba(210,230,190,0.1)'/%3E%3Ccircle cx='500' cy='90' r='2' fill='rgba(255,255,255,0.06)'/%3E%3Ccircle cx='80' cy='600' r='3' fill='rgba(200,220,180,0.08)'/%3E%3C/svg%3E");
+    background-size: cover;
+    pointer-events: none;
 }
 
 .brand-content {
@@ -252,111 +288,131 @@ const handleRegister = async () => {
     width: 72px;
     height: 72px;
     background: transparent;
+    border-radius: 50%;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
 }
 
 .brand-title {
     font-size: 42px;
     font-weight: 700;
-    color: #fff;
+    color: #f5f8ef;
     letter-spacing: 8px;
     margin-bottom: 12px;
 }
 
 .brand-desc {
     font-size: 16px;
-    color: rgba(255, 255, 255, 0.7);
+    color: rgba(235, 242, 220, 0.7);
     letter-spacing: 2px;
 }
 
+/* 装饰圆 — 有机叶形 */
 .decor-circles .circle {
     position: absolute;
     border-radius: 50%;
-    border: 2px solid rgba(255, 255, 255, 0.08);
+    border: 2px solid rgba(180, 200, 150, 0.1);
 }
 
 .c1 {
     width: 400px;
     height: 400px;
-    top: -100px;
-    right: -100px;
+    top: -120px;
+    right: -120px;
 }
 
 .c2 {
-    width: 250px;
-    height: 250px;
-    bottom: -80px;
-    left: -60px;
+    width: 280px;
+    height: 280px;
+    bottom: -100px;
+    left: -80px;
 }
 
 .c3 {
-    width: 150px;
-    height: 150px;
-    top: 50%;
-    left: 20%;
-    border-color: rgba(32, 201, 151, 0.15);
+    width: 160px;
+    height: 160px;
+    top: 55%;
+    left: 25%;
+    border-color: rgba(180, 200, 150, 0.18);
 }
 
-/* ========== 右侧登录区 ========== */
+/* ========== 右侧登录区 — 纸纤维质感 ========== */
 .login-right {
     flex: 1;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: #f5f7fa;
+    background:
+        radial-gradient(ellipse 70% 50% at 20% 30%, rgba(163, 177, 138, 0.05) 0%, transparent 60%),
+        radial-gradient(ellipse 50% 60% at 80% 70%, rgba(165, 196, 212, 0.05) 0%, transparent 60%),
+        #fdfbf7;
 }
 
 .login-card {
     width: 420px;
-    background: #fff;
-    border-radius: 16px;
+    background: var(--bio-paper);
+    border-radius: var(--bio-radius-lg);
     padding: 48px 40px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06);
+    box-shadow: var(--bio-shadow-md);
+    border: 1px solid rgba(163, 177, 138, 0.1);
+    transition: box-shadow var(--bio-dur-slow) var(--bio-ease-out);
+}
+
+.login-card:hover {
+    box-shadow: var(--bio-shadow-lg);
 }
 
 .login-title {
     font-size: 28px;
     font-weight: 700;
-    color: #2b3a4a;
+    color: var(--bio-ink);
     margin-bottom: 8px;
 }
 
 .login-subtitle {
     font-size: 14px;
-    color: #909399;
+    color: var(--bio-ink-muted);
     margin-bottom: 36px;
 }
 
 .login-form :deep(.el-input__wrapper) {
-    border-radius: 10px;
-    background: #f7f8fa;
+    border-radius: var(--bio-radius-md);
+    background: #f8f6f1;
     box-shadow: none;
     padding: 4px 16px;
+    border: 1px solid rgba(163, 177, 138, 0.1);
+    transition: all var(--bio-dur-normal) var(--bio-ease-out);
 }
 
 .login-form :deep(.el-input__wrapper:hover) {
-    box-shadow: 0 0 0 1px #20c997 inset;
+    border-color: rgba(124, 140, 90, 0.3);
+    filter: brightness(1.02);
 }
 
 .login-form :deep(.el-input__wrapper.is-focus) {
-    box-shadow: 0 0 0 1px #20c997 inset !important;
+    border-color: var(--bio-leaf) !important;
+    box-shadow: 0 0 0 3px rgba(127, 140, 82, 0.1) !important;
 }
 
 .login-btn {
     width: 100%;
     height: 48px;
-    border-radius: 10px;
+    border-radius: var(--bio-radius-md);
     font-size: 16px;
     font-weight: 600;
     letter-spacing: 4px;
-    background: linear-gradient(135deg, #35495e, #2b3a4a);
+    background: linear-gradient(135deg, var(--bio-moss) 0%, var(--bio-leaf) 100%);
     border: none;
-    transition: all 0.3s;
+    transition: filter var(--bio-dur-normal) var(--bio-ease-out),
+        transform var(--bio-dur-fast) var(--bio-ease-out);
 }
 
 .login-btn:hover {
-    background: linear-gradient(135deg, #20c997, #1aa87e);
-    transform: translateY(-1px);
-    box-shadow: 0 6px 20px rgba(32, 201, 151, 0.3);
+    filter: brightness(1.12);
+}
+
+.login-btn:active {
+    transform: translateY(1px);
+    filter: brightness(0.96);
 }
 
 .login-extra {
@@ -369,7 +425,7 @@ const handleRegister = async () => {
 }
 
 .remember-me {
-    color: #909399;
+    color: var(--bio-ink-muted);
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -377,37 +433,39 @@ const handleRegister = async () => {
 }
 
 .remember-me input {
-    accent-color: #20c997;
+    accent-color: var(--bio-leaf);
 }
 
 .forgot-link {
-    color: #20c997;
+    color: var(--bio-moss);
     text-decoration: none;
+    transition: filter var(--bio-dur-fast) var(--bio-ease-out);
 }
 
 .forgot-link:hover {
-    text-decoration: underline;
+    filter: brightness(1.2);
 }
 
 .login-footer-text {
     text-align: center;
     font-size: 14px;
-    color: #909399;
+    color: var(--bio-ink-muted);
     padding-top: 24px;
-    border-top: 1px solid #f0f0f0;
+    border-top: 1px solid rgba(163, 177, 138, 0.1);
 }
 
 .register-link {
-    color: #20c997;
+    color: var(--bio-moss);
     font-weight: 600;
     text-decoration: none;
+    transition: filter var(--bio-dur-fast) var(--bio-ease-out);
 }
 
 .register-link:hover {
-    text-decoration: underline;
+    filter: brightness(1.2);
 }
 
-/* 角色选择器 */
+/* 角色选择器 — 有机卡片 */
 .role-selector {
     display: flex;
     gap: 16px;
@@ -422,22 +480,27 @@ const handleRegister = async () => {
     justify-content: center;
     gap: 8px;
     padding: 16px 8px;
-    border: 2px solid #e4e7ed;
-    border-radius: 12px;
+    border: 2px solid rgba(163, 177, 138, 0.15);
+    border-radius: var(--bio-radius-md);
     cursor: pointer;
-    transition: all 0.3s;
-    background: #fff;
+    transition: all var(--bio-dur-normal) var(--bio-ease-out);
+    background: #fdfbf7;
 }
 
 .role-option:hover {
-    border-color: #409eff;
-    background: #ecf5ff;
+    border-color: rgba(124, 140, 90, 0.35);
+    background: #f7f8f2;
+    filter: brightness(1.02);
 }
 
 .role-option.active {
-    border-color: #409eff;
-    background: #ecf5ff;
-    box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.2);
+    border-color: var(--bio-leaf);
+    background: linear-gradient(135deg, rgba(163, 177, 138, 0.12), rgba(163, 177, 138, 0.06));
+    box-shadow: 0 0 0 3px rgba(127, 140, 82, 0.08);
+}
+
+.role-option:active {
+    transform: translateY(1px);
 }
 
 .role-icon {
@@ -447,10 +510,10 @@ const handleRegister = async () => {
 .role-label {
     font-size: 14px;
     font-weight: 600;
-    color: #303133;
+    color: var(--bio-ink-soft);
 }
 
 .role-option.active .role-label {
-    color: #409eff;
+    color: var(--bio-moss);
 }
 </style>

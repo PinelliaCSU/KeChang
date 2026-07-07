@@ -1,18 +1,13 @@
 <template>
   <div class="sidebar-wrapper" :class="{ collapsed }">
-    <el-menu
-      :default-active="activeMenu"
-      :collapse="collapsed"
-      :router="true"
-      background-color="#001529"
-      text-color="#ffffffa6"
-      active-text-color="#1890ff"
-      class="sidebar-menu"
-    >
+    <el-menu :default-active="activeMenu" :collapse="collapsed" :router="true" background-color="transparent"
+      text-color="#4a544c" active-text-color="#606c38" class="sidebar-menu">
       <template v-for="item in menuItems" :key="item.path">
         <el-sub-menu v-if="item.children" :index="item.path">
           <template #title>
-            <el-icon><component :is="item.icon" /></el-icon>
+            <el-icon>
+              <component :is="item.icon" />
+            </el-icon>
             <span>{{ item.title }}</span>
           </template>
           <el-menu-item v-for="child in item.children" :key="child.path" :index="child.path">
@@ -20,13 +15,18 @@
           </el-menu-item>
         </el-sub-menu>
         <el-menu-item v-else :index="item.path">
-          <el-icon><component :is="item.icon" /></el-icon>
+          <el-icon>
+            <component :is="item.icon" />
+          </el-icon>
           <span>{{ item.title }}</span>
         </el-menu-item>
       </template>
     </el-menu>
     <div class="collapse-btn" @click="collapsed = !collapsed">
-      <el-icon :size="18"><Fold v-if="!collapsed" /><Expand v-else /></el-icon>
+      <el-icon :size="18">
+        <Fold v-if="!collapsed" />
+        <Expand v-else />
+      </el-icon>
     </div>
   </div>
 </template>
@@ -75,18 +75,119 @@ const menuItems = computed(() => userStore.isTeacher ? teacherMenus : studentMen
 .sidebar-wrapper {
   width: 220px;
   min-height: calc(100vh - 60px);
-  background: #001529;
-  transition: width 0.3s;
+  background: linear-gradient(180deg, #fdfbf7 0%, #f7f5ed 100%);
+  border-right: 1px solid rgba(163, 177, 138, 0.15);
+  transition: width var(--bio-dur-slow) var(--bio-ease-out);
   position: relative;
   display: flex;
   flex-direction: column;
+  box-shadow: 2px 0 16px rgba(44, 54, 30, 0.04);
 }
-.sidebar-wrapper.collapsed { width: 64px; }
-.sidebar-menu { border-right: none; flex: 1; overflow-y: auto; }
-.sidebar-menu:not(.el-menu--collapse) { width: 220px; }
+
+/* 叶脉纹理装饰 */
+.sidebar-wrapper::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 90% 20%, rgba(163, 177, 138, 0.06) 0%, transparent 50%),
+    radial-gradient(circle at 20% 85%, rgba(165, 196, 212, 0.05) 0%, transparent 40%);
+  pointer-events: none;
+}
+
+.sidebar-wrapper.collapsed {
+  width: 64px;
+}
+
+.sidebar-menu {
+  border-right: none;
+  flex: 1;
+  overflow-y: auto;
+  background: transparent;
+}
+
+.sidebar-menu:not(.el-menu--collapse) {
+  width: 220px;
+}
+
+/* Element Plus 菜单覆盖 — 纸纤维风格 */
+.sidebar-menu :deep(.el-menu) {
+  background: transparent;
+  border-right: none;
+}
+
+.sidebar-menu :deep(.el-menu-item) {
+  color: var(--bio-ink-soft);
+  font-size: 14px;
+  height: 46px;
+  line-height: 46px;
+  margin: 3px 10px;
+  border-radius: var(--bio-radius-md);
+  transition: all var(--bio-dur-normal) var(--bio-ease-out);
+  position: relative;
+}
+
+.sidebar-menu :deep(.el-menu-item:hover) {
+  color: var(--bio-moss);
+  background: rgba(163, 177, 138, 0.12);
+  filter: brightness(1.05);
+}
+
+.sidebar-menu :deep(.el-menu-item.is-active) {
+  color: var(--bio-moss);
+  background: linear-gradient(135deg, rgba(163, 177, 138, 0.18), rgba(163, 177, 138, 0.10));
+  font-weight: 600;
+}
+
+.sidebar-menu :deep(.el-menu-item.is-active::before) {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 12px;
+  bottom: 12px;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: var(--bio-leaf);
+}
+
+.sidebar-menu :deep(.el-sub-menu__title) {
+  color: var(--bio-ink-soft);
+  font-size: 14px;
+  height: 46px;
+  line-height: 46px;
+  margin: 3px 10px;
+  border-radius: var(--bio-radius-md);
+  transition: all var(--bio-dur-normal) var(--bio-ease-out);
+}
+
+.sidebar-menu :deep(.el-sub-menu__title:hover) {
+  color: var(--bio-moss);
+  background: rgba(163, 177, 138, 0.10);
+}
+
+.sidebar-menu :deep(.el-icon) {
+  color: inherit;
+}
+
 .collapse-btn {
-  height: 48px; display: flex; align-items: center; justify-content: center;
-  cursor: pointer; color: #ffffffa6; border-top: 1px solid rgba(255,255,255,0.1);
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--bio-ink-muted);
+  border-top: 1px solid rgba(163, 177, 138, 0.12);
+  transition: color var(--bio-dur-normal) var(--bio-ease-out),
+    background var(--bio-dur-normal) var(--bio-ease-out);
 }
-.collapse-btn:hover { color: #1890ff; }
+
+.collapse-btn:hover {
+  color: var(--bio-moss);
+  background: rgba(163, 177, 138, 0.08);
+  filter: brightness(1.05);
+}
+
+.collapse-btn:active {
+  transform: translateY(1px);
+}
 </style>

@@ -1,7 +1,7 @@
 <template>
   <div class="page-shell">
     <div class="page-title-bar">
-      <h2 class="page-title">🔬 实训中心</h2>
+      <h2 class="page-title">实训中心</h2>
     </div>
 
     <div class="panel" v-if="trainings.length > 0">
@@ -15,7 +15,7 @@
             <p class="training-desc">{{ t.description || '暂无描述' }}</p>
           </div>
           <div class="training-footer">
-            <span class="training-deadline">📅 {{ t.deadline || '未设截止' }}</span>
+            <span class="training-deadline">{{ t.deadline || '未设截止' }}</span>
             <button class="btn-enter">进入实训</button>
           </div>
         </div>

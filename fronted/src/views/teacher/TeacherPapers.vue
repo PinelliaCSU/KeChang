@@ -1,7 +1,7 @@
 <template>
   <div class="page-shell">
     <div class="page-title-bar">
-      <h2 class="page-title">📄 试卷管理</h2>
+      <h2 class="page-title">试卷管理</h2>
       <div class="page-actions">
         <el-button type="success" @click="openAiDialog">🤖 AI 智能组卷</el-button>
         <el-button type="primary" @click="openCreateDialog">+ 手动组卷</el-button>
@@ -138,7 +138,7 @@
         <div v-for="(q, idx) in (paperDetail.questions || [])" :key="q.id" class="paper-question-item">
           <p><b>{{ idx + 1 }}. [{{ typeLabel(q.questionType) }}]</b> {{ q.content }} <el-tag size="small"
               type="warning">{{
-              q.score }}分</el-tag></p>
+                q.score }}分</el-tag></p>
           <p v-if="q.options" style="color:#909399;font-size:13px">
             选项: {{ JSON.parse(q.options || '[]').join(' | ') }}
           </p>

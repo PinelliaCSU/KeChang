@@ -1,7 +1,7 @@
 <template>
   <div class="page-shell">
     <div class="page-title-bar">
-      <h2 class="page-title">📚 {{ course.courseName || '课程详情' }}</h2>
+      <h2 class="page-title">{{ course.courseName || '课程详情' }}</h2>
       <el-button @click="router.back()">返回</el-button>
     </div>
 

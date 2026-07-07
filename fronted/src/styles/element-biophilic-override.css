@@ -1,0 +1,125 @@
+/* ============================================================
+   Element Plus Biophilic 主题覆盖
+   将 Element Plus 默认色板替换为亲自然色盘
+   ============================================================ */
+
+:root {
+  /* Element Plus 主色 → 苔绿 */
+  --el-color-primary: #606c38;
+  --el-color-primary-light-3: #7a8645;
+  --el-color-primary-light-5: #8b9352;
+  --el-color-primary-light-7: #a3b18a;
+  --el-color-primary-light-8: #b7c9a8;
+  --el-color-primary-light-9: #dde8d0;
+  --el-color-primary-dark-2: #4a5c2a;
+
+  /* Element Plus 成功色 → 叶绿 */
+  --el-color-success: #6b8e4e;
+  --el-color-success-light-3: #7fa85c;
+  --el-color-success-light-5: #96bf6e;
+  --el-color-success-light-7: #b7d898;
+  --el-color-success-light-9: #e8f2dc;
+
+  /* Element Plus 警告色 → 暖土 */
+  --el-color-warning: #c4956a;
+  --el-color-warning-light-3: #d4a878;
+  --el-color-warning-light-5: #e0be96;
+  --el-color-warning-light-7: #edd4b8;
+  --el-color-warning-light-9: #faf1e6;
+
+  /* Element Plus 危险色 → 陶土红 */
+  --el-color-danger: #c4665a;
+  --el-color-danger-light-3: #d48278;
+  --el-color-danger-light-5: #e0a098;
+  --el-color-danger-light-7: #edc0ba;
+  --el-color-danger-light-9: #faece9;
+
+  /* Element Plus 信息色 → 天光蓝 */
+  --el-color-info: #7a9fb5;
+  --el-color-info-light-3: #91b2c4;
+  --el-color-info-light-5: #aec8d5;
+  --el-color-info-light-7: #c5dbe8;
+  --el-color-info-light-9: #e3eef5;
+
+  /* 文字色 */
+  --el-text-color-primary: #2c3630;
+  --el-text-color-regular: #4a544c;
+  --el-text-color-secondary: #7a8278;
+  --el-text-color-placeholder: #b0b5ad;
+
+  /* 边框色 */
+  --el-border-color: rgba(163, 177, 138, 0.18);
+  --el-border-color-light: rgba(163, 177, 138, 0.10);
+  --el-border-color-lighter: rgba(163, 177, 138, 0.06);
+
+  /* 背景色 */
+  --el-bg-color: #fefefc;
+  --el-bg-color-page: #faf8f0;
+  --el-bg-color-overlay: #fefefc;
+
+  /* 填充色 */
+  --el-fill-color: #f7f8f2;
+  --el-fill-color-light: #fafbf7;
+  --el-fill-color-lighter: #fdfbf7;
+  --el-fill-color-blank: #fefefc;
+
+  /* 圆角 — 更有机 */
+  --el-border-radius-base: 8px;
+  --el-border-radius-small: 6px;
+  --el-border-radius-round: 20px;
+
+  /* 阴影 */
+  --el-box-shadow-light: 0 2px 8px rgba(44, 54, 48, 0.06);
+  --el-box-shadow: 0 4px 16px rgba(44, 54, 48, 0.07);
+  --el-box-shadow-dark: 0 8px 28px rgba(44, 54, 48, 0.09);
+}
+
+/* 按钮 hover — 亮度上浮 */
+.el-button--primary:hover,
+.el-button--primary:focus {
+  filter: brightness(1.12);
+}
+.el-button--primary:active {
+  filter: brightness(0.96);
+  transform: translateY(1px);
+}
+
+/* 输入框 focus — 叶绿色光晕 */
+.el-input__wrapper.is-focus {
+  box-shadow: 0 0 0 1px var(--el-color-primary) inset !important;
+}
+
+/* 菜单项 hover */
+.el-menu-item:hover,
+.el-sub-menu__title:hover {
+  filter: brightness(1.05);
+}
+
+/* 标签/Tag */
+.el-tag--primary {
+  --el-tag-bg-color: rgba(96, 108, 56, 0.1);
+  --el-tag-border-color: rgba(96, 108, 56, 0.15);
+  --el-tag-text-color: #606c38;
+}
+
+/* 表格 hover */
+.el-table__body tr:hover > td {
+  background-color: #f7f8f2 !important;
+}
+
+/* 弹窗 */
+.el-dialog {
+  border-radius: var(--bio-radius-lg);
+  box-shadow: var(--bio-shadow-lg);
+}
+
+/* 下拉菜单 */
+.el-dropdown-menu__item:hover {
+  background-color: #f7f8f2 !important;
+  color: var(--bio-moss) !important;
+}
+
+/* 日历 */
+.el-calendar-table .el-calendar-day:hover {
+  background-color: rgba(163, 177, 138, 0.1);
+}

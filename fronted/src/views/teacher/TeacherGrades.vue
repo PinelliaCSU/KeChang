@@ -1,7 +1,7 @@
 <template>
   <div class="page-shell">
     <div class="page-title-bar">
-      <h2 class="page-title">📊 成绩管理</h2>
+      <h2 class="page-title">成绩管理</h2>
       <div class="page-actions">
         <el-select v-model="selectedCourse" placeholder="选择课程" size="default" style="width:200px" clearable
           @change="onCourseChange">

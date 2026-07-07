@@ -20,8 +20,8 @@ import AppSidebar from '@/components/AppSidebar.vue'
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background: #f5f7fa;
-  font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: var(--bio-cream);
+  font-family: var(--bio-font);
 }
 
 .layout-body {
@@ -34,5 +34,8 @@ import AppSidebar from '@/components/AppSidebar.vue'
   flex: 1;
   padding: 24px;
   overflow-y: auto;
+  background:
+    radial-gradient(ellipse 60% 40% at 30% 20%, rgba(163, 177, 138, 0.04) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 50% at 80% 70%, rgba(165, 196, 212, 0.04) 0%, transparent 60%);
 }
 </style>

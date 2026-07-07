@@ -1,7 +1,7 @@
 <template>
   <div class="page-shell">
     <div class="page-title-bar">
-      <h2 class="page-title">📒 学习笔记</h2>
+      <h2 class="page-title">学习笔记</h2>
       <el-button type="primary" size="default">+ 新建笔记</el-button>
     </div>
 
