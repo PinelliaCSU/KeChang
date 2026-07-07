@@ -1,7 +1,7 @@
 <template>
   <div class="page-shell">
     <div class="page-title-bar">
-      <h2 class="page-title">💬 互动问答</h2>
+      <h2 class="page-title">互动问答</h2>
     </div>
 
     <div class="panel">

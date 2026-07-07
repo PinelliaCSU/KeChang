@@ -22,6 +22,7 @@ export const courseApi = {
   deleteChapter: (id, chapterId) => request.delete(`/courses/${id}/chapters/${chapterId}`),
   uploadResource: (id, formData) => request.post(`/courses/${id}/resources`, formData),
   getStudents: (id, params) => request.get(`/courses/${id}/students`, { params }),
+  getResources: (id, params) => request.get(`/courses/${id}/resources`, { params }),
   enroll: (id) => request.post(`/courses/${id}/enroll`),
   unenroll: (id) => request.delete(`/courses/${id}/enroll`)
 }
@@ -54,6 +55,7 @@ export const examApi = {
 /** 作业 API */
 export const assignmentApi = {
   list: (params) => request.get('/assignments', { params }),
+  myList: (params) => request.get('/assignments/student/my', { params }),
   create: (data) => request.post('/assignments', data),
   detail: (id) => request.get(`/assignments/${id}`),
   update: (id, data) => request.put(`/assignments/${id}`, data),

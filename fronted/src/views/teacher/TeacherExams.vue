@@ -1,7 +1,7 @@
 <template>
   <div class="page-shell">
     <div class="page-title-bar">
-      <h2 class="page-title">⏱ 考试管理</h2>
+      <h2 class="page-title">考试管理</h2>
       <el-button type="primary" @click="openCreateDialog">+ 创建考试</el-button>
     </div>
 
@@ -137,7 +137,7 @@
           </div>
           <div class="answer-row">
             <span>学生答案：<b :style="{ color: ans.isCorrect === 1 ? '#67c23a' : '#f56c6c' }">{{ ans.studentAnswer || '未作答'
-                }}</b></span>
+            }}</b></span>
             <span style="margin-left:20px">参考答案：<b style="color:#409eff">{{ ans.correctAnswer || '' }}</b></span>
           </div>
           <div class="score-row" v-if="ans.questionType === 'ESSAY' || ans.questionType === 'FILL'">

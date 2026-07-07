@@ -1,7 +1,7 @@
 <template>
   <div class="page-shell">
     <div class="page-title-bar">
-      <h2 class="page-title">📋 作业管理</h2>
+      <h2 class="page-title">作业管理</h2>
       <el-button type="primary" @click="openCreate">+ 布置作业</el-button>
     </div>
 

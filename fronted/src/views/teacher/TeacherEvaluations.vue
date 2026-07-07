@@ -1,7 +1,7 @@
 <template>
   <div class="page-shell">
     <div class="page-title-bar">
-      <h2 class="page-title">⭐ 教学评价</h2>
+      <h2 class="page-title">教学评价</h2>
       <el-button type="primary" @click="openCreateDialog">+ 创建评价</el-button>
     </div>
 
@@ -22,7 +22,7 @@
         <el-table-column label="评价类型" width="120">
           <template #default="{ row }">
             <el-tag :type="row.evaluationType === '学生评教' ? 'primary' : 'success'" size="small">{{ row.evaluationType
-              }}</el-tag>
+            }}</el-tag>
           </template>
         </el-table-column>
         <el-table-column prop="startDate" label="开始日期" width="120" />

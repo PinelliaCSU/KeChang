@@ -196,6 +196,19 @@ public class CourseService {
     }
 
     /**
+     * 查询课程资源列表
+     */
+    public List<CourseResource> getResources(Long courseId, Long chapterId) {
+        LambdaQueryWrapper<CourseResource> wrapper = new LambdaQueryWrapper<CourseResource>()
+                .eq(CourseResource::getCourseId, courseId);
+        if (chapterId != null) {
+            wrapper.eq(CourseResource::getChapterId, chapterId);
+        }
+        wrapper.orderByAsc(CourseResource::getSortOrder);
+        return resourceMapper.selectList(wrapper);
+    }
+
+    /**
      * 查看选课学生
      */
     public PageResult<StudentProfile> getStudents(Long courseId, int page, int size) {

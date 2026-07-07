@@ -1,7 +1,7 @@
 <template>
   <div class="page-shell">
     <div class="page-title-bar">
-      <h2 class="page-title">⏱ 在线考试</h2>
+      <h2 class="page-title">在线考试</h2>
       <div class="page-actions">
         <el-select v-model="statusFilter" placeholder="状态筛选" size="default" style="width:140px" clearable>
           <el-option label="全部" value="" />

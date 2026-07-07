@@ -57,19 +57,19 @@
                             <span class="todo-type-tag" :class="'tag-' + todo.type">{{ todo.typeLabel }}</span>
                             <span class="todo-name">{{ todo.title }}</span>
                             <span class="todo-course">{{ todo.courseName }}</span>
-                            <span class="todo-deadline" :class="{ overdue: todo.overdue }">📅 {{ todo.deadline }}</span>
+                            <span class="todo-deadline" :class="{ overdue: todo.overdue }">{{ todo.deadline }}</span>
                         </div>
                     </div>
                     <div v-else class="empty-state">
                         <svg class="empty-illustration" width="120" height="90" viewBox="0 0 120 90" fill="none">
-                            <rect x="20" y="10" width="80" height="70" rx="4" fill="#e8ecf1" />
-                            <rect x="28" y="20" width="28" height="4" rx="2" fill="#d0d5dd" />
-                            <rect x="28" y="30" width="50" height="3" rx="1.5" fill="#dce1e8" />
-                            <rect x="28" y="38" width="42" height="3" rx="1.5" fill="#dce1e8" />
-                            <rect x="28" y="46" width="36" height="3" rx="1.5" fill="#dce1e8" />
-                            <rect x="28" y="56" width="20" height="6" rx="3" fill="#c8d6e5" />
-                            <circle cx="95" cy="65" r="12" fill="#dfe6ed" />
-                            <path d="M90 65l4 4 8-8" stroke="#b0bec5" stroke-width="2" stroke-linecap="round"
+                            <rect x="20" y="10" width="80" height="70" rx="4" fill="#eef0e7" />
+                            <rect x="28" y="20" width="28" height="4" rx="2" fill="#d8ddce" />
+                            <rect x="28" y="30" width="50" height="3" rx="1.5" fill="#e2e7d8" />
+                            <rect x="28" y="38" width="42" height="3" rx="1.5" fill="#e2e7d8" />
+                            <rect x="28" y="46" width="36" height="3" rx="1.5" fill="#e2e7d8" />
+                            <rect x="28" y="56" width="20" height="6" rx="3" fill="#d0dac0" />
+                            <circle cx="95" cy="65" r="12" fill="#e8eddf" />
+                            <path d="M90 65l4 4 8-8" stroke="#8cb369" stroke-width="2" stroke-linecap="round"
                                 stroke-linejoin="round" />
                         </svg>
                         <p class="empty-text">暂无待办任务</p>
@@ -86,7 +86,7 @@
                                     label="2025-2026 第一学期" value="2025-2026-1" />
                             </el-select>
                             <span class="sort-hint" @click="toggleCourseSort" style="cursor:pointer">{{ sortLabel
-                                }}</span>
+                            }}</span>
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#909399"
                                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="cursor:pointer"
                                 @click="toggleCourseSort">
@@ -134,13 +134,13 @@
                                     <template #dropdown>
                                         <el-dropdown-menu>
                                             <el-dropdown-item command="enter">
-                                                {{ userStore.isTeacher ? '📖 管理课程' : '📖进入课程' }}
+                                                {{ userStore.isTeacher ? '管理课程' : '进入课程' }}
                                             </el-dropdown-item>
-                                            <el-dropdown-item command="detail">ℹ️ 课程详情</el-dropdown-item>
-                                            <el-dropdown-item v-if="userStore.isStudent" command="enroll">✅
-                                                选课</el-dropdown-item>
-                                            <el-dropdown-item v-if="userStore.isTeacher" command="edit">✏️
-                                                编辑课程</el-dropdown-item>
+                                            <el-dropdown-item command="detail">课程详情</el-dropdown-item>
+                                            <el-dropdown-item v-if="userStore.isStudent"
+                                                command="enroll">选课</el-dropdown-item>
+                                            <el-dropdown-item v-if="userStore.isTeacher"
+                                                command="edit">编辑课程</el-dropdown-item>
                                         </el-dropdown-menu>
                                     </template>
                                 </el-dropdown>
@@ -168,8 +168,8 @@
                                 class="progress-arc" />
                             <defs>
                                 <linearGradient id="progressGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                                    <stop offset="0%" stop-color="#20c997" />
-                                    <stop offset="100%" stop-color="#0d9488" />
+                                    <stop offset="0%" stop-color="#8cb369" />
+                                    <stop offset="100%" stop-color="#5a7040" />
                                 </linearGradient>
                             </defs>
                         </svg>
@@ -206,7 +206,7 @@
                             </svg></div>
                     </div>
                     <div class="shortcut-grid">
-                        <a href="javascript:;" class="shortcut-item" style="--bg:#e8f8f0;--color:#20c997"
+                        <a href="javascript:;" class="shortcut-item" style="--bg:#e8eddf;--color:#606c38"
                             @click="goToEvaluations"><span class="shortcut-icon"><svg width="22" height="22"
                                     viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                                     stroke-linecap="round" stroke-linejoin="round">
@@ -217,14 +217,14 @@
                                     <line x1="3" y1="12" x2="3.01" y2="12" />
                                     <line x1="3" y1="18" x2="3.01" y2="18" />
                                 </svg></span><span class="shortcut-label">量规</span></a>
-                        <a href="javascript:;" class="shortcut-item" style="--bg:#fff3e0;--color:#ff9800"
+                        <a href="javascript:;" class="shortcut-item" style="--bg:#eddfd0;--color:#9c6644"
                             @click="goToLearn"><span class="shortcut-icon"><svg width="22" height="22"
                                     viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                                     stroke-linecap="round" stroke-linejoin="round">
                                     <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
                                     <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
                                 </svg></span><span class="shortcut-label">互动教材</span></a>
-                        <a href="javascript:;" class="shortcut-item" style="--bg:#e3f2fd;--color:#2196f3"
+                        <a href="javascript:;" class="shortcut-item" style="--bg:#dce8f0;--color:#5c7a8a"
                             @click="goToQuestions"><span class="shortcut-icon"><svg width="22" height="22"
                                     viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                                     stroke-linecap="round" stroke-linejoin="round">
@@ -234,7 +234,7 @@
                                     <line x1="15" y1="15" x2="21" y2="21" />
                                     <line x1="4" y1="4" x2="9" y2="9" />
                                 </svg></span><span class="shortcut-label">个人题库</span></a>
-                        <a href="javascript:;" class="shortcut-item" style="--bg:#e0f7fa;--color:#00bcd4"
+                        <a href="javascript:;" class="shortcut-item" style="--bg:#dde8d6;--color:#6b8e4e"
                             @click="goToPosts"><span class="shortcut-icon"><svg width="22" height="22"
                                     viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                                     stroke-linecap="round" stroke-linejoin="round">
@@ -299,14 +299,14 @@ const progressDashOffset = computed(() => circumference - (progressPercent.value
 
 // ==================== 课程相关 ====================
 const gradientPalette = [
-    'linear-gradient(135deg, #3b5998 0%, #4c6da7 50%, #5b7ec2 100%)',
-    'linear-gradient(135deg, #1e4d92 0%, #2d6bc4 50%, #3b82f6 100%)',
-    'linear-gradient(135deg, #0d7377 0%, #14a3a8 50%, #20c997 100%)',
-    'linear-gradient(135deg, #4a1a8a 0%, #6b3fb8 50%, #8b5cf6 100%)',
-    'linear-gradient(135deg, #b45309 0%, #d97706 50%, #f59e0b 100%)',
-    'linear-gradient(135deg, #9b1b30 0%, #c0392b 50%, #e74c3c 100%)',
-    'linear-gradient(135deg, #2c3e50 0%, #3498db 50%, #2980b9 100%)',
-    'linear-gradient(135deg, #6c3483 0%, #8e44ad 50%, #a569bd 100%)'
+    'linear-gradient(135deg, #5a7040 0%, #6b8e4e 50%, #8cb369 100%)',
+    'linear-gradient(135deg, #4a5c38 0%, #606c38 50%, #7f8c52 100%)',
+    'linear-gradient(135deg, #3b5e4a 0%, #4c7a5e 50%, #6b9e7a 100%)',
+    'linear-gradient(135deg, #5c4a3a 0%, #7a6048 50%, #9c7a5c 100%)',
+    'linear-gradient(135deg, #4a5a6e 0%, #5c7a8a 50%, #7a9fb5 100%)',
+    'linear-gradient(135deg, #6b5e4a 0%, #8a7a5c 50%, #a8986e 100%)',
+    'linear-gradient(135deg, #4e5a3a 0%, #667a48 50%, #8c9e6a 100%)',
+    'linear-gradient(135deg, #5a4a3e 0%, #7a6250 50%, #a08068 100%)'
 ]
 const getCoverGradient = (id) => gradientPalette[(id - 1) % gradientPalette.length]
 
@@ -412,9 +412,9 @@ onMounted(() => { fetchCourses(); fetchTodos(); fetchDashboardStats(); fetchNoti
     display: flex;
     flex-direction: column;
     height: 100vh;
-    font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
-    background: #f5f7fa;
-    color: #303133;
+    font-family: var(--bio-font);
+    background: var(--bio-cream);
+    color: var(--bio-ink);
     overflow: hidden;
 }
 
@@ -424,16 +424,17 @@ onMounted(() => { fetchCourses(); fetchTodos(); fetchDashboardStats(); fetchNoti
     overflow: hidden;
 }
 
+/* ========== 左侧快捷导航 ========== */
 .left-sidebar {
     width: 76px;
-    background: #fff;
+    background: linear-gradient(180deg, #fdfbf7 0%, #f8f5ed 100%);
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    border-right: 1px solid #ebeef5;
-    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.03);
+    border-right: 1px solid rgba(163, 177, 138, 0.12);
+    box-shadow: 2px 0 12px rgba(44, 54, 30, 0.03);
 }
 
 .sidebar-nav {
@@ -446,30 +447,33 @@ onMounted(() => { fetchCourses(); fetchTodos(); fetchDashboardStats(); fetchNoti
 .sidebar-item {
     width: 52px;
     height: 52px;
-    border-radius: 12px;
+    border-radius: var(--bio-radius-md);
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     gap: 4px;
-    color: #909399;
+    color: var(--bio-ink-muted);
     text-decoration: none;
     font-size: 10px;
-    transition: all 0.25s;
+    transition: color var(--bio-dur-normal) var(--bio-ease-out),
+        background var(--bio-dur-normal) var(--bio-ease-out);
 }
 
 .sidebar-item:hover {
-    color: #20c997;
-    background: rgba(32, 201, 151, 0.08);
+    color: var(--bio-moss);
+    background: rgba(163, 177, 138, 0.10);
+    filter: brightness(1.05);
 }
 
 .sidebar-item.active {
-    color: #20c997;
-    background: rgba(32, 201, 151, 0.12);
+    color: var(--bio-moss);
+    background: linear-gradient(135deg, rgba(163, 177, 138, 0.16), rgba(163, 177, 138, 0.08));
+    font-weight: 500;
 }
 
 .sidebar-item.active svg {
-    stroke: #20c997;
+    stroke: var(--bio-moss);
 }
 
 .sidebar-footer {
@@ -479,14 +483,15 @@ onMounted(() => { fetchCourses(); fetchTodos(); fetchDashboardStats(); fetchNoti
 
 .old-version {
     font-size: 10px;
-    color: #c0c4cc;
+    color: var(--bio-ink-faint);
     cursor: pointer;
     writing-mode: vertical-rl;
     letter-spacing: 2px;
+    transition: color var(--bio-dur-fast) var(--bio-ease-out);
 }
 
 .old-version:hover {
-    color: #909399;
+    color: var(--bio-ink-muted);
 }
 
 .main-content {
@@ -498,11 +503,18 @@ onMounted(() => { fetchCourses(); fetchTodos(); fetchDashboardStats(); fetchNoti
     gap: 20px;
 }
 
+/* ========== 面板通用 ========== */
 .panel {
-    background: #fff;
-    border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    background: var(--bio-paper);
+    border-radius: var(--bio-radius-md);
+    box-shadow: var(--bio-shadow-sm);
     padding: 20px 24px;
+    border: 1px solid rgba(163, 177, 138, 0.08);
+    transition: box-shadow var(--bio-dur-slow) var(--bio-ease-out);
+}
+
+.panel:hover {
+    box-shadow: var(--bio-shadow-md);
 }
 
 .panel-header {
@@ -515,7 +527,7 @@ onMounted(() => { fetchCourses(); fetchTodos(); fetchDashboardStats(); fetchNoti
 .panel-title {
     font-size: 16px;
     font-weight: 600;
-    color: #303133;
+    color: var(--bio-ink);
 }
 
 .panel-filters {
@@ -530,7 +542,7 @@ onMounted(() => { fetchCourses(); fetchTodos(); fetchDashboardStats(); fetchNoti
 
 .sort-hint {
     font-size: 12px;
-    color: #909399;
+    color: var(--bio-ink-muted);
     white-space: nowrap;
 }
 
@@ -551,13 +563,19 @@ onMounted(() => { fetchCourses(); fetchTodos(); fetchDashboardStats(); fetchNoti
     align-items: center;
     gap: 12px;
     padding: 10px 12px;
-    border-radius: 8px;
+    border-radius: var(--bio-radius-sm);
     cursor: pointer;
-    transition: background 0.15s;
+    transition: background var(--bio-dur-fast) var(--bio-ease-out),
+        filter var(--bio-dur-fast) var(--bio-ease-out);
 }
 
 .todo-item:hover {
-    background: #f5f7fa;
+    background: #f7f8f2;
+    filter: brightness(1.02);
+}
+
+.todo-item:active {
+    transform: translateY(1px);
 }
 
 .todo-type-tag {
@@ -569,24 +587,24 @@ onMounted(() => { fetchCourses(); fetchTodos(); fetchDashboardStats(); fetchNoti
 }
 
 .tag-assignment {
-    background: #ecf5ff;
-    color: #409eff;
+    background: #e8eddf;
+    color: var(--bio-moss);
 }
 
 .tag-exam {
-    background: #fef0f0;
-    color: #f56c6c;
+    background: #f4e8e0;
+    color: #c4665a;
 }
 
 .tag-training {
-    background: #fdf6ec;
-    color: #e6a23c;
+    background: #f0ebe0;
+    color: var(--bio-earth-warm);
 }
 
 .todo-name {
     flex: 1;
     font-size: 13px;
-    color: #303133;
+    color: var(--bio-ink);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -594,18 +612,18 @@ onMounted(() => { fetchCourses(); fetchTodos(); fetchDashboardStats(); fetchNoti
 
 .todo-course {
     font-size: 12px;
-    color: #909399;
+    color: var(--bio-ink-muted);
     flex-shrink: 0;
 }
 
 .todo-deadline {
     font-size: 12px;
-    color: #909399;
+    color: var(--bio-ink-muted);
     flex-shrink: 0;
 }
 
 .todo-deadline.overdue {
-    color: #f56c6c;
+    color: #c4665a;
     font-weight: 500;
 }
 
@@ -618,12 +636,12 @@ onMounted(() => { fetchCourses(); fetchTodos(); fetchDashboardStats(); fetchNoti
 }
 
 .empty-illustration {
-    opacity: 0.6;
+    opacity: 0.5;
     margin-bottom: 16px;
 }
 
 .empty-text {
-    color: #c0c4cc;
+    color: var(--bio-ink-faint);
     font-size: 14px;
 }
 
@@ -632,7 +650,7 @@ onMounted(() => { fetchCourses(); fetchTodos(); fetchDashboardStats(); fetchNoti
     flex-direction: column;
     align-items: center;
     padding: 48px 0;
-    color: #909399;
+    color: var(--bio-ink-muted);
     font-size: 13px;
     gap: 12px;
 }
@@ -661,19 +679,24 @@ onMounted(() => { fetchCourses(); fetchTodos(); fetchDashboardStats(); fetchNoti
 .course-card {
     min-width: 200px;
     max-width: 200px;
-    background: #fff;
-    border-radius: 12px;
-    border: 1px solid #ebeef5;
+    background: var(--bio-paper);
+    border-radius: var(--bio-radius-md);
+    border: 1px solid rgba(163, 177, 138, 0.1);
     overflow: hidden;
     display: flex;
     flex-direction: column;
     flex-shrink: 0;
-    transition: all 0.3s;
+    transition: box-shadow var(--bio-dur-normal) var(--bio-ease-out),
+        transform var(--bio-dur-normal) var(--bio-ease-out);
 }
 
 .course-card:hover {
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
-    transform: translateY(-4px);
+    box-shadow: var(--bio-shadow-lg);
+    transform: translateY(-3px);
+}
+
+.course-card:active {
+    transform: translateY(0px);
 }
 
 .card-cover {
@@ -690,7 +713,7 @@ onMounted(() => { fetchCourses(); fetchTodos(); fetchDashboardStats(); fetchNoti
 .card-title {
     font-size: 14px;
     font-weight: 600;
-    color: #303133;
+    color: var(--bio-ink);
     margin-bottom: 6px;
     white-space: nowrap;
     overflow: hidden;
@@ -699,13 +722,13 @@ onMounted(() => { fetchCourses(); fetchTodos(); fetchDashboardStats(); fetchNoti
 
 .card-author {
     font-size: 12px;
-    color: #606266;
+    color: var(--bio-ink-soft);
     margin-bottom: 2px;
 }
 
 .card-student-id {
     font-size: 11px;
-    color: #c0c4cc;
+    color: var(--bio-ink-faint);
 }
 
 .card-footer {
@@ -719,36 +742,42 @@ onMounted(() => { fetchCourses(); fetchTodos(); fetchDashboardStats(); fetchNoti
     flex: 1;
     height: 34px;
     border: none;
-    border-radius: 8px;
-    background: #ecf5ff;
-    color: #409eff;
+    border-radius: var(--bio-radius-sm);
+    background: linear-gradient(135deg, rgba(163, 177, 138, 0.15), rgba(163, 177, 138, 0.08));
+    color: var(--bio-moss);
     font-size: 13px;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: filter var(--bio-dur-fast) var(--bio-ease-out),
+        transform var(--bio-dur-fast) var(--bio-ease-out);
     font-family: inherit;
 }
 
 .btn-enter:hover {
-    background: #d9ecff;
+    filter: brightness(1.1);
+}
+
+.btn-enter:active {
+    transform: translateY(1px);
 }
 
 .btn-more {
     width: 34px;
     height: 34px;
     border: none;
-    border-radius: 8px;
+    border-radius: var(--bio-radius-sm);
     background: transparent;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: background 0.2s;
+    transition: background var(--bio-dur-fast) var(--bio-ease-out);
 }
 
 .btn-more:hover {
-    background: #f0f2f5;
+    background: rgba(163, 177, 138, 0.08);
 }
 
+/* ========== 右侧面板 ========== */
 .right-sidebar {
     width: 280px;
     padding: 20px 16px 20px 0;
@@ -760,10 +789,16 @@ onMounted(() => { fetchCourses(); fetchTodos(); fetchDashboardStats(); fetchNoti
 }
 
 .right-card {
-    background: #fff;
-    border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    background: var(--bio-paper);
+    border-radius: var(--bio-radius-md);
+    box-shadow: var(--bio-shadow-sm);
     padding: 18px 16px;
+    border: 1px solid rgba(163, 177, 138, 0.08);
+    transition: box-shadow var(--bio-dur-slow) var(--bio-ease-out);
+}
+
+.right-card:hover {
+    box-shadow: var(--bio-shadow-md);
 }
 
 .progress-card {
@@ -782,7 +817,7 @@ onMounted(() => { fetchCourses(); fetchTodos(); fetchDashboardStats(); fetchNoti
     width: 48px;
     height: 48px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #20c997, #0d9488);
+    background: linear-gradient(135deg, #8cb369, #6b8e4e);
     color: #fff;
     display: flex;
     align-items: center;
@@ -790,18 +825,19 @@ onMounted(() => { fetchCourses(); fetchTodos(); fetchDashboardStats(); fetchNoti
     font-size: 20px;
     font-weight: 600;
     flex-shrink: 0;
+    box-shadow: 0 2px 10px rgba(96, 108, 56, 0.15);
 }
 
 .greeting-text {
     font-size: 14px;
     font-weight: 600;
-    color: #303133;
+    color: var(--bio-ink);
     margin-bottom: 2px;
 }
 
 .semester-info {
     font-size: 11px;
-    color: #909399;
+    color: var(--bio-ink-muted);
 }
 
 .progress-ring-wrapper {
@@ -828,7 +864,7 @@ onMounted(() => { fetchCourses(); fetchTodos(); fetchDashboardStats(); fetchNoti
 .progress-percent {
     font-size: 28px;
     font-weight: 700;
-    background: linear-gradient(135deg, #20c997, #0d9488);
+    background: linear-gradient(135deg, var(--bio-moss), var(--bio-leaf));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -836,7 +872,7 @@ onMounted(() => { fetchCourses(); fetchTodos(); fetchDashboardStats(); fetchNoti
 
 .progress-desc {
     font-size: 12px;
-    color: #909399;
+    color: var(--bio-ink-muted);
     margin-top: 4px;
 }
 
@@ -847,13 +883,13 @@ onMounted(() => { fetchCourses(); fetchTodos(); fetchDashboardStats(); fetchNoti
     margin-bottom: 12px;
     font-size: 14px;
     font-weight: 600;
-    color: #303133;
+    color: var(--bio-ink);
 }
 
 .notice-empty {
     text-align: center;
     font-size: 13px;
-    color: #c0c4cc;
+    color: var(--bio-ink-faint);
     padding: 12px 0;
 }
 
@@ -865,17 +901,17 @@ onMounted(() => { fetchCourses(); fetchTodos(); fetchDashboardStats(); fetchNoti
 
 .notice-item-row {
     font-size: 12px;
-    color: #606266;
+    color: var(--bio-ink-soft);
     cursor: pointer;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
     padding: 4px 0;
-    transition: color 0.15s;
+    transition: color var(--bio-dur-fast) var(--bio-ease-out);
 }
 
 .notice-item-row:hover {
-    color: #20c997;
+    color: var(--bio-moss);
 }
 
 .shortcut-header {
@@ -885,7 +921,7 @@ onMounted(() => { fetchCourses(); fetchTodos(); fetchDashboardStats(); fetchNoti
     margin-bottom: 14px;
     font-size: 14px;
     font-weight: 600;
-    color: #303133;
+    color: var(--bio-ink);
 }
 
 .shortcut-actions {
@@ -896,13 +932,14 @@ onMounted(() => { fetchCourses(); fetchTodos(); fetchDashboardStats(); fetchNoti
 
 .manage-link {
     font-size: 12px;
-    color: #20c997;
+    color: var(--bio-moss);
     cursor: pointer;
     font-weight: 400;
+    transition: filter var(--bio-dur-fast) var(--bio-ease-out);
 }
 
 .manage-link:hover {
-    text-decoration: underline;
+    filter: brightness(1.2);
 }
 
 .shortcut-grid {
@@ -918,17 +955,22 @@ onMounted(() => { fetchCourses(); fetchTodos(); fetchDashboardStats(); fetchNoti
     justify-content: center;
     gap: 8px;
     padding: 14px 8px;
-    border-radius: 10px;
+    border-radius: var(--bio-radius-md);
     background: var(--bg);
     color: var(--color);
     text-decoration: none;
-    transition: all 0.2s;
+    transition: filter var(--bio-dur-normal) var(--bio-ease-out),
+        transform var(--bio-dur-fast) var(--bio-ease-out);
     cursor: pointer;
 }
 
 .shortcut-item:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    filter: brightness(1.08);
+    transform: translateY(-1px);
+}
+
+.shortcut-item:active {
+    transform: translateY(0px);
 }
 
 .shortcut-icon {

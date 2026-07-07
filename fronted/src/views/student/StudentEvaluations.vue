@@ -1,7 +1,7 @@
 <template>
   <div class="page-shell">
     <div class="page-title-bar">
-      <h2 class="page-title">⭐ 教学评价</h2>
+      <h2 class="page-title">教学评价</h2>
     </div>
 
     <div class="panel" v-if="evaluations.length > 0">
@@ -30,11 +30,18 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import { evaluationApi } from '@/api'
 
 const evaluations = ref([])
 
 onMounted(async () => {
-  // TODO: 加载评价数据
+  try {
+    const res = await evaluationApi.list({ page: 1, size: 50 })
+    if (res.data.code === 200) {
+      const d = res.data.data
+      evaluations.value = Array.isArray(d?.records) ? d.records : Array.isArray(d) ? d : []
+    }
+  } catch (e) { /* ignore */ }
 })
 </script>
 

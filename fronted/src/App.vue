@@ -7,17 +7,12 @@
 </script>
 
 <style>
+@import '@/styles/biophilic-theme.css';
+
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-}
-
-body {
-  font-family: 'Helvetica Neue', Helvetica, 'PingFang SC', 'Hiragino Sans GB',
-    'Microsoft YaHei', Arial, sans-serif;
-  background-color: #f0f5ff;
-  color: #303133;
 }
 
 #app {

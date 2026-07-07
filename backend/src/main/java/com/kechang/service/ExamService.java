@@ -8,6 +8,7 @@ import com.kechang.dto.ExamSubmitDTO;
 import com.kechang.dto.PaperCreateDTO;
 import com.kechang.entity.*;
 import com.kechang.mapper.*;
+import com.kechang.vo.ExamListVO;
 import com.kechang.vo.ExamVO;
 import com.kechang.vo.QuestionVO;
 import lombok.RequiredArgsConstructor;
@@ -33,6 +34,7 @@ public class ExamService {
     private final ExamRecordMapper recordMapper;
     private final ExamRecordAnswerMapper answerMapper;
     private final SysUserMapper userMapper;
+    private final CourseMapper courseMapper;
 
     // ==================== 试题库 ====================
     public PageResult<Question> getQuestionList(int page, int size, String questionType,
@@ -158,14 +160,33 @@ public class ExamService {
     }
 
     // ==================== 考试安排 ====================
-    public PageResult<Exam> getExamList(int page, int size, Long courseId) {
+    public PageResult<ExamListVO> getExamList(int page, int size, Long courseId) {
         LambdaQueryWrapper<Exam> w = new LambdaQueryWrapper<>();
         if (courseId != null) {
             w.eq(Exam::getCourseId, courseId);
         }
         w.orderByDesc(Exam::getStartTime);
         Page<Exam> p = examMapper.selectPage(new Page<>(page, size), w);
-        return PageResult.of(p.getRecords(), p.getTotal(), page, size);
+        List<ExamListVO> vos = p.getRecords().stream().map(e -> {
+            ExamListVO vo = new ExamListVO();
+            vo.setId(e.getId());
+            vo.setExamName(e.getExamName());
+            vo.setPaperId(e.getPaperId());
+            vo.setCourseId(e.getCourseId());
+            vo.setStartTime(e.getStartTime());
+            vo.setEndTime(e.getEndTime());
+            vo.setDuration(e.getDuration());
+            vo.setStatus(e.getStatus());
+            vo.setAllowRetry(e.getAllowRetry());
+            vo.setCreateTime(e.getCreateTime());
+            // 查询课程名称
+            Course course = courseMapper.selectById(e.getCourseId());
+            if (course != null) {
+                vo.setCourseName(course.getCourseName());
+            }
+            return vo;
+        }).collect(Collectors.toList());
+        return PageResult.of(vos, p.getTotal(), page, size);
     }
 
     public void createExam(Exam exam) {

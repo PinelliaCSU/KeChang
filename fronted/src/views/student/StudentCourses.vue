@@ -1,7 +1,7 @@
 <template>
   <div class="page-shell">
     <div class="page-title-bar">
-      <h2 class="page-title">📚 课程中心</h2>
+      <h2 class="page-title">课程中心</h2>
       <div class="page-actions">
         <el-input v-model="keyword" placeholder="搜索课程..." size="default" style="width:240px" clearable />
       </div>

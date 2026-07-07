@@ -1,22 +1,22 @@
 <template>
   <div class="page-shell">
     <div class="page-title-bar">
-      <h2 class="page-title">💬 互动问答</h2>
-      <el-button type="primary" size="default">+ 发布问题</el-button>
+      <h2 class="page-title">互动问答</h2>
+      <el-button type="primary" size="default" @click="showCreate = true">+ 发布问题</el-button>
     </div>
 
     <div class="panel" v-if="posts.length > 0">
       <div class="post-list">
         <div class="post-item" v-for="p in posts" :key="p.id">
-          <div class="post-avatar">{{ (p.createByName || '?').charAt(0) }}</div>
+          <div class="post-avatar">{{ (p.createByName || p.createBy || '?').toString().charAt(0) }}</div>
           <div class="post-body">
             <h4 class="post-title">{{ p.title }}</h4>
-            <p class="post-preview">{{ p.content?.substring(0, 150) || '' }}</p>
+            <p class="post-preview">{{ (p.content || '').substring(0, 150) }}</p>
             <div class="post-meta">
-              <span>{{ p.createByName }}</span>
+              <span>{{ p.createByName || p.createBy }}</span>
               <span>{{ p.createTime }}</span>
-              <span>💬 {{ p.replyCount || 0 }} 回复</span>
-              <span>👁 {{ p.viewCount || 0 }} 浏览</span>
+              <span>{{ p.replyCount || 0 }} 回复</span>
+              <span>{{ p.viewCount || 0 }} 浏览</span>
             </div>
           </div>
           <el-tag v-if="p.isResolved" type="success" size="small">已解决</el-tag>
@@ -33,17 +33,57 @@
         <p class="empty-text">暂无讨论帖</p>
       </div>
     </div>
+
+    <!-- 发布问题弹窗 -->
+    <el-dialog v-model="showCreate" title="发布问题" width="500px" destroy-on-close>
+      <el-form label-width="80px">
+        <el-form-item label="标题" required><el-input v-model="createForm.title" placeholder="请输入问题标题" /></el-form-item>
+        <el-form-item label="内容"><el-input v-model="createForm.content" type="textarea" :rows="4"
+            placeholder="描述你的问题..." /></el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="showCreate = false">取消</el-button>
+        <el-button type="primary" :loading="submitting" @click="createPost">发布</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import { qaApi } from '@/api'
+import { ElMessage } from 'element-plus'
 
 const posts = ref([])
+const showCreate = ref(false)
+const createForm = ref({ title: '', content: '', courseId: null })
+const courseList = ref([])
+const submitting = ref(false)
 
-onMounted(async () => {
-  // TODO: 加载帖子数据
-})
+const fetchPosts = async () => {
+  try {
+    const res = await qaApi.listPosts({ page: 1, size: 50 })
+    if (res.data.code === 200) {
+      const d = res.data.data
+      posts.value = Array.isArray(d?.records) ? d.records : Array.isArray(d) ? d : []
+    }
+  } catch (e) { /* ignore */ }
+}
+
+const createPost = async () => {
+  if (!createForm.value.title.trim()) { ElMessage.warning('请输入标题'); return }
+  submitting.value = true
+  try {
+    await qaApi.createPost(createForm.value)
+    ElMessage.success('发布成功')
+    showCreate.value = false
+    createForm.value = { title: '', content: '', courseId: null }
+    fetchPosts()
+  } catch (e) { ElMessage.error('发布失败') }
+  submitting.value = false
+}
+
+onMounted(fetchPosts)
 </script>
 
 <style scoped>
