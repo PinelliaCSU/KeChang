@@ -28,14 +28,15 @@ public class AssignmentController {
     @GetMapping
     public Result<PageResult<AssignmentVO>> list(@RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size,
-            @RequestParam(required = false) Long courseId) {
+            @RequestParam(required = false) Long courseId,
+            @RequestParam(required = false) Long chapterId) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         Long userId = (Long) authentication.getPrincipal();
         String role = authentication.getAuthorities().stream()
                 .findFirst()
                 .map(Object::toString)
                 .orElse("");
-        return Result.success(assignmentService.list(page, size, courseId, userId, role));
+        return Result.success(assignmentService.list(page, size, courseId, chapterId, userId, role));
     }
 
     @PostMapping

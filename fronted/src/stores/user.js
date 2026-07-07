@@ -16,6 +16,7 @@ export const useUserStore = defineStore('user', () => {
   const isLoggedIn = computed(() => !!token.value)
   const isTeacher = computed(() => roleCode.value === 'ROLE_TEACHER')
   const isStudent = computed(() => roleCode.value === 'ROLE_STUDENT')
+  const isAdmin = computed(() => roleCode.value === 'ROLE_ADMIN')
 
   function setLoginData(data) {
     token.value = data.token
@@ -78,7 +79,7 @@ export const useUserStore = defineStore('user', () => {
 
   return {
     token, userId, username, nickname, phone, email, roleCode, roleName, avatar,
-    isLoggedIn, isTeacher, isStudent,
+    isLoggedIn, isTeacher, isStudent, isAdmin,
     setLoginData, clearLoginData, fetchUserInfo
   }
 })

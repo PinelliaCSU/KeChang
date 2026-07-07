@@ -37,6 +37,11 @@ public class CourseService {
      * 分页查询课程
      */
     public PageResult<CourseVO> getCourseList(int page, int size, String keyword, String status) {
+        return getCourseList(page, size, keyword, status, null, null);
+    }
+
+    public PageResult<CourseVO> getCourseList(int page, int size, String keyword, String status, Long currentUserId,
+            String role) {
         LambdaQueryWrapper<Course> wrapper = new LambdaQueryWrapper<>();
         if (StringUtils.hasText(keyword)) {
             wrapper.like(Course::getCourseName, keyword);
@@ -44,9 +49,13 @@ public class CourseService {
         if (StringUtils.hasText(status)) {
             wrapper.eq(Course::getStatus, status);
         }
+        if ("ROLE_TEACHER".equals(role) && currentUserId != null) {
+            wrapper.eq(Course::getTeacherId, currentUserId);
+        }
         wrapper.orderByDesc(Course::getCreateTime);
 
         Page<Course> pageResult = courseMapper.selectPage(new Page<>(page, size), wrapper);
+        Long currentStudentId = "ROLE_STUDENT".equals(role) ? currentUserId : null;
         List<CourseVO> records = pageResult.getRecords().stream().map(c -> {
             CourseVO vo = new CourseVO();
             copyCourseFields(c, vo);
@@ -54,6 +63,7 @@ public class CourseService {
             if (teacher != null) {
                 vo.setTeacherName(teacher.getNickname());
             }
+            vo.setEnrolled(isEnrolled(c.getId(), currentStudentId));
             return vo;
         }).collect(Collectors.toList());
 
@@ -149,7 +159,8 @@ public class CourseService {
     /**
      * 添加章节
      */
-    public void addChapter(Long courseId, ChapterDTO dto) {
+    public void addChapter(Long courseId, ChapterDTO dto, Long teacherId) {
+        checkCourseOwner(courseId, teacherId);
         CourseChapter chapter = new CourseChapter();
         chapter.setCourseId(courseId);
         chapter.setChapterName(dto.getChapterName());
@@ -161,10 +172,14 @@ public class CourseService {
     /**
      * 更新章节
      */
-    public void updateChapter(Long chapterId, ChapterDTO dto) {
+    public void updateChapter(Long courseId, Long chapterId, ChapterDTO dto, Long teacherId) {
+        checkCourseOwner(courseId, teacherId);
         CourseChapter chapter = chapterMapper.selectById(chapterId);
         if (chapter == null) {
             throw BusinessException.notFound("章节不存在");
+        }
+        if (!courseId.equals(chapter.getCourseId())) {
+            throw BusinessException.badRequest("章节不属于该课程");
         }
         chapter.setChapterName(dto.getChapterName());
         chapter.setSortOrder(dto.getSortOrder());
@@ -175,7 +190,15 @@ public class CourseService {
     /**
      * 删除章节
      */
-    public void deleteChapter(Long chapterId) {
+    public void deleteChapter(Long courseId, Long chapterId, Long teacherId) {
+        checkCourseOwner(courseId, teacherId);
+        CourseChapter chapter = chapterMapper.selectById(chapterId);
+        if (chapter == null) {
+            throw BusinessException.notFound("章节不存在");
+        }
+        if (!courseId.equals(chapter.getCourseId())) {
+            throw BusinessException.badRequest("章节不属于该课程");
+        }
         chapterMapper.deleteById(chapterId);
     }
 
@@ -183,7 +206,8 @@ public class CourseService {
      * 上传课程资源
      */
     public void uploadResource(Long courseId, Long chapterId, String resourceName,
-            String resourceType, String fileUrl, Long fileSize) {
+            String resourceType, String fileUrl, Long fileSize, Long teacherId) {
+        checkCourseOwner(courseId, teacherId);
         CourseResource resource = new CourseResource();
         resource.setCourseId(courseId);
         resource.setChapterId(chapterId);
@@ -211,7 +235,8 @@ public class CourseService {
     /**
      * 查看选课学生
      */
-    public PageResult<StudentProfile> getStudents(Long courseId, int page, int size) {
+    public PageResult<StudentProfile> getStudents(Long courseId, int page, int size, Long teacherId) {
+        checkCourseOwner(courseId, teacherId);
         List<CourseStudent> enrollments = courseStudentMapper.selectList(
                 new LambdaQueryWrapper<CourseStudent>().eq(CourseStudent::getCourseId, courseId));
         List<Long> studentIds = enrollments.stream().map(CourseStudent::getStudentId).collect(Collectors.toList());
@@ -220,6 +245,17 @@ public class CourseService {
         }
         Page<StudentProfile> pageResult = studentProfileMapper.selectPage(new Page<>(page, size),
                 new LambdaQueryWrapper<StudentProfile>().in(StudentProfile::getUserId, studentIds));
+        pageResult.getRecords().forEach(profile -> {
+            SysUser user = sysUserMapper.selectById(profile.getUserId());
+            if (user != null) {
+                if (!StringUtils.hasText(profile.getRealName())) {
+                    profile.setRealName(user.getNickname() != null ? user.getNickname() : user.getUsername());
+                }
+                if (!StringUtils.hasText(profile.getStudentNo())) {
+                    profile.setStudentNo(String.valueOf(user.getId()));
+                }
+            }
+        });
         return PageResult.of(pageResult.getRecords(), pageResult.getTotal(), page, size);
     }
 
@@ -276,5 +312,24 @@ public class CourseService {
         vo.setEndDate(c.getEndDate());
         vo.setStatus(c.getStatus());
         vo.setStudentCount(c.getStudentCount());
+    }
+
+    private boolean isEnrolled(Long courseId, Long studentId) {
+        if (courseId == null || studentId == null) {
+            return false;
+        }
+        return courseStudentMapper.selectCount(new LambdaQueryWrapper<CourseStudent>()
+                .eq(CourseStudent::getCourseId, courseId)
+                .eq(CourseStudent::getStudentId, studentId)) > 0;
+    }
+
+    private void checkCourseOwner(Long courseId, Long teacherId) {
+        Course course = courseMapper.selectById(courseId);
+        if (course == null) {
+            throw BusinessException.notFound("课程不存在");
+        }
+        if (!course.getTeacherId().equals(teacherId)) {
+            throw BusinessException.forbidden("只能管理自己创建的课程");
+        }
     }
 }

@@ -14,6 +14,7 @@ public class AssignmentDTO {
 
     @NotNull(message = "课程ID不能为空")
     private Long courseId;
+    private Long chapterId;
 
     @NotBlank(message = "作业标题不能为空")
     private String title;

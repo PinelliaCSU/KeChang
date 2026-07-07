@@ -11,6 +11,7 @@ import com.kechang.vo.CourseVO;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -39,7 +40,7 @@ public class CourseController {
             @RequestParam(defaultValue = "12") int size,
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) String status) {
-        return Result.success(courseService.getCourseList(page, size, keyword, status));
+        return Result.success(courseService.getCourseList(page, size, keyword, status, currentUserId(), currentRole()));
     }
 
     /**
@@ -89,7 +90,8 @@ public class CourseController {
     @PostMapping("/{id}/chapters")
     @PreAuthorize("hasAuthority('ROLE_TEACHER')")
     public Result<Void> addChapter(@PathVariable Long id, @Valid @RequestBody ChapterDTO dto) {
-        courseService.addChapter(id, dto);
+        Long userId = (Long) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        courseService.addChapter(id, dto, userId);
         return Result.success();
     }
 
@@ -100,7 +102,8 @@ public class CourseController {
     @PreAuthorize("hasAuthority('ROLE_TEACHER')")
     public Result<Void> updateChapter(@PathVariable Long id, @PathVariable Long chapterId,
             @Valid @RequestBody ChapterDTO dto) {
-        courseService.updateChapter(chapterId, dto);
+        Long userId = (Long) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        courseService.updateChapter(id, chapterId, dto, userId);
         return Result.success();
     }
 
@@ -110,7 +113,8 @@ public class CourseController {
     @DeleteMapping("/{id}/chapters/{chapterId}")
     @PreAuthorize("hasAuthority('ROLE_TEACHER')")
     public Result<Void> deleteChapter(@PathVariable Long id, @PathVariable Long chapterId) {
-        courseService.deleteChapter(chapterId);
+        Long userId = (Long) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        courseService.deleteChapter(id, chapterId, userId);
         return Result.success();
     }
 
@@ -130,7 +134,8 @@ public class CourseController {
         file.transferTo(destFile);
         String fileUrl = "/uploads/courses/" + id + "/" + fileName;
         String resourceType = getResourceType(file.getOriginalFilename());
-        courseService.uploadResource(id, chapterId, file.getOriginalFilename(), resourceType, fileUrl, file.getSize());
+        Long userId = (Long) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        courseService.uploadResource(id, chapterId, file.getOriginalFilename(), resourceType, fileUrl, file.getSize(), userId);
         return Result.success();
     }
 
@@ -142,7 +147,8 @@ public class CourseController {
     public Result<PageResult<StudentProfile>> students(@PathVariable Long id,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size) {
-        return Result.success(courseService.getStudents(id, page, size));
+        Long userId = (Long) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        return Result.success(courseService.getStudents(id, page, size, userId));
     }
 
     /**
@@ -191,5 +197,25 @@ public class CourseController {
             return "PPT";
         }
         return "LINK";
+    }
+
+    private Long currentUserId() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !(authentication.getPrincipal() instanceof Long)) {
+            return null;
+        }
+        return (Long) authentication.getPrincipal();
+    }
+
+    private String currentRole() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null) {
+            return null;
+        }
+        return authentication.getAuthorities().stream()
+                .map(authority -> authority.getAuthority())
+                .filter(authority -> authority.startsWith("ROLE_"))
+                .findFirst()
+                .orElse(null);
     }
 }

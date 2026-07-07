@@ -21,6 +21,7 @@ public class CourseVO {
     private LocalDate endDate;
     private String status;
     private Integer studentCount;
+    private Boolean enrolled;
 
     // 章节列表
     private List<ChapterVO> chapters;

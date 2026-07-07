@@ -81,7 +81,9 @@ public class AuthService {
         user.setUsername(dto.getEmail());  // 邮箱作为登录账号
         user.setPassword(passwordEncoder.encode(dto.getPassword()));
         user.setEmail(dto.getEmail());
-        user.setNickname(dto.getNickname() != null ? dto.getNickname() : dto.getEmail().split("@")[0]);
+        String nickname = hasText(dto.getNickname()) ? dto.getNickname().trim() : dto.getEmail().split("@")[0];
+        String realName = hasText(dto.getRealName()) ? dto.getRealName().trim() : nickname;
+        user.setNickname(nickname);
         user.setRoleId(role.getId());
         user.setStatus(0);
         sysUserMapper.insert(user);
@@ -90,12 +92,23 @@ public class AuthService {
         if (isTeacher) {
             TeacherProfile profile = new TeacherProfile();
             profile.setUserId(user.getId());
+            profile.setRealName(realName);
+            profile.setDepartment(clean(dto.getDepartment()));
+            profile.setTitle(clean(dto.getTitle()));
             teacherProfileMapper.insert(profile);
         } else {
-            String studentNo = generateStudentNo();
+            String studentNo = hasText(dto.getStudentNo()) ? dto.getStudentNo().trim() : generateStudentNo();
+            if (hasText(dto.getStudentNo()) && studentProfileMapper.selectOne(
+                    new LambdaQueryWrapper<StudentProfile>().eq(StudentProfile::getStudentNo, studentNo)) != null) {
+                throw BusinessException.badRequest("该学号已被使用");
+            }
             StudentProfile profile = new StudentProfile();
             profile.setUserId(user.getId());
             profile.setStudentNo(studentNo);
+            profile.setRealName(realName);
+            profile.setGrade(clean(dto.getGrade()));
+            profile.setMajor(clean(dto.getMajor()));
+            profile.setClassName(clean(dto.getClassName()));
             studentProfileMapper.insert(profile);
         }
 
@@ -234,5 +247,13 @@ public class AuthService {
         String year = String.valueOf(LocalDate.now().getYear());
         Long count = studentProfileMapper.selectCount(null);
         return year + String.format("%04d", (count + 1) % 10000);
+    }
+
+    private boolean hasText(String value) {
+        return value != null && !value.trim().isEmpty();
+    }
+
+    private String clean(String value) {
+        return hasText(value) ? value.trim() : null;
     }
 }

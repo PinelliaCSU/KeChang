@@ -24,6 +24,15 @@ public class RegisterDTO {
 
     private String nickname;
 
+    @NotBlank(message = "真实姓名不能为空")
+    private String realName;
+    private String studentNo;
+    private String grade;
+    private String major;
+    private String className;
+    private String department;
+    private String title;
+
     /**
      * 角色类型: student / teacher，默认为 student
      */

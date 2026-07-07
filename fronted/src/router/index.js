@@ -65,6 +65,16 @@ const routes = [
 
   // ==================== 学生端 ====================
   {
+    path: '/admin',
+    redirect: '/admin/courses',
+    component: () => import('@/views/teacher/TeacherLayout.vue'),
+    meta: { role: 'ROLE_ADMIN' },
+    children: [
+      { path: 'courses', name: 'AdminCourses', component: () => import('@/views/admin/AdminCourses.vue'), meta: { title: '课程总览' } }
+    ]
+  },
+
+  {
     path: '/student',
     redirect: '/student/dashboard',
     component: () => import('@/views/student/StudentLayout.vue'),
@@ -97,12 +107,23 @@ router.beforeEach((to, from, next) => {
   document.title = to.meta.title || '课畅'
 
   const userStore = useUserStore()
+  const roleHome = () => {
+    if (userStore.roleCode === 'ROLE_ADMIN') return '/admin/courses'
+    if (userStore.roleCode === 'ROLE_TEACHER') return '/teacher/dashboard'
+    if (userStore.roleCode === 'ROLE_STUDENT') return '/student/dashboard'
+    return '/dashboard'
+  }
   const requiredRole = to.meta.role || to.matched.find(r => r.meta.role)?.meta?.role
   const requiresAuth = to.meta.requiresAuth
 
   // 访问根路径 / ：已登录→仪表盘，未登录→登录页
   if (to.path === '/') {
-    next(userStore.token ? '/dashboard' : '/login')
+    next(userStore.token ? roleHome() : '/login')
+    return
+  }
+
+  if (to.path === '/dashboard' && userStore.token && userStore.roleCode === 'ROLE_ADMIN') {
+    next('/admin/courses')
     return
   }
 
@@ -114,7 +135,7 @@ router.beforeEach((to, from, next) => {
 
   // 已登录用户访问登录页，重定向到仪表盘
   if (to.path === '/login' && userStore.token) {
-    next('/dashboard')
+    next(roleHome())
     return
   }
 
@@ -124,7 +145,7 @@ router.beforeEach((to, from, next) => {
       return
     }
     if (userStore.roleCode !== requiredRole) {
-      next('/dashboard')
+      next(roleHome())
       return
     }
   }

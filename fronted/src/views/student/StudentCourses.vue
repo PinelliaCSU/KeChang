@@ -22,8 +22,15 @@
             <p class="card-code" v-if="course.courseCode">{{ course.courseCode }}</p>
           </div>
           <div class="card-footer">
-            <button class="btn-enter" @click="enterLearn(course)">进入学习</button>
-            <button class="btn-enroll" @click="enrollCourse(course)">加入课程</button>
+            <button class="btn-enter" :disabled="!course.enrolled" @click="enterLearn(course)">
+              {{ course.enrolled ? '进入学习' : '先加入后学习' }}
+            </button>
+            <button
+              :class="course.enrolled ? 'btn-unenroll' : 'btn-enroll'"
+              @click="course.enrolled ? unenrollCourse(course) : enrollCourse(course)"
+            >
+              {{ course.enrolled ? '退出课程' : '加入课程' }}
+            </button>
           </div>
         </div>
       </div>
@@ -70,14 +77,37 @@ const filteredCourses = computed(() => {
 })
 
 const getCoverGradient = (id) => gradientPalette[((id || 1) - 1) % gradientPalette.length]
-const enterLearn = (course) => router.push(`/student/courses/${course.id}/learn`)
+const enterLearn = (course) => {
+  if (!course.enrolled) {
+    ElMessage.warning('请先加入课程')
+    return
+  }
+  router.push(`/student/courses/${course.id}/learn`)
+}
 
 const enrollCourse = async (course) => {
+  if (course.enrolled) {
+    ElMessage.info('已加入该课程')
+    return
+  }
   try {
     await courseApi.enroll(course.id)
+    course.enrolled = true
+    course.studentCount = Number(course.studentCount || 0) + 1
     ElMessage.success('选课成功，现在可以在我的作业中查看该课程作业')
   } catch (e) {
     ElMessage.error(e.response?.data?.message || '选课失败')
+  }
+}
+
+const unenrollCourse = async (course) => {
+  try {
+    await courseApi.unenroll(course.id)
+    course.enrolled = false
+    course.studentCount = Math.max(0, Number(course.studentCount || 0) - 1)
+    ElMessage.success('已退出课程')
+  } catch (e) {
+    ElMessage.error(e.response?.data?.message || '退课失败')
   }
 }
 
@@ -191,7 +221,8 @@ onMounted(fetchCourses)
 }
 
 .btn-enter,
-.btn-enroll {
+.btn-enroll,
+.btn-unenroll {
   width: 100%;
   height: 34px;
   border: none;
@@ -218,6 +249,21 @@ onMounted(fetchCourses)
 
 .btn-enroll:hover {
   background: #e1f3d8;
+}
+
+.btn-unenroll {
+  background: #fef0f0;
+  color: #f56c6c;
+}
+
+.btn-unenroll:hover {
+  background: #fde2e2;
+}
+
+.btn-enter:disabled {
+  background: #f4f4f5;
+  color: #a8abb2;
+  cursor: not-allowed;
 }
 
 .empty-panel {

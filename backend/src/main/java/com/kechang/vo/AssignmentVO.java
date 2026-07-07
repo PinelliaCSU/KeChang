@@ -9,6 +9,7 @@ public class AssignmentVO {
 
     private Long id;
     private Long courseId;
+    private Long chapterId;
     private String courseName;
     private String title;
     private String content;

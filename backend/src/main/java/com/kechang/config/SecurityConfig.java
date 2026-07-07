@@ -3,7 +3,6 @@ package com.kechang.config;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -40,7 +39,7 @@ public class SecurityConfig {
                 // 公开接口
                 .requestMatchers("/api/auth/login", "/api/auth/register").permitAll()
                 .requestMatchers("/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/courses/**").permitAll()
+                .requestMatchers("/uploads/**").permitAll()
                 // 其他接口需要认证
                 .anyRequest().authenticated())
                 // JWT 过滤器

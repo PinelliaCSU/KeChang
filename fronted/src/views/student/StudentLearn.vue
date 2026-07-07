@@ -1,56 +1,63 @@
 <template>
-  <div class="page-shell">
-    <div class="page-title-bar">
-      <h2 class="page-title">在线学习</h2>
-      <el-button @click="router.push('/student/notes')">查看我的笔记</el-button>
+  <div class="learn-page">
+    <div class="course-header">
+      <div>
+        <el-button link @click="router.back()">返回</el-button>
+        <h2 class="course-title">{{ course.courseName || '课程学习' }}</h2>
+        <p class="course-meta">{{ course.teacherName || '授课教师' }} · {{ course.description || '暂无课程简介' }}</p>
+      </div>
+      <el-button type="primary" @click="router.push('/student/assignments')">查看我的作业</el-button>
     </div>
 
-    <div class="learn-layout">
-      <!-- 左侧：视频+资源+笔记 -->
-      <div class="learn-main">
-        <div class="panel video-panel">
-          <div class="video-placeholder">
-            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.6)"
-              stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <polygon points="5 3 19 12 5 21 5 3" fill="rgba(255,255,255,0.2)" />
-            </svg>
-            <p style="color:#fff;font-size:16px;font-weight:500">视频播放器区域</p>
-            <p style="color:rgba(255,255,255,0.5);font-size:13px">支持播放/暂停、进度拖拽、倍速、全屏</p>
-          </div>
-        </div>
+    <div class="learn-tabs">
+      <span class="active">章节</span>
+      <span>课件</span>
+      <span>作业</span>
+      <span>笔记</span>
+    </div>
 
-        <div class="panel">
-          <h4 class="section-title">课件下载</h4>
-          <div class="resource-links" v-if="resources.length > 0">
-            <el-link v-for="r in resources" :key="r.id" type="primary" :underline="false" :href="r.fileUrl"
-              target="_blank">
-              {{ r.resourceName }}
-            </el-link>
-          </div>
-          <p v-else style="color:#c0c4cc;font-size:13px">暂无课件资源</p>
-        </div>
-
-        <div class="panel">
-          <h4 class="section-title">记笔记</h4>
-          <el-input v-model="noteContent" type="textarea" :rows="3" placeholder="在此输入笔记内容..." />
-          <div class="note-actions">
-            <el-input v-model="timestamp" placeholder="视频时间点(如02:35)" style="width:160px" size="default" />
-            <el-button type="primary" @click="saveNote">保存笔记</el-button>
-          </div>
-        </div>
-      </div>
-
-      <!-- 右侧：章节大纲 -->
-      <div class="learn-sidebar">
-        <div class="panel outline-panel">
-          <h4 class="section-title">章节大纲</h4>
-          <div class="outline-list">
-            <div v-for="ch in chapters" :key="ch.id" :class="['outline-item', ch.active ? 'active' : '']">
-              <span>{{ ch.sortOrder }}. {{ ch.chapterName }}</span>
-              <el-tag v-if="ch.done" type="success" size="small">已完成</el-tag>
+    <div class="chapter-panel">
+      <el-collapse v-model="openChapterNames">
+        <el-collapse-item v-for="chapter in chapters" :key="chapter.id" :name="String(chapter.id)">
+          <template #title>
+            <div class="chapter-title">
+              <span>{{ chapter.sortOrder }} {{ chapter.chapterName }}</span>
+              <span class="chapter-stat">{{ resourcesByChapter(chapter.id).length }} 个资源 · {{ assignmentsByChapter(chapter.id).length }} 个作业</span>
             </div>
+          </template>
+
+          <div class="chapter-body">
+            <div v-for="resource in resourcesByChapter(chapter.id)" :key="`r-${resource.id}`" class="learn-item">
+              <span class="item-icon">📎</span>
+              <span class="item-name">{{ resource.resourceName }}</span>
+              <el-link :href="resource.fileUrl" target="_blank" type="primary">查看文件</el-link>
+            </div>
+
+            <div v-for="assignment in assignmentsByChapter(chapter.id)" :key="`a-${assignment.id}`" class="learn-item">
+              <span class="item-icon assignment">作</span>
+              <span class="item-name">{{ assignment.title }}</span>
+              <span class="item-meta">截止 {{ formatDate(assignment.deadline) }}</span>
+              <el-button size="small" @click="router.push('/student/assignments')">
+                {{ assignment.submitted ? '查看提交' : '去完成' }}
+              </el-button>
+            </div>
+
+            <el-empty
+              v-if="resourcesByChapter(chapter.id).length === 0 && assignmentsByChapter(chapter.id).length === 0"
+              description="本章节暂无内容"
+              :image-size="70"
+            />
           </div>
-        </div>
+        </el-collapse-item>
+      </el-collapse>
+      <el-empty v-if="chapters.length === 0" description="暂无章节内容" :image-size="110" />
+    </div>
+
+    <div class="note-panel">
+      <h4>学习笔记</h4>
+      <el-input v-model="noteContent" type="textarea" :rows="3" placeholder="在此输入本课程学习笔记..." />
+      <div class="note-actions">
+        <el-button type="primary" @click="saveNote">保存笔记</el-button>
       </div>
     </div>
   </div>
@@ -59,159 +66,81 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { courseApi, knowledgeApi } from '@/api'
+import { assignmentApi, courseApi, knowledgeApi } from '@/api'
 import { ElMessage } from 'element-plus'
 
 const route = useRoute()
 const router = useRouter()
-const noteContent = ref('')
-const timestamp = ref('')
+const course = ref({})
 const chapters = ref([])
 const resources = ref([])
-const courseName = ref('')
+const assignments = ref([])
+const openChapterNames = ref([])
+const noteContent = ref('')
+
+const courseId = () => route.params.id
 
 const fetchCourseData = async () => {
   try {
-    const courseId = route.params.id
-    const res = await courseApi.detail(courseId)
-    if (res.data.code === 200) {
-      const course = res.data.data
-      courseName.value = course.courseName || ''
-      chapters.value = (course.chapters || []).map(ch => ({
-        ...ch,
-        done: false,
-        active: false
-      }))
+    const [courseRes, resourceRes, assignmentRes] = await Promise.all([
+      courseApi.detail(courseId()),
+      courseApi.getResources(courseId()),
+      assignmentApi.list({ page: 1, size: 200, courseId: courseId() })
+    ])
+    if (courseRes.data.code === 200) {
+      course.value = courseRes.data.data || {}
+      chapters.value = course.value.chapters || []
+      openChapterNames.value = chapters.value.slice(0, 1).map(chapter => String(chapter.id))
     }
-    // 获取课程资源
-    const rRes = await courseApi.getResources(courseId)
-    if (rRes.data.code === 200) {
-      resources.value = rRes.data.data || []
-    }
-  } catch (e) { /* ignore */ }
+    if (resourceRes.data.code === 200) resources.value = resourceRes.data.data || []
+    if (assignmentRes.data.code === 200) assignments.value = assignmentRes.data.data?.records || []
+  } catch (e) {
+    ElMessage.error('课程内容加载失败')
+  }
 }
 
-onMounted(fetchCourseData)
+const resourcesByChapter = (chapterId) => resources.value.filter(resource => resource.chapterId === chapterId)
+const assignmentsByChapter = (chapterId) => assignments.value.filter(assignment => assignment.chapterId === chapterId)
+const formatDate = (value) => value ? String(value).replace('T', ' ').slice(0, 16) : '--'
 
 const saveNote = async () => {
-  if (!noteContent.value.trim()) { ElMessage.warning('请输入笔记内容'); return }
+  if (!noteContent.value.trim()) {
+    ElMessage.warning('请输入笔记内容')
+    return
+  }
   try {
     await knowledgeApi.createNote({
-      title: '学习笔记',
+      title: `${course.value.courseName || '课程'}学习笔记`,
       content: noteContent.value,
-      courseId: route.params.id,
-      videoTimestamp: timestamp.value || null
+      courseId: courseId()
     })
     ElMessage.success('笔记已保存')
     noteContent.value = ''
-    timestamp.value = ''
   } catch (e) {
     ElMessage.error('保存失败')
   }
 }
+
+onMounted(fetchCourseData)
 </script>
 
 <style scoped>
-.page-shell {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.page-title-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 4px;
-}
-
-.page-title {
-  font-size: 20px;
-  font-weight: 600;
-  color: #303133;
-  margin: 0;
-}
-
-.panel {
-  background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-  padding: 24px;
-  margin-bottom: 16px;
-}
-
-.section-title {
-  font-size: 15px;
-  font-weight: 600;
-  color: #303133;
-  margin: 0 0 14px 0;
-}
-
-.learn-layout {
-  display: flex;
-  gap: 20px;
-  align-items: flex-start;
-}
-
-.learn-main {
-  flex: 1;
-  min-width: 0;
-}
-
-.learn-sidebar {
-  width: 260px;
-  flex-shrink: 0;
-}
-
-.video-panel {
-  padding: 0;
-  overflow: hidden;
-}
-
-.video-placeholder {
-  height: 400px;
-  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-}
-
-.resource-links {
-  display: flex;
-  gap: 20px;
-}
-
-.note-actions {
-  display: flex;
-  gap: 8px;
-  margin-top: 10px;
-}
-
-.outline-panel {
-  position: sticky;
-  top: 84px;
-}
-
-.outline-item {
-  padding: 12px 0;
-  border-bottom: 1px solid #f5f5f5;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  cursor: pointer;
-  font-size: 14px;
-  color: #606266;
-  transition: color 0.2s;
-}
-
-.outline-item:last-child {
-  border-bottom: none;
-}
-
-.outline-item:hover,
-.outline-item.active {
-  color: #409eff;
-}
+.learn-page { display: flex; flex-direction: column; gap: 22px; }
+.course-header { display: flex; align-items: flex-start; justify-content: space-between; }
+.course-title { display: inline-block; margin: 0 0 8px 8px; font-size: 24px; color: #303133; }
+.course-meta { margin: 0; color: #909399; font-size: 14px; }
+.learn-tabs { display: flex; gap: 44px; border-bottom: 1px solid #e4e7ed; color: #606266; font-size: 18px; }
+.learn-tabs span { padding: 0 0 12px; }
+.learn-tabs .active { color: #20bfc8; border-bottom: 3px solid #20bfc8; }
+.chapter-panel, .note-panel { background: #fff; border: 1px solid #e4e7ed; border-radius: 8px; padding: 24px; }
+.chapter-title { width: 100%; display: flex; justify-content: space-between; padding-right: 20px; font-size: 18px; }
+.chapter-stat { color: #909399; font-size: 13px; font-weight: 400; }
+.chapter-body { padding: 12px 24px 20px; }
+.learn-item { display: grid; grid-template-columns: 36px minmax(180px, 1fr) auto auto; align-items: center; gap: 12px; padding: 14px 0; color: #606266; }
+.item-icon { width: 28px; height: 28px; border-radius: 50%; background: #ffe1a3; display: flex; align-items: center; justify-content: center; }
+.item-icon.assignment { background: #ecf5ff; color: #409eff; font-size: 13px; font-weight: 700; }
+.item-name { color: #303133; font-size: 15px; }
+.item-meta { color: #909399; font-size: 13px; }
+.note-panel h4 { margin: 0 0 12px; color: #303133; }
+.note-actions { display: flex; justify-content: flex-end; margin-top: 12px; }
 </style>

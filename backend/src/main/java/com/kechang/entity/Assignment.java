@@ -16,6 +16,7 @@ public class Assignment {
     private Long id;
 
     private Long courseId;
+    private Long chapterId;
     private String title;
     private String content;
     private String attachmentUrl;

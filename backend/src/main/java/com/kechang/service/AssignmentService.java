@@ -33,10 +33,13 @@ public class AssignmentService {
     private final StudentProfileMapper studentProfileMapper;
     private final SysUserMapper sysUserMapper;
 
-    public PageResult<AssignmentVO> list(int page, int size, Long courseId, Long userId, String role) {
+    public PageResult<AssignmentVO> list(int page, int size, Long courseId, Long chapterId, Long userId, String role) {
         LambdaQueryWrapper<Assignment> w = new LambdaQueryWrapper<>();
         if (courseId != null) {
             w.eq(Assignment::getCourseId, courseId);
+        }
+        if (chapterId != null) {
+            w.eq(Assignment::getChapterId, chapterId);
         }
         if ("ROLE_TEACHER".equals(role)) {
             w.eq(Assignment::getCreateBy, userId);
@@ -79,6 +82,7 @@ public class AssignmentService {
     public void create(AssignmentDTO dto, Long teacherId) {
         Assignment a = new Assignment();
         a.setCourseId(dto.getCourseId());
+        a.setChapterId(dto.getChapterId());
         a.setTitle(dto.getTitle());
         a.setContent(dto.getContent());
         a.setAttachmentUrl(dto.getAttachmentUrl());
@@ -100,7 +104,10 @@ public class AssignmentService {
         }
         a.setTitle(dto.getTitle());
         a.setContent(dto.getContent());
+        a.setChapterId(dto.getChapterId());
         a.setDeadline(dto.getDeadline());
+        a.setAttachmentUrl(dto.getAttachmentUrl());
+        a.setTotalScore(dto.getTotalScore() != null ? dto.getTotalScore() : a.getTotalScore());
         assignmentMapper.updateById(a);
     }
 
@@ -184,6 +191,7 @@ public class AssignmentService {
         AssignmentVO vo = new AssignmentVO();
         vo.setId(assignment.getId());
         vo.setCourseId(assignment.getCourseId());
+        vo.setChapterId(assignment.getChapterId());
         vo.setTitle(assignment.getTitle());
         vo.setContent(assignment.getContent());
         vo.setAttachmentUrl(assignment.getAttachmentUrl());

@@ -68,7 +68,15 @@ const studentMenus = [
   { path: '/student/evaluations', title: '教学评价', icon: 'Star' }
 ]
 
-const menuItems = computed(() => userStore.isTeacher ? teacherMenus : studentMenus)
+const adminMenus = [
+  { path: '/admin/courses', title: '课程总览', icon: 'Reading' }
+]
+
+const menuItems = computed(() => {
+  if (userStore.isTeacher) return teacherMenus
+  if (userStore.isAdmin) return adminMenus
+  return studentMenus
+})
 </script>
 
 <style scoped>

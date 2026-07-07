@@ -137,8 +137,10 @@
                                                 {{ userStore.isTeacher ? '管理课程' : '进入课程' }}
                                             </el-dropdown-item>
                                             <el-dropdown-item command="detail">课程详情</el-dropdown-item>
-                                            <el-dropdown-item v-if="userStore.isStudent"
-                                                command="enroll">选课</el-dropdown-item>
+                                            <el-dropdown-item v-if="userStore.isStudent" command="enroll"
+                                                :disabled="course.enrolled">
+                                                {{ course.enrolled ? '已选课' : '选课' }}
+                                            </el-dropdown-item>
                                             <el-dropdown-item v-if="userStore.isTeacher"
                                                 command="edit">编辑课程</el-dropdown-item>
                                         </el-dropdown-menu>
@@ -338,7 +340,15 @@ const handleCourseAction = (cmd, course) => {
     } else if (cmd === 'edit') {
         router.push(`/teacher/courses/${course.id}`)
     } else if (cmd === 'enroll') {
-        courseApi.enroll(course.id).then(() => { ElMessage.success('选课成功'); fetchCourses() }).catch(e => ElMessage.error(e.response?.data?.message || '选课失败'))
+        if (course.enrolled) {
+            ElMessage.info('已选该课程')
+            return
+        }
+        courseApi.enroll(course.id).then(() => {
+            course.enrolled = true
+            course.studentCount = Number(course.studentCount || 0) + 1
+            ElMessage.success('选课成功')
+        }).catch(e => ElMessage.error(e.response?.data?.message || '选课失败'))
     }
 }
 
