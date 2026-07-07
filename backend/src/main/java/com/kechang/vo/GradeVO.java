@@ -12,6 +12,9 @@ public class GradeVO {
 
     private Long courseId;
     private String courseName;
+    private Long studentId;
+    private String studentName;
+    private String studentNo;
     private Double examAvgScore;
     private Double assignmentAvgScore;
     private Double totalScore;

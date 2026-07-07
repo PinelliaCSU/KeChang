@@ -42,7 +42,7 @@ const collapsed = ref(false)
 const activeMenu = computed(() => route.path)
 
 const teacherMenus = [
-  { path: '/teacher/dashboard', title: '仪表盘', icon: 'Odometer' },
+  { path: '/teacher/dashboard', title: '主页', icon: 'Odometer' },
   { path: '/teacher/courses', title: '课程管理', icon: 'Reading' },
   { path: '/teacher/questions', title: '试题管理', icon: 'EditPen' },
   { path: '/teacher/papers', title: '试卷管理', icon: 'Document' },
@@ -56,7 +56,7 @@ const teacherMenus = [
 ]
 
 const studentMenus = [
-  { path: '/student/dashboard', title: '仪表盘', icon: 'Odometer' },
+  { path: '/student/dashboard', title: '主页', icon: 'Odometer' },
   { path: '/student/courses', title: '课程中心', icon: 'Reading' },
   { path: '/student/assignments', title: '我的作业', icon: 'Notebook' },
   { path: '/student/exams', title: '在线考试', icon: 'Timer' },

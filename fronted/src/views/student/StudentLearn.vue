@@ -21,10 +21,13 @@
 
         <div class="panel">
           <h4 class="section-title">课件下载</h4>
-          <div class="resource-links">
-            <el-link type="primary" :underline="false">第二章PPT.pdf</el-link>
-            <el-link type="primary" :underline="false">第二章讲义.docx</el-link>
+          <div class="resource-links" v-if="resources.length > 0">
+            <el-link v-for="r in resources" :key="r.id" type="primary" :underline="false" :href="r.fileUrl"
+              target="_blank">
+              {{ r.resourceName }}
+            </el-link>
           </div>
+          <p v-else style="color:#c0c4cc;font-size:13px">暂无课件资源</p>
         </div>
 
         <div class="panel">
@@ -54,24 +57,57 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { courseApi, knowledgeApi } from '@/api'
 import { ElMessage } from 'element-plus'
 
+const route = useRoute()
 const router = useRouter()
 const noteContent = ref('')
 const timestamp = ref('')
-const chapters = ref([
-  { id: 1, sortOrder: 1, chapterName: '第一章 入门', done: true },
-  { id: 2, sortOrder: 2, chapterName: '第二章 面向对象', done: false, active: true },
-  { id: 3, sortOrder: 3, chapterName: '第三章 异常处理', done: false }
-])
+const chapters = ref([])
+const resources = ref([])
+const courseName = ref('')
 
-const saveNote = () => {
+const fetchCourseData = async () => {
+  try {
+    const courseId = route.params.id
+    const res = await courseApi.detail(courseId)
+    if (res.data.code === 200) {
+      const course = res.data.data
+      courseName.value = course.courseName || ''
+      chapters.value = (course.chapters || []).map(ch => ({
+        ...ch,
+        done: false,
+        active: false
+      }))
+    }
+    // 获取课程资源
+    const rRes = await courseApi.getResources(courseId)
+    if (rRes.data.code === 200) {
+      resources.value = rRes.data.data || []
+    }
+  } catch (e) { /* ignore */ }
+}
+
+onMounted(fetchCourseData)
+
+const saveNote = async () => {
   if (!noteContent.value.trim()) { ElMessage.warning('请输入笔记内容'); return }
-  ElMessage.success('笔记已保存')
-  noteContent.value = ''
-  timestamp.value = ''
+  try {
+    await knowledgeApi.createNote({
+      title: '学习笔记',
+      content: noteContent.value,
+      courseId: route.params.id,
+      videoTimestamp: timestamp.value || null
+    })
+    ElMessage.success('笔记已保存')
+    noteContent.value = ''
+    timestamp.value = ''
+  } catch (e) {
+    ElMessage.error('保存失败')
+  }
 }
 </script>
 

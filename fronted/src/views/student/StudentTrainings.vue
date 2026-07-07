@@ -11,11 +11,11 @@
             <span class="training-tag">{{ t.type || '实训' }}</span>
           </div>
           <div class="training-body">
-            <h4 class="training-title">{{ t.name || t.title }}</h4>
+            <h4 class="training-title">{{ t.projectName || t.title }}</h4>
             <p class="training-desc">{{ t.description || '暂无描述' }}</p>
           </div>
           <div class="training-footer">
-            <span class="training-deadline">{{ t.deadline || '未设截止' }}</span>
+            <span class="training-deadline">{{ t.endDate || t.deadline || '未设截止' }}</span>
             <button class="btn-enter">进入实训</button>
           </div>
         </div>
@@ -37,6 +37,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import { trainingApi } from '@/api'
 
 const trainings = ref([])
 
@@ -47,7 +48,13 @@ const gradientPalette = [
 const getCoverGradient = (id) => gradientPalette[(id - 1) % gradientPalette.length]
 
 onMounted(async () => {
-  // TODO: 加载实训数据
+  try {
+    const res = await trainingApi.listProjects({ page: 1, size: 50 })
+    if (res.data.code === 200) {
+      const d = res.data.data
+      trainings.value = Array.isArray(d?.records) ? d.records : Array.isArray(d) ? d : []
+    }
+  } catch (e) { /* ignore */ }
 })
 </script>
 

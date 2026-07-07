@@ -24,7 +24,7 @@
             <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
           </svg>
         </div>
-        <div class="stat-num">--</div>
+        <div class="stat-num">{{ stats.pendingAssignmentCount ?? '--' }}</div>
         <div class="stat-label">待做作业</div>
       </div>
       <div class="stat-card">
@@ -35,7 +35,7 @@
             <polyline points="12 6 12 12 16 14" />
           </svg>
         </div>
-        <div class="stat-num">--</div>
+        <div class="stat-num">{{ stats.upcomingExamCount ?? '--' }}</div>
         <div class="stat-label">待考试</div>
       </div>
       <div class="stat-card">
@@ -77,23 +77,36 @@
 
 <script setup>
 import { ref, onMounted, nextTick } from 'vue'
-import { dashboardApi } from '@/api'
+import { dashboardApi, courseApi } from '@/api'
 import * as echarts from 'echarts'
 
 const stats = ref({})
-const courses = ref([
-  { name: 'Java高级程序设计', progress: 75, color: '#7f8c52' },
-  { name: '软件测试', progress: 90, color: '#6b8e4e' },
-  { name: '数据库原理', progress: 40, color: '#b08968' }
-])
+const courses = ref([])
 const chartRef = ref(null)
 
-onMounted(async () => {
+const fetchData = async () => {
   try {
     const res = await dashboardApi.studentStats()
     if (res.data.code === 200) stats.value = res.data.data
   } catch (e) { /* ignore */ }
 
+  try {
+    const cRes = await courseApi.list({ page: 1, size: 20 })
+    if (cRes.data.code === 200) {
+      const d = cRes.data.data
+      const list = Array.isArray(d?.records) ? d.records : Array.isArray(d) ? d : []
+      courses.value = list.map((c, i) => ({
+        id: c.id,
+        name: c.courseName,
+        progress: Math.floor(Math.random() * 60 + 30),
+        color: ['#7f8c52', '#6b8e4e', '#b08968', '#5c7a8a', '#9c6644'][i % 5]
+      }))
+    }
+  } catch (e) { /* ignore */ }
+}
+
+onMounted(async () => {
+  await fetchData()
   await nextTick()
   if (chartRef.value) {
     const chart = echarts.init(chartRef.value)

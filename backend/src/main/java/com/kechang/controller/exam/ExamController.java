@@ -10,6 +10,7 @@ import com.kechang.entity.ExamRecord;
 import com.kechang.entity.ExamRecordAnswer;
 import com.kechang.entity.Question;
 import com.kechang.service.ExamService;
+import com.kechang.vo.ExamListVO;
 import com.kechang.vo.ExamVO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -101,7 +102,7 @@ public class ExamController {
 
     // ==================== 考试安排 ====================
     @GetMapping("/api/exams")
-    public Result<PageResult<Exam>> listExams(@RequestParam(defaultValue = "1") int page,
+    public Result<PageResult<ExamListVO>> listExams(@RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) Long courseId) {
         return Result.success(examService.getExamList(page, size, courseId));

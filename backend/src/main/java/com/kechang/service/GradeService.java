@@ -4,11 +4,14 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.kechang.common.PageResult;
 import com.kechang.entity.GradeCourse;
 import com.kechang.entity.Course;
+import com.kechang.entity.StudentProfile;
 import com.kechang.mapper.GradeCourseMapper;
 import com.kechang.mapper.CourseMapper;
+import com.kechang.mapper.StudentProfileMapper;
 import com.kechang.vo.GradeVO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -22,6 +25,7 @@ public class GradeService {
 
     private final GradeCourseMapper gradeCourseMapper;
     private final CourseMapper courseMapper;
+    private final StudentProfileMapper studentProfileMapper;
 
     public List<GradeVO> getStudentGrades(Long studentId) {
         return buildGradeVOs(studentId);
@@ -37,10 +41,18 @@ public class GradeService {
         return grades.stream().map(g -> {
             GradeVO vo = new GradeVO();
             vo.setCourseId(g.getCourseId());
+            vo.setStudentId(g.getStudentId());
             vo.setExamAvgScore(g.getExamAvgScore());
             vo.setAssignmentAvgScore(g.getAssignmentAvgScore());
             vo.setTotalScore(g.getTotalScore());
             vo.setGradeLevel(g.getGradeLevel());
+            // 查询学生信息
+            StudentProfile sp = studentProfileMapper.selectOne(
+                    new LambdaQueryWrapper<StudentProfile>().eq(StudentProfile::getUserId, g.getStudentId()));
+            if (sp != null) {
+                vo.setStudentName(sp.getRealName());
+                vo.setStudentNo(sp.getStudentNo());
+            }
             return vo;
         }).collect(Collectors.toList());
     }
@@ -78,13 +90,69 @@ public class GradeService {
         return grades.stream().map(g -> {
             GradeVO vo = new GradeVO();
             vo.setCourseId(g.getCourseId());
+            vo.setStudentId(g.getStudentId());
             Course course = courseMapper.selectById(g.getCourseId());
             vo.setCourseName(course != null ? course.getCourseName() : "未知课程");
             vo.setExamAvgScore(g.getExamAvgScore());
             vo.setAssignmentAvgScore(g.getAssignmentAvgScore());
             vo.setTotalScore(g.getTotalScore());
             vo.setGradeLevel(g.getGradeLevel());
+            StudentProfile sp = studentProfileMapper.selectOne(
+                    new LambdaQueryWrapper<StudentProfile>().eq(StudentProfile::getUserId, studentId));
+            if (sp != null) {
+                vo.setStudentName(sp.getRealName());
+                vo.setStudentNo(sp.getStudentNo());
+            }
             return vo;
         }).collect(Collectors.toList());
+    }
+
+    /**
+     * 根据作业均分和考试均分重新计算总评成绩
+     */
+    @Transactional
+    public void recalculateGrade(Long courseId, Long studentId) {
+        GradeCourse gc = getOrCreateGradeCourse(courseId, studentId);
+        double exam = gc.getExamAvgScore() != null ? gc.getExamAvgScore() : 0;
+        double assign = gc.getAssignmentAvgScore() != null ? gc.getAssignmentAvgScore() : 0;
+        // 综合成绩 = 考试均分*0.6 + 作业均分*0.4
+        double total = exam * 0.6 + assign * 0.4;
+        gc.setTotalScore(Math.round(total * 10.0) / 10.0);
+        // 等级判断
+        if (total >= 90) {
+            gc.setGradeLevel("优秀"); 
+        }else if (total >= 80) {
+            gc.setGradeLevel("良好"); 
+        }else if (total >= 70) {
+            gc.setGradeLevel("中等"); 
+        }else if (total >= 60) {
+            gc.setGradeLevel("及格"); 
+        }else {
+            gc.setGradeLevel("不及格");
+        }
+        gradeCourseMapper.updateById(gc);
+    }
+
+    @Transactional
+    public GradeCourse getOrCreateGradeCourse(Long courseId, Long studentId) {
+        GradeCourse gc = gradeCourseMapper.selectOne(
+                new LambdaQueryWrapper<GradeCourse>()
+                        .eq(GradeCourse::getCourseId, courseId)
+                        .eq(GradeCourse::getStudentId, studentId));
+        if (gc == null) {
+            gc = new GradeCourse();
+            gc.setCourseId(courseId);
+            gc.setStudentId(studentId);
+            gc.setExamAvgScore(0.0);
+            gc.setAssignmentAvgScore(0.0);
+            gc.setTotalScore(0.0);
+            gc.setGradeLevel("不及格");
+            gradeCourseMapper.insert(gc);
+        }
+        return gc;
+    }
+
+    public void updateGradeCourse(GradeCourse gc) {
+        gradeCourseMapper.updateById(gc);
     }
 }

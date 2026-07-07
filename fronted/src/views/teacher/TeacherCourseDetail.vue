@@ -54,13 +54,69 @@
         </el-tab-pane>
 
         <el-tab-pane label="作业" name="assignments">
-          <el-empty description="请在作业管理页面查看" />
+          <div v-if="loadingAssignments" v-loading="loadingAssignments" style="min-height:100px"></div>
+          <el-table v-else-if="courseAssignments.length > 0" :data="courseAssignments" border stripe>
+            <el-table-column prop="title" label="作业标题" min-width="180" />
+            <el-table-column prop="totalScore" label="总分" width="80" />
+            <el-table-column prop="deadline" label="截止时间" width="170" />
+            <el-table-column label="提交情况" width="110">
+              <template #default="{ row }">{{ row.submitCount || 0 }}/{{ row.totalStudents || 0 }}</template>
+            </el-table-column>
+            <el-table-column label="状态" width="90">
+              <template #default="{ row }">
+                <el-tag :type="row.status === '进行中' ? 'success' : 'info'" size="small">{{ row.status || '进行中'
+                  }}</el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column label="操作" width="100">
+              <template #default="{ row }">
+                <el-button size="small" @click="$router.push('/teacher/assignments')">管理</el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+          <el-empty v-else description="暂无作业" :image-size="80" />
         </el-tab-pane>
         <el-tab-pane label="考试" name="exams">
-          <el-empty description="请在考试管理页面查看" />
+          <div v-if="loadingExams" v-loading="loadingExams" style="min-height:100px"></div>
+          <el-table v-else-if="courseExams.length > 0" :data="courseExams" border stripe>
+            <el-table-column prop="examName" label="考试名称" min-width="180" />
+            <el-table-column prop="startTime" label="开始时间" width="170" />
+            <el-table-column prop="endTime" label="结束时间" width="170" />
+            <el-table-column prop="duration" label="时长(分)" width="80" />
+            <el-table-column label="状态" width="90">
+              <template #default="{ row }">
+                <el-tag :type="row.status === '进行中' ? 'success' : row.status === '未开始' ? 'warning' : 'info'"
+                  size="small">{{ row.status || '未开始' }}</el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column label="操作" width="100">
+              <template #default="{ row }">
+                <el-button size="small" @click="$router.push('/teacher/exams')">管理</el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+          <el-empty v-else description="暂无考试安排" :image-size="80" />
         </el-tab-pane>
         <el-tab-pane label="成绩" name="grades">
-          <el-empty description="请在成绩管理页面查看" />
+          <div v-if="loadingGrades" v-loading="loadingGrades" style="min-height:100px"></div>
+          <el-table v-else-if="courseGrades.length > 0" :data="courseGrades" border stripe>
+            <el-table-column prop="studentName" label="姓名" width="100" />
+            <el-table-column prop="studentNo" label="学号" width="120" />
+            <el-table-column prop="examAvgScore" label="考试均分" width="100" />
+            <el-table-column prop="assignmentAvgScore" label="作业均分" width="100" />
+            <el-table-column prop="totalScore" label="总评" width="80">
+              <template #default="{ row }">
+                <b :style="{ color: row.totalScore >= 90 ? '#67c23a' : row.totalScore >= 60 ? '#409eff' : '#f56c6c' }">{{
+                  row.totalScore }}</b>
+              </template>
+            </el-table-column>
+            <el-table-column prop="gradeLevel" label="等级" width="80">
+              <template #default="{ row }">
+                <el-tag :type="levelType(row.gradeLevel)" size="small">{{ row.gradeLevel || '--' }}</el-tag>
+              </template>
+            </el-table-column>
+          </el-table>
+          <el-empty v-else description="暂无成绩数据" :image-size="80" />
         </el-tab-pane>
       </el-tabs>
     </div>
@@ -83,7 +139,7 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { courseApi } from '@/api'
+import { courseApi, assignmentApi, examApi, gradeApi } from '@/api'
 import { ElMessage } from 'element-plus'
 
 const route = useRoute(); const router = useRouter()
@@ -93,6 +149,53 @@ const chapters = ref([])
 const students = ref([])
 const showChapterDialog = ref(false)
 const chapterForm = reactive({ chapterName: '', sortOrder: 1, description: '' })
+
+// 课程维度的作业/考试/成绩
+const courseAssignments = ref([])
+const courseExams = ref([])
+const courseGrades = ref([])
+const loadingAssignments = ref(false)
+const loadingExams = ref(false)
+const loadingGrades = ref(false)
+
+const levelType = (level) => {
+  const m = { '优秀': 'success', '良好': '', '中等': 'warning', '及格': '', '不及格': 'danger' }
+  return m[level] || 'info'
+}
+
+const fetchTabData = async (tabName) => {
+  const courseId = route.params.id
+  if (tabName === 'assignments') {
+    loadingAssignments.value = true
+    try {
+      const res = await assignmentApi.list({ courseId, size: 50 })
+      if (res.data.code === 200) {
+        const d = res.data.data
+        courseAssignments.value = Array.isArray(d?.records) ? d.records : Array.isArray(d) ? d : []
+      }
+    } catch (e) { /* ignore */ }
+    loadingAssignments.value = false
+  } else if (tabName === 'exams') {
+    loadingExams.value = true
+    try {
+      const res = await examApi.listExams({ courseId, size: 50 })
+      if (res.data.code === 200) {
+        const d = res.data.data
+        courseExams.value = Array.isArray(d?.records) ? d.records : Array.isArray(d) ? d : []
+      }
+    } catch (e) { /* ignore */ }
+    loadingExams.value = false
+  } else if (tabName === 'grades') {
+    loadingGrades.value = true
+    try {
+      const res = await gradeApi.courseGrades(courseId)
+      if (res.data.code === 200) {
+        courseGrades.value = res.data.data || []
+      }
+    } catch (e) { /* ignore */ }
+    loadingGrades.value = false
+  }
+}
 
 onMounted(async () => {
   try {
@@ -104,6 +207,14 @@ onMounted(async () => {
     const sRes = await courseApi.getStudents(route.params.id, { page: 1, size: 50 })
     if (sRes.data.code === 200) students.value = sRes.data.data.records || []
   } catch (e) { /* ignore */ }
+})
+
+// 切换tab时加载数据
+import { watch } from 'vue'
+watch(activeTab, (tab) => {
+  if (tab === 'assignments' || tab === 'exams' || tab === 'grades') {
+    fetchTabData(tab)
+  }
 })
 
 const addChapter = async () => {

@@ -13,6 +13,7 @@ public class DashboardVO {
     private Long courseCount;
     private Long pendingAssignmentCount;
     private Long pendingQuestionCount;
+    private Long upcomingExamCount;
     private Double avgScore;
 
     // 近7日活跃趋势

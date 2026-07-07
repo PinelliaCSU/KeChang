@@ -14,8 +14,8 @@
               <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
               <polyline points="14 2 14 8 20 8" />
             </svg>
-            <svg v-else-if="item.type === 'video'" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#5c7a8a"
-              stroke-width="1.8" stroke-linecap="round">
+            <svg v-else-if="item.type === 'video'" width="28" height="28" viewBox="0 0 24 24" fill="none"
+              stroke="#5c7a8a" stroke-width="1.8" stroke-linecap="round">
               <polygon points="23 7 16 12 23 17 23 7" />
               <rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
             </svg>
@@ -49,13 +49,24 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import { knowledgeApi } from '@/api'
 
 const items = ref([])
 const keyword = ref('')
 
-onMounted(async () => {
-  // TODO: 加载知识库数据
-})
+const fetchArticles = async () => {
+  try {
+    const params = { page: 1, size: 50 }
+    if (keyword.value) params.keyword = keyword.value
+    const res = await knowledgeApi.listArticles(params)
+    if (res.data.code === 200) {
+      const d = res.data.data
+      items.value = Array.isArray(d?.records) ? d.records : Array.isArray(d) ? d : []
+    }
+  } catch (e) { /* ignore */ }
+}
+
+onMounted(fetchArticles)
 </script>
 
 <style scoped>

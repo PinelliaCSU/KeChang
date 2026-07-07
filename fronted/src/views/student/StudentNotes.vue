@@ -2,14 +2,14 @@
   <div class="page-shell">
     <div class="page-title-bar">
       <h2 class="page-title">学习笔记</h2>
-      <el-button type="primary" size="default">+ 新建笔记</el-button>
+      <el-button type="primary" size="default" @click="showCreate = true">+ 新建笔记</el-button>
     </div>
 
     <div class="panel" v-if="notes.length > 0">
       <div class="note-grid">
         <div class="note-card" v-for="n in notes" :key="n.id">
           <h4 class="note-title">{{ n.title }}</h4>
-          <p class="note-preview">{{ n.content?.substring(0, 120) || '暂无内容' }}</p>
+          <p class="note-preview">{{ (n.content || '').substring(0, 120) || '暂无内容' }}</p>
           <div class="note-footer">
             <span class="note-course">{{ n.courseName || '' }}</span>
             <span class="note-time">{{ n.createTime || '' }}</span>
@@ -28,17 +28,55 @@
         <p class="empty-text">暂无笔记，去课程学习中记录吧</p>
       </div>
     </div>
+
+    <!-- 新建笔记弹窗 -->
+    <el-dialog v-model="showCreate" title="新建笔记" width="500px" destroy-on-close>
+      <el-form label-width="80px">
+        <el-form-item label="标题" required><el-input v-model="createForm.title" /></el-form-item>
+        <el-form-item label="内容"><el-input v-model="createForm.content" type="textarea" :rows="6" /></el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="showCreate = false">取消</el-button>
+        <el-button type="primary" :loading="submitting" @click="doCreate">创建</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import { knowledgeApi } from '@/api'
+import { ElMessage } from 'element-plus'
 
 const notes = ref([])
+const showCreate = ref(false)
+const createForm = ref({ title: '', content: '' })
+const submitting = ref(false)
 
-onMounted(async () => {
-  // TODO: 加载笔记数据
-})
+const fetchNotes = async () => {
+  try {
+    const res = await knowledgeApi.listNotes({ page: 1, size: 50 })
+    if (res.data.code === 200) {
+      const d = res.data.data
+      notes.value = Array.isArray(d?.records) ? d.records : Array.isArray(d) ? d : []
+    }
+  } catch (e) { /* ignore */ }
+}
+
+const doCreate = async () => {
+  if (!createForm.value.title.trim()) { ElMessage.warning('请输入标题'); return }
+  submitting.value = true
+  try {
+    await knowledgeApi.createNote(createForm.value)
+    ElMessage.success('笔记创建成功')
+    showCreate.value = false
+    createForm.value = { title: '', content: '' }
+    fetchNotes()
+  } catch (e) { ElMessage.error('创建失败') }
+  submitting.value = false
+}
+
+onMounted(fetchNotes)
 </script>
 
 <style scoped>

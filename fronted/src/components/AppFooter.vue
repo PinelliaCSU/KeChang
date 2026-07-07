@@ -1,6 +1,6 @@
 <template>
   <footer class="app-footer">
-    <p>© 2024 课畅 KeChang — 智能化在线教学支持服务平台 | 技术支持：华迪实训</p>
+    <p>© 2026 课畅 KeChang — 智能化在线教学支持服务平台 | 部分资源来自网络，仅供学习参考</p>
   </footer>
 </template>
 

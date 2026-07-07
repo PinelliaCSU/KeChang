@@ -14,19 +14,19 @@
     <!-- 统计卡片 -->
     <div class="stat-row" v-if="stats">
       <div class="stat-card">
-        <div class="stat-num">{{ stats.avgScore || '--' }}</div>
+        <div class="stat-num">{{ stats.avg || '--' }}</div>
         <div class="stat-label">📊 平均分</div>
       </div>
       <div class="stat-card">
-        <div class="stat-num">{{ stats.maxScore || '--' }}</div>
+        <div class="stat-num">{{ stats.max || '--' }}</div>
         <div class="stat-label">🏆 最高分</div>
       </div>
       <div class="stat-card">
-        <div class="stat-num">{{ stats.minScore || '--' }}</div>
+        <div class="stat-num">{{ stats.min || '--' }}</div>
         <div class="stat-label">📉 最低分</div>
       </div>
       <div class="stat-card">
-        <div class="stat-num">{{ stats.passRate || '--' }}%</div>
+        <div class="stat-num">{{ passRate }}%</div>
         <div class="stat-label">✅ 通过率</div>
       </div>
     </div>
@@ -110,6 +110,8 @@ const distData = ref([])
 const detailVisible = ref(false)
 const currentStudent = ref(null)
 
+const passRate = ref(0)
+
 const levelType = (l) => ({ '优秀': 'success', '良好': 'primary', '中等': 'warning', '及格': 'info', '不及格': 'danger' }[l] || 'info')
 
 const fetchCourses = async () => {
@@ -140,6 +142,8 @@ const onCourseChange = async (courseId) => {
         { level: '不及格(0-59)', min: 0, max: 59, color: '#f56c6c' }
       ]
       const total = grades.value.length || 1
+      const passed = grades.value.filter(g => g.totalScore >= 60).length
+      passRate.value = Math.round(passed / total * 100)
       distData.value = levels.map(l => {
         const count = grades.value.filter(g => g.totalScore >= l.min && g.totalScore <= l.max).length
         return { ...l, count, percent: Math.round(count / total * 100) }

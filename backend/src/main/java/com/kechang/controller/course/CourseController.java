@@ -4,6 +4,7 @@ import com.kechang.common.PageResult;
 import com.kechang.common.Result;
 import com.kechang.dto.ChapterDTO;
 import com.kechang.dto.CourseDTO;
+import com.kechang.entity.CourseResource;
 import com.kechang.entity.StudentProfile;
 import com.kechang.service.CourseService;
 import com.kechang.vo.CourseVO;
@@ -16,6 +17,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -163,6 +165,15 @@ public class CourseController {
         Long userId = (Long) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         courseService.unenrollCourse(id, userId);
         return Result.success();
+    }
+
+    /**
+     * 查看课程资源列表
+     */
+    @GetMapping("/{id}/resources")
+    public Result<List<CourseResource>> listResources(@PathVariable Long id,
+            @RequestParam(required = false) Long chapterId) {
+        return Result.success(courseService.getResources(id, chapterId));
     }
 
     private String getResourceType(String filename) {
