@@ -7,22 +7,23 @@
       </div>
     </div>
 
-    <div class="panel" v-if="courses.length > 0">
+    <div class="panel" v-if="filteredCourses.length > 0">
       <div class="course-grid">
-        <div class="course-card" v-for="c in courses" :key="c.id" @click="enterLearn(c)">
-          <div class="card-cover" :style="{ background: getCoverGradient(c.id) }">
+        <div class="course-card" v-for="course in filteredCourses" :key="course.id">
+          <div class="card-cover" :style="{ background: getCoverGradient(course.id) }">
             <svg class="cover-pattern" width="100%" height="100%" viewBox="0 0 200 100" preserveAspectRatio="none">
               <circle cx="160" cy="20" r="40" fill="rgba(255,255,255,0.08)" />
               <circle cx="30" cy="70" r="55" fill="rgba(255,255,255,0.05)" />
             </svg>
           </div>
           <div class="card-body">
-            <h4 class="card-title" :title="c.courseName || c.name">{{ c.courseName || c.name }}</h4>
-            <p class="card-meta">{{ c.teacherName || '未知教师' }}</p>
-            <p class="card-code" v-if="c.courseCode">{{ c.courseCode }}</p>
+            <h4 class="card-title" :title="course.courseName || course.name">{{ course.courseName || course.name }}</h4>
+            <p class="card-meta">{{ course.teacherName || '未知教师' }}</p>
+            <p class="card-code" v-if="course.courseCode">{{ course.courseCode }}</p>
           </div>
           <div class="card-footer">
-            <button class="btn-enter">进入学习</button>
+            <button class="btn-enter" @click="enterLearn(course)">进入学习</button>
+            <button class="btn-enroll" @click="enrollCourse(course)">加入课程</button>
           </div>
         </div>
       </div>
@@ -35,16 +36,17 @@
           <rect x="28" y="20" width="28" height="4" rx="2" fill="#d0d5dd" />
           <rect x="28" y="30" width="50" height="3" rx="1.5" fill="#dce1e8" />
         </svg>
-        <p class="empty-text">暂未选课，请前往课程广场选课</p>
+        <p class="empty-text">暂无课程</p>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { courseApi } from '@/api'
+import { ElMessage } from 'element-plus'
 
 const router = useRouter()
 const courses = ref([])
@@ -60,19 +62,44 @@ const gradientPalette = [
   'linear-gradient(135deg, #2c3e50 0%, #3498db 50%, #2980b9 100%)',
   'linear-gradient(135deg, #6c3483 0%, #8e44ad 50%, #a569bd 100%)'
 ]
-const getCoverGradient = (id) => gradientPalette[(id - 1) % gradientPalette.length]
 
-const enterLearn = (c) => router.push(`/student/courses/${c.id}/learn`)
+const filteredCourses = computed(() => {
+  const kw = keyword.value.trim().toLowerCase()
+  if (!kw) return courses.value
+  return courses.value.filter(course => String(course.courseName || course.name || '').toLowerCase().includes(kw))
+})
 
-onMounted(async () => {
+const getCoverGradient = (id) => gradientPalette[((id || 1) - 1) % gradientPalette.length]
+const enterLearn = (course) => router.push(`/student/courses/${course.id}/learn`)
+
+const enrollCourse = async (course) => {
+  try {
+    await courseApi.enroll(course.id)
+    ElMessage.success('选课成功，现在可以在我的作业中查看该课程作业')
+  } catch (e) {
+    ElMessage.error(e.response?.data?.message || '选课失败')
+  }
+}
+
+const fetchCourses = async () => {
   try {
     const res = await courseApi.list({ page: 1, size: 50 })
     if (res.data.code === 200) {
       const data = res.data.data
-      courses.value = Array.isArray(data?.records) ? data.records : Array.isArray(data?.list) ? data.list : Array.isArray(data) ? data : []
+      courses.value = Array.isArray(data?.records)
+        ? data.records
+        : Array.isArray(data?.list)
+          ? data.list
+          : Array.isArray(data)
+            ? data
+            : []
     }
-  } catch (e) { /* ignore */ }
-})
+  } catch (e) {
+    ElMessage.error('课程列表加载失败')
+  }
+}
+
+onMounted(fetchCourses)
 </script>
 
 <style scoped>
@@ -114,7 +141,6 @@ onMounted(async () => {
   border-radius: 12px;
   border: 1px solid #ebeef5;
   overflow: hidden;
-  cursor: pointer;
   transition: all 0.3s;
   display: flex;
   flex-direction: column;
@@ -159,23 +185,39 @@ onMounted(async () => {
 
 .card-footer {
   padding: 8px 14px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
-.btn-enter {
+.btn-enter,
+.btn-enroll {
   width: 100%;
   height: 34px;
   border: none;
   border-radius: 8px;
-  background: #ecf5ff;
-  color: #409eff;
   font-size: 13px;
   cursor: pointer;
   transition: all 0.2s;
   font-family: inherit;
 }
 
+.btn-enter {
+  background: #ecf5ff;
+  color: #409eff;
+}
+
 .btn-enter:hover {
   background: #d9ecff;
+}
+
+.btn-enroll {
+  background: #f0f9eb;
+  color: #67c23a;
+}
+
+.btn-enroll:hover {
+  background: #e1f3d8;
 }
 
 .empty-panel {

@@ -16,6 +16,8 @@ public class AssignmentSubmitVO {
     private String attachmentUrl;
     private LocalDateTime submitTime;
     private Double score;
+    private String comment;
+    private LocalDateTime gradedTime;
     private String status;
     private LocalDateTime createTime;
 }

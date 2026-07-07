@@ -20,4 +20,13 @@ public class AssignmentVO {
     private LocalDateTime createTime;
     private Integer submitCount;
     private Integer totalStudents;
+    private Boolean submitted;
+    private Long mySubmitId;
+    private String submitContent;
+    private String submitAttachmentUrl;
+    private LocalDateTime submitTime;
+    private String mySubmitStatus;
+    private Double myScore;
+    private String gradeComment;
+    private LocalDateTime gradedTime;
 }

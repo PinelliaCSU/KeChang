@@ -47,15 +47,31 @@ public class AssignmentService {
                     .stream()
                     .map(CourseStudent::getCourseId)
                     .collect(Collectors.toList());
-            if (courseIds.isEmpty()) {
+            List<Long> submittedAssignmentIds = submitMapper.selectList(new LambdaQueryWrapper<AssignmentSubmit>()
+                            .eq(AssignmentSubmit::getStudentId, userId))
+                    .stream()
+                    .map(AssignmentSubmit::getAssignmentId)
+                    .collect(Collectors.toList());
+            if (courseIds.isEmpty() && submittedAssignmentIds.isEmpty()) {
                 return PageResult.of(new ArrayList<>(), 0, page, size);
             }
-            w.in(Assignment::getCourseId, courseIds);
+            w.and(q -> {
+                if (!courseIds.isEmpty()) {
+                    q.in(Assignment::getCourseId, courseIds);
+                }
+                if (!submittedAssignmentIds.isEmpty()) {
+                    if (!courseIds.isEmpty()) {
+                        q.or();
+                    }
+                    q.in(Assignment::getId, submittedAssignmentIds);
+                }
+            });
         }
         w.orderByDesc(Assignment::getCreateTime);
         Page<Assignment> p = assignmentMapper.selectPage(new Page<>(page, size), w);
+        Long studentId = "ROLE_STUDENT".equals(role) ? userId : null;
         List<AssignmentVO> records = p.getRecords().stream()
-                .map(this::toAssignmentVO)
+                .map(assignment -> toAssignmentVO(assignment, studentId))
                 .collect(Collectors.toList());
         return PageResult.of(records, p.getTotal(), page, size);
     }
@@ -110,7 +126,9 @@ public class AssignmentService {
 
         AssignmentSubmit exist = submitMapper.selectOne(new LambdaQueryWrapper<AssignmentSubmit>()
                 .eq(AssignmentSubmit::getAssignmentId, assignmentId)
-                .eq(AssignmentSubmit::getStudentId, studentId));
+                .eq(AssignmentSubmit::getStudentId, studentId)
+                .orderByDesc(AssignmentSubmit::getSubmitTime)
+                .last("limit 1"));
         if (exist != null) {
             throw BusinessException.badRequest("已提交过该作业");
         }
@@ -127,7 +145,9 @@ public class AssignmentService {
 
     public PageResult<AssignmentSubmitVO> getSubmitList(Long assignmentId, int page, int size) {
         Page<AssignmentSubmit> p = submitMapper.selectPage(new Page<>(page, size),
-                new LambdaQueryWrapper<AssignmentSubmit>().eq(AssignmentSubmit::getAssignmentId, assignmentId));
+                new LambdaQueryWrapper<AssignmentSubmit>()
+                        .eq(AssignmentSubmit::getAssignmentId, assignmentId)
+                        .orderByDesc(AssignmentSubmit::getSubmitTime));
         List<AssignmentSubmitVO> records = p.getRecords().stream()
                 .map(this::toSubmitVO)
                 .collect(Collectors.toList());
@@ -160,7 +180,7 @@ public class AssignmentService {
         }
     }
 
-    private AssignmentVO toAssignmentVO(Assignment assignment) {
+    private AssignmentVO toAssignmentVO(Assignment assignment, Long studentId) {
         AssignmentVO vo = new AssignmentVO();
         vo.setId(assignment.getId());
         vo.setCourseId(assignment.getCourseId());
@@ -184,7 +204,38 @@ public class AssignmentService {
                 .eq(CourseStudent::getCourseId, assignment.getCourseId()));
         vo.setSubmitCount(Math.toIntExact(submitCount));
         vo.setTotalStudents(Math.toIntExact(Math.max(enrolledCount, submitCount)));
+        fillMySubmission(vo, assignment.getId(), studentId);
         return vo;
+    }
+
+    private void fillMySubmission(AssignmentVO vo, Long assignmentId, Long studentId) {
+        if (studentId == null) {
+            return;
+        }
+        AssignmentSubmit submit = submitMapper.selectOne(new LambdaQueryWrapper<AssignmentSubmit>()
+                .eq(AssignmentSubmit::getAssignmentId, assignmentId)
+                .eq(AssignmentSubmit::getStudentId, studentId)
+                .orderByDesc(AssignmentSubmit::getSubmitTime)
+                .last("limit 1"));
+        vo.setSubmitted(submit != null);
+        if (submit == null) {
+            return;
+        }
+        vo.setMySubmitId(submit.getId());
+        vo.setSubmitContent(submit.getContent());
+        vo.setSubmitAttachmentUrl(submit.getAttachmentUrl());
+        vo.setSubmitTime(submit.getSubmitTime());
+        vo.setMySubmitStatus(submit.getStatus());
+        vo.setMyScore(submit.getScore());
+
+        AssignmentGrade grade = gradeMapper.selectOne(new LambdaQueryWrapper<AssignmentGrade>()
+                .eq(AssignmentGrade::getSubmitId, submit.getId())
+                .last("limit 1"));
+        if (grade != null) {
+            vo.setMyScore(grade.getScore());
+            vo.setGradeComment(grade.getComment());
+            vo.setGradedTime(grade.getGradedTime());
+        }
     }
 
     private AssignmentSubmitVO toSubmitVO(AssignmentSubmit submit) {
@@ -198,6 +249,15 @@ public class AssignmentService {
         vo.setScore(submit.getScore());
         vo.setStatus(submit.getStatus());
         vo.setCreateTime(submit.getCreateTime());
+
+        AssignmentGrade grade = gradeMapper.selectOne(new LambdaQueryWrapper<AssignmentGrade>()
+                .eq(AssignmentGrade::getSubmitId, submit.getId())
+                .last("limit 1"));
+        if (grade != null) {
+            vo.setScore(grade.getScore());
+            vo.setComment(grade.getComment());
+            vo.setGradedTime(grade.getGradedTime());
+        }
 
         StudentProfile profile = studentProfileMapper.selectOne(new LambdaQueryWrapper<StudentProfile>()
                 .eq(StudentProfile::getUserId, submit.getStudentId())

@@ -79,6 +79,7 @@
         <el-table-column prop="score" label="评分" width="80">
           <template #default="{ row }">{{ row.score != null ? row.score : '未评' }}</template>
         </el-table-column>
+        <el-table-column prop="comment" label="评语" min-width="140" show-overflow-tooltip />
         <el-table-column label="状态" width="90">
           <template #default="{ row }">
             <el-tag :type="row.status === '已批改' ? 'success' : 'warning'" size="small">{{ row.status || '待批改' }}</el-tag>
@@ -207,7 +208,7 @@ const viewSubmits = async (row) => {
 const openGradeDialog = (row) => {
   currentSubmit.value = row
   gradeForm.score = row.score || 0
-  gradeForm.comment = ''
+  gradeForm.comment = row.comment || ''
   gradeDialogVisible.value = true
 }
 

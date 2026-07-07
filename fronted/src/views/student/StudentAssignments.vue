@@ -5,8 +5,9 @@
       <div class="page-actions">
         <el-select v-model="statusFilter" placeholder="状态筛选" size="default" style="width:140px" clearable>
           <el-option label="全部" value="" />
-          <el-option label="进行中" value="进行中" />
-          <el-option label="已结束" value="已结束" />
+          <el-option label="未提交" value="pending" />
+          <el-option label="已提交" value="submitted" />
+          <el-option label="已批改" value="graded" />
         </el-select>
       </div>
     </div>
@@ -25,12 +26,13 @@
           </template>
         </el-table-column>
         <el-table-column prop="totalScore" label="总分" width="80" />
-        <el-table-column prop="status" label="状态" width="100">
+        <el-table-column label="提交状态" width="110">
           <template #default="{ row }">
-            <el-tag :type="isOverdue(row.deadline) ? 'info' : 'success'" size="small">
-              {{ isOverdue(row.deadline) ? '已截止' : (row.status || '进行中') }}
-            </el-tag>
+            <el-tag :type="submitTagType(row)" size="small">{{ submitLabel(row) }}</el-tag>
           </template>
+        </el-table-column>
+        <el-table-column label="分数" width="90">
+          <template #default="{ row }">{{ row.myScore != null ? row.myScore : '--' }}</template>
         </el-table-column>
         <el-table-column label="操作" width="120">
           <template #default="{ row }">
@@ -47,17 +49,18 @@
           <rect x="28" y="20" width="28" height="4" rx="2" fill="#d0d5dd" />
           <rect x="28" y="30" width="50" height="3" rx="1.5" fill="#dce1e8" />
         </svg>
-        <p class="empty-text">暂无作业任务</p>
+        <p class="empty-text">暂无作业任务，请先在课程中心加入课程</p>
       </div>
     </div>
 
-    <el-dialog v-model="detailVisible" title="作业详情" width="640px" destroy-on-close>
+    <el-dialog v-model="detailVisible" title="作业详情" width="680px" destroy-on-close>
       <div v-if="currentAssignment" class="assignment-detail">
         <h3 class="detail-title">{{ currentAssignment.title }}</h3>
         <div class="detail-meta">
           <span>课程：{{ currentAssignment.courseName || '未关联课程' }}</span>
           <span>截止：{{ formatDate(currentAssignment.deadline) }}</span>
           <span>总分：{{ currentAssignment.totalScore || 100 }}</span>
+          <span>状态：{{ submitLabel(currentAssignment) }}</span>
         </div>
 
         <div class="detail-section">
@@ -72,31 +75,54 @@
           </a>
         </div>
 
-        <div class="detail-section">
-          <div class="section-label">我的提交</div>
-          <el-input
-            v-model="submitForm.content"
-            type="textarea"
-            :rows="6"
-            placeholder="请输入作业答案、说明或提交内容"
-            :disabled="submitting || isOverdue(currentAssignment.deadline)"
-          />
+        <div v-if="currentAssignment.submitted" class="detail-section">
+          <div class="section-label">已提交内容</div>
+          <div class="section-content">{{ currentAssignment.submitContent || '无文字内容' }}</div>
+          <a v-if="currentAssignment.submitAttachmentUrl" :href="currentAssignment.submitAttachmentUrl" target="_blank" rel="noreferrer">
+            {{ currentAssignment.submitAttachmentUrl }}
+          </a>
+          <div class="detail-meta">
+            <span>提交时间：{{ formatDate(currentAssignment.submitTime) }}</span>
+            <span v-if="currentAssignment.myScore != null">得分：{{ currentAssignment.myScore }}</span>
+          </div>
         </div>
 
-        <el-input
-          v-model="submitForm.attachmentUrl"
-          placeholder="附件链接（可选）"
-          :disabled="submitting || isOverdue(currentAssignment.deadline)"
-        />
-        <p v-if="isOverdue(currentAssignment.deadline)" class="submit-tip">该作业已过截止时间，不能提交。</p>
+        <div v-if="currentAssignment.gradeComment" class="detail-section">
+          <div class="section-label">教师评语</div>
+          <div class="section-content">{{ currentAssignment.gradeComment }}</div>
+        </div>
+
+        <template v-if="!currentAssignment.submitted">
+          <div class="detail-section">
+            <div class="section-label">我的提交</div>
+            <el-input
+              v-model="submitForm.content"
+              type="textarea"
+              :rows="6"
+              placeholder="请输入作业答案、说明或提交内容"
+              :disabled="submitting || isOverdue(currentAssignment.deadline)"
+            />
+          </div>
+
+          <el-input
+            v-model="submitForm.attachmentUrl"
+            placeholder="附件链接（可选）"
+            :disabled="submitting || isOverdue(currentAssignment.deadline)"
+          />
+        </template>
+
+        <p v-if="isOverdue(currentAssignment.deadline) && !currentAssignment.submitted" class="submit-tip">
+          该作业已过截止时间，不能提交。
+        </p>
       </div>
 
       <template #footer>
-        <el-button @click="detailVisible = false">取消</el-button>
+        <el-button @click="detailVisible = false">关闭</el-button>
         <el-button
+          v-if="currentAssignment && !currentAssignment.submitted"
           type="primary"
           :loading="submitting"
-          :disabled="!currentAssignment || isOverdue(currentAssignment.deadline)"
+          :disabled="isOverdue(currentAssignment.deadline)"
           @click="submitAssignment"
         >
           提交作业
@@ -125,12 +151,29 @@ const formatDate = (value) => {
   return String(value).replace('T', ' ')
 }
 
+const submitLabel = (row) => {
+  if (row.myScore != null || row.mySubmitStatus === '已批改' || row.mySubmitStatus === '宸叉壒鏀?') return '已批改'
+  if (row.submitted) return '已提交'
+  if (isOverdue(row.deadline)) return '已截止'
+  return '未提交'
+}
+
+const submitTagType = (row) => {
+  if (row.myScore != null || row.mySubmitStatus === '已批改' || row.mySubmitStatus === '宸叉壒鏀?') return 'success'
+  if (row.submitted) return 'warning'
+  if (isOverdue(row.deadline)) return 'info'
+  return 'danger'
+}
+
 const visibleAssignments = computed(() => {
   if (!statusFilter.value) return assignments.value
-  if (statusFilter.value === '已结束') {
-    return assignments.value.filter(a => isOverdue(a.deadline) || a.status === '已结束')
+  if (statusFilter.value === 'pending') {
+    return assignments.value.filter(a => !a.submitted && !isOverdue(a.deadline))
   }
-  return assignments.value.filter(a => !isOverdue(a.deadline) && a.status !== '已结束')
+  if (statusFilter.value === 'submitted') {
+    return assignments.value.filter(a => a.submitted && a.myScore == null)
+  }
+  return assignments.value.filter(a => a.myScore != null || a.mySubmitStatus === '已批改' || a.mySubmitStatus === '宸叉壒鏀?')
 })
 
 const handleClick = (row) => {
