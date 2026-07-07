@@ -7,6 +7,8 @@ export const useUserStore = defineStore('user', () => {
   const userId = ref(Number(localStorage.getItem('userId')) || null)
   const username = ref(localStorage.getItem('username') || '')
   const nickname = ref(localStorage.getItem('nickname') || '')
+  const phone = ref(localStorage.getItem('phone') || '')
+  const email = ref(localStorage.getItem('email') || '')
   const roleCode = ref(localStorage.getItem('roleCode') || '')
   const roleName = ref(localStorage.getItem('roleName') || '')
   const avatar = ref(localStorage.getItem('avatar') || '')
@@ -20,6 +22,8 @@ export const useUserStore = defineStore('user', () => {
     userId.value = data.userId
     username.value = data.username
     nickname.value = data.nickname
+    phone.value = data.phone || ''
+    email.value = data.email || ''
     roleCode.value = data.roleCode
     roleName.value = data.roleName
     avatar.value = data.avatar || ''
@@ -28,6 +32,8 @@ export const useUserStore = defineStore('user', () => {
     localStorage.setItem('userId', data.userId)
     localStorage.setItem('username', data.username)
     localStorage.setItem('nickname', data.nickname)
+    localStorage.setItem('phone', data.phone || '')
+    localStorage.setItem('email', data.email || '')
     localStorage.setItem('roleCode', data.roleCode)
     localStorage.setItem('roleName', data.roleName)
     localStorage.setItem('avatar', data.avatar || '')
@@ -38,6 +44,8 @@ export const useUserStore = defineStore('user', () => {
     userId.value = null
     username.value = ''
     nickname.value = ''
+    phone.value = ''
+    email.value = ''
     roleCode.value = ''
     roleName.value = ''
     avatar.value = ''
@@ -51,10 +59,14 @@ export const useUserStore = defineStore('user', () => {
       if (res.data.code === 200) {
         const user = res.data.data
         nickname.value = user.nickname
+        phone.value = user.phone
+        email.value = user.email
         avatar.value = user.avatar
         roleCode.value = user.roleCode
         roleName.value = user.roleName
         localStorage.setItem('nickname', user.nickname)
+        localStorage.setItem('phone', user.phone || '')
+        localStorage.setItem('email', user.email || '')
         localStorage.setItem('avatar', user.avatar || '')
         localStorage.setItem('roleCode', user.roleCode)
         localStorage.setItem('roleName', user.roleName)
@@ -65,7 +77,7 @@ export const useUserStore = defineStore('user', () => {
   }
 
   return {
-    token, userId, username, nickname, roleCode, roleName, avatar,
+    token, userId, username, nickname, phone, email, roleCode, roleName, avatar,
     isLoggedIn, isTeacher, isStudent,
     setLoginData, clearLoginData, fetchUserInfo
   }

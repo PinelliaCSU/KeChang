@@ -2,118 +2,189 @@
     <div class="profile-shell">
         <DashboardHeader />
         <div class="profile-body">
+            <!-- 页面标题 + 编辑按钮 -->
             <div class="page-title-bar">
-                <h2 class="page-title">👤 个人中心</h2>
+                <h2 class="page-title">个人中心</h2>
+                <el-button type="primary" @click="showEditDialog = true">
+                    <el-icon style="margin-right:4px">
+                        <Edit />
+                    </el-icon>编辑资料
+                </el-button>
             </div>
 
-            <div class="profile-grid">
-                <!-- 左侧：基本信息卡片 -->
-                <div class="panel info-card">
-                    <div class="avatar-section">
-                        <el-avatar :size="80" class="profile-avatar">{{ displayName.charAt(0) }}</el-avatar>
-                        <div class="avatar-info">
-                            <h3 class="user-display-name">{{ displayName }}</h3>
-                            <el-tag size="small" :type="userStore.isTeacher ? 'warning' : 'success'">
-                                {{ userStore.isTeacher ? '教师' : '学生' }}
-                            </el-tag>
-                        </div>
+            <!-- 信息展示卡片（流式布局） -->
+            <div class="panel info-display-card">
+                <!-- 用户头像 -->
+                <div class="info-row avatar-row">
+                    <span class="info-label">头像</span>
+                    <div class="info-value">
+                        <el-avatar :size="72" class="display-avatar">
+                            {{ displayName.charAt(0) }}
+                        </el-avatar>
                     </div>
-                    <el-divider />
-                    <el-form :model="profileForm" label-width="80px" class="profile-form">
-                        <el-form-item label="用户名">
-                            <el-input v-model="profileForm.username" disabled />
-                        </el-form-item>
-                        <el-form-item label="昵称">
-                            <el-input v-model="profileForm.nickname" placeholder="请输入昵称" maxlength="20"
-                                show-word-limit />
-                        </el-form-item>
-                        <el-form-item label="手机号">
-                            <el-input v-model="profileForm.phone" placeholder="请输入手机号" />
-                        </el-form-item>
-                        <el-form-item label="邮箱">
-                            <el-input v-model="profileForm.email" placeholder="请输入邮箱" />
-                        </el-form-item>
-                        <el-form-item>
-                            <el-button type="primary" @click="handleSaveProfile" :loading="saving">保存修改</el-button>
-                        </el-form-item>
-                    </el-form>
+                </div>
+                <el-divider class="info-divider" />
+
+                <!-- 用户姓名 -->
+                <div class="info-row">
+                    <span class="info-label">用户姓名</span>
+                    <span class="info-value">{{ displayName }}</span>
+                </div>
+                <el-divider class="info-divider" />
+
+                <!-- 角色 -->
+                <div class="info-row">
+                    <span class="info-label">角色</span>
+                    <span class="info-value">
+                        <el-tag size="small" :type="userStore.isTeacher ? 'warning' : 'success'">
+                            {{ roleDisplayName }}
+                        </el-tag>
+                    </span>
+                </div>
+                <el-divider class="info-divider" />
+
+                <!-- 用户名 -->
+                <div class="info-row">
+                    <span class="info-label">用户名</span>
+                    <span class="info-value">{{ userStore.username || '-' }}</span>
+                </div>
+                <el-divider class="info-divider" />
+
+                <!-- 昵称 -->
+                <div class="info-row">
+                    <span class="info-label">昵称</span>
+                    <span class="info-value">{{ userStore.nickname || '-' }}</span>
+                </div>
+                <el-divider class="info-divider" />
+
+                <!-- 手机号 -->
+                <div class="info-row">
+                    <span class="info-label">手机号</span>
+                    <span class="info-value">{{ userStore.phone || profileForm.phone || '-' }}</span>
+                </div>
+                <el-divider class="info-divider" />
+
+                <!-- 邮箱 -->
+                <div class="info-row">
+                    <span class="info-label">邮箱</span>
+                    <span class="info-value">{{ userStore.email || profileForm.email || '-' }}</span>
                 </div>
 
-                <!-- 右侧：修改密码 + 账户统计 -->
-                <div class="right-col">
-                    <div class="panel password-card">
-                        <h3 class="card-title">🔒 修改密码</h3>
-                        <el-form :model="pwdForm" label-width="80px" class="profile-form">
-                            <el-form-item label="原密码">
-                                <el-input v-model="pwdForm.oldPassword" type="password" placeholder="请输入原密码"
-                                    show-password />
-                            </el-form-item>
-                            <el-form-item label="新密码">
-                                <el-input v-model="pwdForm.newPassword" type="password" placeholder="请输入新密码（至少6位）"
-                                    show-password />
-                            </el-form-item>
-                            <el-form-item label="确认密码">
-                                <el-input v-model="pwdForm.confirmPassword" type="password" placeholder="请再次输入新密码"
-                                    show-password />
-                            </el-form-item>
-                            <el-form-item>
-                                <el-button type="warning" @click="handleChangePwd"
-                                    :loading="changingPwd">修改密码</el-button>
-                            </el-form-item>
-                        </el-form>
+                <!-- 学生/教师扩展信息 -->
+                <template v-if="userExtInfo.realName">
+                    <el-divider class="info-divider" />
+                    <div class="info-row">
+                        <span class="info-label">真实姓名</span>
+                        <span class="info-value">{{ userExtInfo.realName }}</span>
                     </div>
+                </template>
+                <template v-if="userExtInfo.studentNo">
+                    <el-divider class="info-divider" />
+                    <div class="info-row">
+                        <span class="info-label">学号</span>
+                        <span class="info-value">{{ userExtInfo.studentNo }}</span>
+                    </div>
+                </template>
+                <template v-if="userExtInfo.grade">
+                    <el-divider class="info-divider" />
+                    <div class="info-row">
+                        <span class="info-label">年级</span>
+                        <span class="info-value">{{ userExtInfo.grade }}</span>
+                    </div>
+                </template>
+                <template v-if="userExtInfo.major">
+                    <el-divider class="info-divider" />
+                    <div class="info-row">
+                        <span class="info-label">专业</span>
+                        <span class="info-value">{{ userExtInfo.major }}</span>
+                    </div>
+                </template>
+                <template v-if="userExtInfo.className">
+                    <el-divider class="info-divider" />
+                    <div class="info-row">
+                        <span class="info-label">班级</span>
+                        <span class="info-value">{{ userExtInfo.className }}</span>
+                    </div>
+                </template>
+                <template v-if="userExtInfo.title">
+                    <el-divider class="info-divider" />
+                    <div class="info-row">
+                        <span class="info-label">职称</span>
+                        <span class="info-value">{{ userExtInfo.title }}</span>
+                    </div>
+                </template>
+                <template v-if="userExtInfo.department">
+                    <el-divider class="info-divider" />
+                    <div class="info-row">
+                        <span class="info-label">院系</span>
+                        <span class="info-value">{{ userExtInfo.department }}</span>
+                    </div>
+                </template>
+            </div>
 
-                    <div class="panel stats-card">
-                        <h3 class="card-title">📊 账户统计</h3>
-                        <div class="stats-grid">
-                            <div class="stat-item">
-                                <span class="stat-value">{{ stats.courseCount }}</span>
-                                <span class="stat-label">课程数</span>
-                            </div>
-                            <div class="stat-item">
-                                <span class="stat-value">{{ stats.todoCount }}</span>
-                                <span class="stat-label">待办数</span>
-                            </div>
-                            <div class="stat-item">
-                                <span class="stat-value">{{ stats.completedCount }}</span>
-                                <span class="stat-label">已完成</span>
-                            </div>
-                        </div>
+            <!-- 账户统计 -->
+            <div class="panel stats-card">
+                <h3 class="card-title">账户统计</h3>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <span class="stat-value">{{ stats.courseCount }}</span>
+                        <span class="stat-label">课程数</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value">{{ stats.todoCount }}</span>
+                        <span class="stat-label">待办数</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value">{{ stats.completedCount }}</span>
+                        <span class="stat-label">已完成</span>
                     </div>
                 </div>
             </div>
         </div>
+
+        <!-- 编辑资料弹窗组件 -->
+        <ProfileEditDialog v-model="showEditDialog" :user-info="editUserInfo" @saved="onProfileSaved" />
     </div>
 </template>
 
 <script setup>
 import { reactive, ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
+import { Edit } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 import { authApi, courseApi, assignmentApi, examApi } from '@/api'
 import DashboardHeader from '@/components/DashboardHeader.vue'
+import ProfileEditDialog from '@/components/ProfileEditDialog.vue'
 
-const router = useRouter()
 const userStore = useUserStore()
 
-const saving = ref(false)
-const changingPwd = ref(false)
+const showEditDialog = ref(false)
 
 const displayName = computed(() => userStore.nickname || userStore.username || '同学')
 
+const roleDisplayName = computed(() => {
+    if (userStore.isTeacher) return '教师'
+    if (userStore.isStudent) return '学生'
+    return userStore.roleName || '-'
+})
+
+// 用于传递给编辑弹窗的当前用户信息
+const editUserInfo = computed(() => ({
+    username: userStore.username || '',
+    nickname: userStore.nickname || '',
+    phone: userStore.phone || '',
+    email: userStore.email || '',
+    avatar: userStore.avatar || '',
+    realName: userExtInfo.value.realName
+}))
+
+// 本地缓存的表单数据（用于展示 phone/email 等 store 中可能不存在的字段）
 const profileForm = reactive({
-    username: '',
-    nickname: '',
     phone: '',
     email: ''
 })
 
-const pwdForm = reactive({
-    oldPassword: '',
-    newPassword: '',
-    confirmPassword: ''
-})
+// 从后端获取的扩展信息
+const userExtInfo = ref({})
 
 const stats = reactive({
     courseCount: 0,
@@ -122,11 +193,37 @@ const stats = reactive({
 })
 
 // ==================== 加载数据 ====================
-const loadProfile = () => {
-    profileForm.username = userStore.username || ''
-    profileForm.nickname = userStore.nickname || ''
-    profileForm.phone = userStore.phone || ''
-    profileForm.email = userStore.email || ''
+const loadFullProfile = async () => {
+    try {
+        const res = await authApi.me()
+        if (res.data?.code === 200) {
+            const user = res.data.data
+            profileForm.phone = user.phone || ''
+            profileForm.email = user.email || ''
+            userExtInfo.value = {
+                realName: user.realName || '',
+                studentNo: user.studentNo || '',
+                grade: user.grade || '',
+                major: user.major || '',
+                className: user.className || '',
+                title: user.title || '',
+                department: user.department || ''
+            }
+            // 同步到 store
+            if (user.nickname) {
+                userStore.nickname = user.nickname
+                localStorage.setItem('nickname', user.nickname)
+            }
+            if (user.avatar) {
+                userStore.avatar = user.avatar
+                localStorage.setItem('avatar', user.avatar)
+            }
+        }
+    } catch (e) {
+        // 请求失败时使用 store 中的缓存数据
+        profileForm.phone = localStorage.getItem('phone') || ''
+        profileForm.email = localStorage.getItem('email') || ''
+    }
 }
 
 const loadStats = async () => {
@@ -146,36 +243,17 @@ const loadStats = async () => {
     } catch (e) { /* ignore */ }
 }
 
-// ==================== 保存 ====================
-const handleSaveProfile = async () => {
-    saving.value = true
-    try {
-        userStore.nickname = profileForm.nickname
-        localStorage.setItem('nickname', profileForm.nickname)
-        // TODO: 调用后端更新 profile API
-        ElMessage.success('个人信息已更新')
-    } catch (e) {
-        ElMessage.error('保存失败')
-    } finally { saving.value = false }
+// ==================== 编辑保存回调 ====================
+const onProfileSaved = (savedData) => {
+    // 更新本地缓存的展示数据
+    if (savedData.phone !== undefined) profileForm.phone = savedData.phone
+    if (savedData.email !== undefined) profileForm.email = savedData.email
+    // 同步到 localStorage
+    if (savedData.phone) localStorage.setItem('phone', savedData.phone)
+    if (savedData.email) localStorage.setItem('email', savedData.email)
 }
 
-const handleChangePwd = async () => {
-    if (!pwdForm.oldPassword) { ElMessage.warning('请输入原密码'); return }
-    if (!pwdForm.newPassword || pwdForm.newPassword.length < 6) { ElMessage.warning('新密码至少6位'); return }
-    if (pwdForm.newPassword !== pwdForm.confirmPassword) { ElMessage.warning('两次密码不一致'); return }
-
-    changingPwd.value = true
-    try {
-        await authApi.changePassword({ password: pwdForm.newPassword })
-        ElMessage.success('密码修改成功，请重新登录')
-        userStore.clearLoginData()
-        router.push('/login')
-    } catch (e) {
-        ElMessage.error(e.response?.data?.message || '密码修改失败')
-    } finally { changingPwd.value = false }
-}
-
-onMounted(() => { loadProfile(); loadStats() })
+onMounted(() => { loadFullProfile(); loadStats() })
 </script>
 
 <style scoped>
@@ -192,12 +270,16 @@ onMounted(() => { loadProfile(); loadStats() })
 .profile-body {
     flex: 1;
     overflow-y: auto;
-    padding: 24px;
+    padding: 24px 32px;
     display: flex;
     flex-direction: column;
     gap: 20px;
+    max-width: 720px;
+    margin: 0 auto;
+    width: 100%;
 }
 
+/* ========== 页面标题栏 ========== */
 .page-title-bar {
     display: flex;
     align-items: center;
@@ -205,92 +287,133 @@ onMounted(() => { loadProfile(); loadStats() })
 }
 
 .page-title {
-    font-size: 20px;
-    font-weight: 600;
-    color: #303133;
+    font-size: 22px;
+    font-weight: 700;
+    color: #1d2129;
     margin: 0;
 }
 
-.profile-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 20px;
-    align-items: start;
-}
-
-@media (max-width: 900px) {
-    .profile-grid {
-        grid-template-columns: 1fr;
-    }
-}
-
+/* ========== 面板通用 ========== */
 .panel {
     background: #fff;
-    border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-    padding: 24px;
+    border-radius: 14px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+    padding: 28px 32px;
 }
 
-.right-col {
+/* ========== 信息展示卡片（流式布局） ========== */
+.info-display-card {
     display: flex;
     flex-direction: column;
-    gap: 20px;
 }
 
+.info-row {
+    display: flex;
+    align-items: center;
+    padding: 6px 0;
+    min-height: 44px;
+}
+
+.info-label {
+    width: 90px;
+    flex-shrink: 0;
+    font-size: 14px;
+    color: #86909c;
+    font-weight: 500;
+}
+
+.info-value {
+    flex: 1;
+    font-size: 15px;
+    color: #1d2129;
+    display: flex;
+    align-items: center;
+}
+
+.avatar-row {
+    padding: 4px 0 12px;
+}
+
+.display-avatar {
+    background: linear-gradient(135deg, #20c997, #0d9488);
+    color: #fff;
+    font-size: 28px;
+    font-weight: 600;
+}
+
+.info-divider {
+    margin: 4px 0;
+}
+
+/* ========== 统计卡片 ========== */
 .card-title {
     font-size: 16px;
     font-weight: 600;
-    margin-bottom: 16px;
-    color: #303133;
-}
-
-.avatar-section {
-    display: flex;
-    align-items: center;
-    gap: 20px;
-    margin-bottom: 8px;
-}
-
-.profile-avatar {
-    background: linear-gradient(135deg, #20c997, #0d9488);
-    color: #fff;
-    font-size: 32px;
-    font-weight: 600;
-}
-
-.avatar-info h3 {
-    font-size: 20px;
-    margin: 0 0 6px 0;
-    color: #303133;
-}
-
-.profile-form {
-    max-width: 400px;
+    margin: 0 0 20px;
+    color: #1d2129;
 }
 
 .stats-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 12px;
+    gap: 16px;
 }
 
 .stat-item {
     text-align: center;
-    padding: 16px 8px;
-    border-radius: 10px;
+    padding: 20px 12px;
+    border-radius: 12px;
     background: #f8f9fb;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.stat-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(32, 201, 151, 0.1);
 }
 
 .stat-value {
     display: block;
-    font-size: 28px;
+    font-size: 30px;
     font-weight: 700;
     color: #20c997;
+    line-height: 1.3;
 }
 
 .stat-label {
-    font-size: 12px;
-    color: #909399;
+    font-size: 13px;
+    color: #86909c;
     margin-top: 4px;
+    display: block;
+}
+
+/* ========== 响应式 ========== */
+@media (max-width: 768px) {
+    .profile-body {
+        padding: 16px;
+        max-width: 100%;
+    }
+
+    .panel {
+        padding: 20px 16px;
+    }
+
+    .info-label {
+        width: 70px;
+        font-size: 13px;
+    }
+
+    .info-value {
+        font-size: 14px;
+    }
+
+    .stats-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+    }
+
+    .stat-value {
+        font-size: 24px;
+    }
 }
 </style>

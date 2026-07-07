@@ -3,6 +3,7 @@ package com.kechang.controller.auth;
 import com.kechang.common.Result;
 import com.kechang.dto.LoginDTO;
 import com.kechang.dto.PasswordDTO;
+import com.kechang.dto.ProfileDTO;
 import com.kechang.dto.RegisterDTO;
 import com.kechang.service.AuthService;
 import com.kechang.vo.LoginVO;
@@ -54,6 +55,16 @@ public class AuthController {
     public Result<Void> changePassword(@Valid @RequestBody PasswordDTO dto) {
         Long userId = (Long) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         authService.changePassword(userId, dto);
+        return Result.success();
+    }
+
+    /**
+     * 更新个人资料
+     */
+    @PutMapping("/profile")
+    public Result<Void> updateProfile(@RequestBody ProfileDTO dto) {
+        Long userId = (Long) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        authService.updateProfile(userId, dto);
         return Result.success();
     }
 

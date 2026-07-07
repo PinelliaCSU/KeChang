@@ -5,6 +5,7 @@ import com.kechang.common.BusinessException;
 import com.kechang.config.JwtUtil;
 import com.kechang.dto.LoginDTO;
 import com.kechang.dto.PasswordDTO;
+import com.kechang.dto.ProfileDTO;
 import com.kechang.dto.RegisterDTO;
 import com.kechang.entity.*;
 import com.kechang.mapper.*;
@@ -149,6 +150,37 @@ public class AuthService {
             throw BusinessException.badRequest("旧密码不正确");
         }
         user.setPassword(passwordEncoder.encode(dto.getNewPassword()));
+        sysUserMapper.updateById(user);
+    }
+
+    /**
+     * 更新用户资料
+     */
+    public void updateProfile(Long userId, ProfileDTO dto) {
+        SysUser user = sysUserMapper.selectById(userId);
+        if (user == null) {
+            throw BusinessException.notFound("用户不存在");
+        }
+        if (dto.getNickname() != null) {
+            user.setNickname(dto.getNickname());
+        }
+        if (dto.getPhone() != null) {
+            user.setPhone(dto.getPhone());
+        }
+        if (dto.getEmail() != null) {
+            // 检查邮箱是否被其他用户占用
+            SysUser exist = sysUserMapper.selectOne(
+                    new LambdaQueryWrapper<SysUser>()
+                            .eq(SysUser::getEmail, dto.getEmail())
+                            .ne(SysUser::getId, userId));
+            if (exist != null) {
+                throw BusinessException.badRequest("该邮箱已被其他用户使用");
+            }
+            user.setEmail(dto.getEmail());
+        }
+        if (dto.getAvatar() != null) {
+            user.setAvatar(dto.getAvatar());
+        }
         sysUserMapper.updateById(user);
     }
 
