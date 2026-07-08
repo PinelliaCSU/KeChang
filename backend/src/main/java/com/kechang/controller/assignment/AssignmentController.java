@@ -14,6 +14,9 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api/assignments")
 @RequiredArgsConstructor
@@ -67,9 +70,16 @@ public class AssignmentController {
 
     @PostMapping("/{id}/submit")
     @PreAuthorize("hasAuthority('ROLE_STUDENT')")
-    public Result<Void> submit(@PathVariable Long id, @RequestParam(required = false) String content,
-            @RequestParam(required = false) String attachmentUrl) {
-        assignmentService.submit(id, getUserId(), content, attachmentUrl);
+    public Result<Void> submit(@PathVariable Long id, @RequestBody Map<String, Object> body) {
+        String content = body.get("content") != null ? body.get("content").toString() : null;
+        String attachmentUrl = body.get("attachmentUrl") != null ? body.get("attachmentUrl").toString() : null;
+        List<String> attachmentUrls = body.get("attachmentUrls") instanceof List
+                ? ((List<?>) body.get("attachmentUrls")).stream().map(Object::toString).toList() : null;
+        List<String> attachmentNames = body.get("attachmentNames") instanceof List
+                ? ((List<?>) body.get("attachmentNames")).stream().map(Object::toString).toList() : null;
+        List<Long> attachmentSizes = body.get("attachmentSizes") instanceof List
+                ? ((List<?>) body.get("attachmentSizes")).stream().map(o -> o instanceof Number ? ((Number) o).longValue() : Long.parseLong(o.toString())).toList() : null;
+        assignmentService.submit(id, getUserId(), content, attachmentUrl, attachmentUrls, attachmentNames, attachmentSizes);
         return Result.success();
     }
 

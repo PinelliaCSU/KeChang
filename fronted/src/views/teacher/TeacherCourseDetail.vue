@@ -43,7 +43,7 @@
                 <el-button size="small" @click="openChapterDialog(chapter)">编辑章节</el-button>
                 <el-button size="small" type="danger" @click="deleteChapter(chapter)">删除章节</el-button>
                 <el-upload action="#" :http-request="payload => uploadResource(payload, chapter.id)" :show-file-list="false">
-                  <el-button size="small" type="primary">上传资源</el-button>
+                  <el-button size="small" type="primary" :loading="uploading">上传资源</el-button>
                 </el-upload>
               </div>
 
@@ -51,10 +51,13 @@
                 <h4 class="group-title">资源</h4>
                 <div v-if="resourcesByChapter(chapter.id).length" class="item-list">
                   <div v-for="resource in resourcesByChapter(chapter.id)" :key="resource.id" class="content-item">
-                    <span class="item-kind">课件</span>
+                    <span class="item-kind">{{ resource.resourceType || '课件' }}</span>
                     <span class="item-title">{{ resource.resourceName }}</span>
-                    <span class="item-meta">{{ resource.resourceType || 'FILE' }} · {{ formatFileSize(resource.fileSize) }}</span>
-                    <el-link v-if="resource.fileUrl" :href="resource.fileUrl" target="_blank" type="primary">查看文件</el-link>
+                    <span class="item-meta">{{ formatFileSize(resource.fileSize) }}</span>
+                    <div class="item-actions">
+                      <el-link v-if="resource.fileUrl" :href="resource.fileUrl" target="_blank" type="primary">查看</el-link>
+                      <el-button size="small" type="danger" @click="deleteResource(resource)">删除</el-button>
+                    </div>
                   </div>
                 </div>
                 <el-empty v-else description="本章节暂无资源" :image-size="70" />
@@ -130,6 +133,7 @@ const assignments = ref([])
 const openChapterNames = ref([])
 const chapterDialogVisible = ref(false)
 const savingChapter = ref(false)
+const uploading = ref(false)
 const editingChapterId = ref(null)
 
 const chapterForm = reactive({ chapterName: '', sortOrder: 1, description: '' })
@@ -228,15 +232,32 @@ const deleteChapter = async (chapter) => {
 }
 
 const uploadResource = async ({ file }, chapterId) => {
+  const raw = file instanceof File ? file : (file?.raw || file?.file || file)
   const formData = new FormData()
-  formData.append('file', file)
+  formData.append('file', raw)
   formData.append('chapterId', chapterId)
+  uploading.value = true
   try {
     await courseApi.uploadResource(courseId(), formData)
     ElMessage.success('资源上传成功')
     await Promise.all([fetchResources(), fetchCourse()])
   } catch (e) {
     ElMessage.error(e.response?.data?.message || '资源上传失败')
+  } finally {
+    uploading.value = false
+  }
+}
+
+const deleteResource = async (resource) => {
+  try {
+    await ElMessageBox.confirm(`确定删除资源"${resource.resourceName}"吗？`, '删除资源', {
+      type: 'warning', confirmButtonText: '删除', cancelButtonText: '取消'
+    })
+    await courseApi.deleteResource(courseId(), resource.id)
+    ElMessage.success('资源已删除')
+    await Promise.all([fetchResources(), fetchCourse()])
+  } catch (e) {
+    if (e !== 'cancel') ElMessage.error(e.response?.data?.message || '删除资源失败')
   }
 }
 
@@ -270,4 +291,5 @@ onMounted(loadAll)
 .item-kind.assignment { color: #e6a23c; background: #fdf6ec; }
 .item-title { color: #303133; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .item-meta { color: #909399; font-size: 13px; }
+.item-actions { display: flex; align-items: center; gap: 8px; }
 </style>

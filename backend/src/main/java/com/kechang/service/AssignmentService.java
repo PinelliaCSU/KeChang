@@ -28,6 +28,7 @@ public class AssignmentService {
     private final AssignmentMapper assignmentMapper;
     private final AssignmentSubmitMapper submitMapper;
     private final AssignmentGradeMapper gradeMapper;
+    private final AttachmentFileMapper attachmentFileMapper;
     private final CourseMapper courseMapper;
     private final CourseStudentMapper courseStudentMapper;
     private final StudentProfileMapper studentProfileMapper;
@@ -80,17 +81,26 @@ public class AssignmentService {
     }
 
     public void create(AssignmentDTO dto, Long teacherId) {
+        // 如果传了多文件但没传单个 URL，用第一个文件的 URL
+        String effectiveUrl = dto.getAttachmentUrl();
+        if ((effectiveUrl == null || effectiveUrl.isEmpty()) && dto.getAttachmentUrls() != null && !dto.getAttachmentUrls().isEmpty()) {
+            effectiveUrl = dto.getAttachmentUrls().get(0);
+        }
+
         Assignment a = new Assignment();
         a.setCourseId(dto.getCourseId());
         a.setChapterId(dto.getChapterId());
         a.setTitle(dto.getTitle());
         a.setContent(dto.getContent());
-        a.setAttachmentUrl(dto.getAttachmentUrl());
+        a.setAttachmentUrl(effectiveUrl);
         a.setDeadline(dto.getDeadline());
         a.setTotalScore(dto.getTotalScore() != null ? dto.getTotalScore() : 100.0);
         a.setStatus("进行中");
         a.setCreateBy(teacherId);
         assignmentMapper.insert(a);
+
+        // 保存多文件附件
+        saveAttachments("ASSIGNMENT", a.getId(), dto.getAttachmentUrls(), dto.getAttachmentNames(), dto.getAttachmentSizes());
     }
 
     public Assignment getDetail(Long id) {
@@ -102,21 +112,55 @@ public class AssignmentService {
         if (a == null) {
             throw BusinessException.notFound("作业不存在");
         }
+        String effectiveUrl = dto.getAttachmentUrl();
+        if ((effectiveUrl == null || effectiveUrl.isEmpty()) && dto.getAttachmentUrls() != null && !dto.getAttachmentUrls().isEmpty()) {
+            effectiveUrl = dto.getAttachmentUrls().get(0);
+        }
         a.setTitle(dto.getTitle());
         a.setContent(dto.getContent());
         a.setChapterId(dto.getChapterId());
         a.setDeadline(dto.getDeadline());
-        a.setAttachmentUrl(dto.getAttachmentUrl());
+        a.setAttachmentUrl(effectiveUrl);
         a.setTotalScore(dto.getTotalScore() != null ? dto.getTotalScore() : a.getTotalScore());
         assignmentMapper.updateById(a);
+
+        // 更新附件：先删旧附件，再保存新的
+        attachmentFileMapper.delete(new LambdaQueryWrapper<AttachmentFile>()
+                .eq(AttachmentFile::getTargetType, "ASSIGNMENT")
+                .eq(AttachmentFile::getTargetId, id));
+        saveAttachments("ASSIGNMENT", id, dto.getAttachmentUrls(), dto.getAttachmentNames(), dto.getAttachmentSizes());
     }
 
     public void delete(Long id) {
         assignmentMapper.deleteById(id);
     }
 
+    private void saveAttachments(String targetType, Long targetId, List<String> urls, List<String> names, List<Long> sizes) {
+        if (urls == null || urls.isEmpty()) return;
+        for (int i = 0; i < urls.size(); i++) {
+            String url = urls.get(i);
+            if (url == null || url.isEmpty()) continue;
+            AttachmentFile af = new AttachmentFile();
+            af.setTargetType(targetType);
+            af.setTargetId(targetId);
+            af.setFileUrl(url);
+            af.setFileName(names != null && i < names.size() ? names.get(i) : url.substring(url.lastIndexOf('/') + 1));
+            af.setFileSize(sizes != null && i < sizes.size() ? sizes.get(i) : 0L);
+            af.setSortOrder(i);
+            attachmentFileMapper.insert(af);
+        }
+    }
+
+    private List<AttachmentFile> getAttachments(String targetType, Long targetId) {
+        return attachmentFileMapper.selectList(new LambdaQueryWrapper<AttachmentFile>()
+                .eq(AttachmentFile::getTargetType, targetType)
+                .eq(AttachmentFile::getTargetId, targetId)
+                .orderByAsc(AttachmentFile::getSortOrder));
+    }
+
     @Transactional
-    public void submit(Long assignmentId, Long studentId, String content, String attachmentUrl) {
+    public void submit(Long assignmentId, Long studentId, String content, String attachmentUrl,
+            List<String> attachmentUrls, List<String> attachmentNames, List<Long> attachmentSizes) {
         Assignment a = assignmentMapper.selectById(assignmentId);
         if (a == null) {
             throw BusinessException.notFound("作业不存在");
@@ -140,14 +184,23 @@ public class AssignmentService {
             throw BusinessException.badRequest("已提交过该作业");
         }
 
+        // 如果传了多文件但没传单个 URL，用第一个文件的 URL
+        String effectiveUrl = attachmentUrl;
+        if ((effectiveUrl == null || effectiveUrl.isEmpty()) && attachmentUrls != null && !attachmentUrls.isEmpty()) {
+            effectiveUrl = attachmentUrls.get(0);
+        }
+
         AssignmentSubmit s = new AssignmentSubmit();
         s.setAssignmentId(assignmentId);
         s.setStudentId(studentId);
         s.setContent(content);
-        s.setAttachmentUrl(attachmentUrl);
+        s.setAttachmentUrl(effectiveUrl);
         s.setSubmitTime(LocalDateTime.now());
         s.setStatus("待批改");
         submitMapper.insert(s);
+
+        // 保存多文件附件
+        saveAttachments("SUBMIT", s.getId(), attachmentUrls, attachmentNames, attachmentSizes);
     }
 
     public PageResult<AssignmentSubmitVO> getSubmitList(Long assignmentId, int page, int size) {
@@ -195,6 +248,7 @@ public class AssignmentService {
         vo.setTitle(assignment.getTitle());
         vo.setContent(assignment.getContent());
         vo.setAttachmentUrl(assignment.getAttachmentUrl());
+        vo.setAttachments(getAttachments("ASSIGNMENT", assignment.getId()));
         vo.setDeadline(assignment.getDeadline());
         vo.setTotalScore(assignment.getTotalScore());
         vo.setStatus(assignment.getStatus());
@@ -232,6 +286,7 @@ public class AssignmentService {
         vo.setMySubmitId(submit.getId());
         vo.setSubmitContent(submit.getContent());
         vo.setSubmitAttachmentUrl(submit.getAttachmentUrl());
+        vo.setSubmitAttachments(getAttachments("SUBMIT", submit.getId()));
         vo.setSubmitTime(submit.getSubmitTime());
         vo.setMySubmitStatus(submit.getStatus());
         vo.setMyScore(submit.getScore());
@@ -257,6 +312,7 @@ public class AssignmentService {
         vo.setScore(submit.getScore());
         vo.setStatus(submit.getStatus());
         vo.setCreateTime(submit.getCreateTime());
+        vo.setAttachments(getAttachments("SUBMIT", submit.getId()));
 
         AssignmentGrade grade = gradeMapper.selectOne(new LambdaQueryWrapper<AssignmentGrade>()
                 .eq(AssignmentGrade::getSubmitId, submit.getId())

@@ -5,12 +5,20 @@ import com.kechang.common.Result;
 import com.kechang.entity.*;
 import com.kechang.service.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 // ==================== 实训管理 ====================
 @RestController
@@ -363,5 +371,33 @@ class NotificationController {
         n.setSenderId(uid());
         notifService.send(n);
         return Result.success();
+    }
+}
+
+// ==================== 通用文件上传 ====================
+@RestController
+@RequestMapping("/api/upload")
+class UploadController {
+
+    @Value("${kechang.upload.path:./uploads}")
+    private String uploadBasePath;
+
+    @PostMapping("/file")
+    @PreAuthorize("hasAnyAuthority('ROLE_TEACHER','ROLE_STUDENT')")
+    public Result<Map<String, Object>> uploadFile(@RequestPart("file") MultipartFile file) throws IOException {
+        Path baseDir = Paths.get(uploadBasePath).toAbsolutePath().normalize();
+        Path commonDir = baseDir.resolve("common");
+        Files.createDirectories(commonDir);
+
+        String safeName = file.getOriginalFilename() != null
+                ? file.getOriginalFilename().replace("\\", "/").replaceAll(".*/", "")
+                : "file";
+        String uuid = UUID.randomUUID().toString();
+        String fileName = uuid + "_" + safeName;
+        Path destFile = commonDir.resolve(fileName);
+        Files.copy(file.getInputStream(), destFile, StandardCopyOption.REPLACE_EXISTING);
+
+        String url = "/uploads/common/" + fileName;
+        return Result.success(Map.of("url", url, "name", safeName, "size", Files.size(destFile)));
     }
 }

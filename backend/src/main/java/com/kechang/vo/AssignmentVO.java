@@ -1,8 +1,10 @@
 package com.kechang.vo;
 
+import com.kechang.entity.AttachmentFile;
 import lombok.Data;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 public class AssignmentVO {
@@ -14,6 +16,7 @@ public class AssignmentVO {
     private String title;
     private String content;
     private String attachmentUrl;
+    private List<AttachmentFile> attachments;
     private LocalDateTime deadline;
     private Double totalScore;
     private String status;
@@ -25,6 +28,7 @@ public class AssignmentVO {
     private Long mySubmitId;
     private String submitContent;
     private String submitAttachmentUrl;
+    private List<AttachmentFile> submitAttachments;
     private LocalDateTime submitTime;
     private String mySubmitStatus;
     private Double myScore;

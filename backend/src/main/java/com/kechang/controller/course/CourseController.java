@@ -10,14 +10,18 @@ import com.kechang.service.CourseService;
 import com.kechang.vo.CourseVO;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.UUID;
 
@@ -119,6 +123,11 @@ public class CourseController {
         return Result.success();
     }
 
+    @Value("${kechang.upload.path:./uploads}")
+    private String uploadBasePath;
+
+    // ... (other fields via @RequiredArgsConstructor)
+
     /**
      * 上传课程资源
      */
@@ -126,17 +135,23 @@ public class CourseController {
     @PreAuthorize("hasAuthority('ROLE_TEACHER')")
     public Result<Void> uploadResource(@PathVariable Long id,
             @RequestParam(required = false) Long chapterId,
-            @RequestParam("file") MultipartFile file) throws IOException {
-        // 简单本地文件存储
-        String uploadDir = "./uploads/courses/" + id + "/";
-        new File(uploadDir).mkdirs();
-        String fileName = UUID.randomUUID() + "_" + file.getOriginalFilename();
-        File destFile = new File(uploadDir + fileName);
-        file.transferTo(destFile);
+            @RequestPart("file") MultipartFile file) throws IOException {
+        // 使用配置的路径 + courses/{id} 子目录
+        Path baseDir = Paths.get(uploadBasePath).toAbsolutePath().normalize();
+        Path courseDir = baseDir.resolve("courses").resolve(String.valueOf(id));
+        Files.createDirectories(courseDir);
+
+        String safeName = file.getOriginalFilename() != null
+                ? file.getOriginalFilename().replace("\\", "/").replaceAll(".*/", "")
+                : "file";
+        String fileName = UUID.randomUUID() + "_" + safeName;
+        Path destFile = courseDir.resolve(fileName);
+        Files.copy(file.getInputStream(), destFile, StandardCopyOption.REPLACE_EXISTING);
+
         String fileUrl = "/uploads/courses/" + id + "/" + fileName;
-        String resourceType = getResourceType(file.getOriginalFilename());
+        String resourceType = getResourceType(safeName);
         Long userId = (Long) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        courseService.uploadResource(id, chapterId, file.getOriginalFilename(), resourceType, fileUrl, file.getSize(), userId);
+        courseService.uploadResource(id, chapterId, safeName, resourceType, fileUrl, Files.size(destFile), userId);
         return Result.success();
     }
 
@@ -181,6 +196,17 @@ public class CourseController {
     public Result<List<CourseResource>> listResources(@PathVariable Long id,
             @RequestParam(required = false) Long chapterId) {
         return Result.success(courseService.getResources(id, chapterId, currentUserId(), currentRole()));
+    }
+
+    /**
+     * 删除课程资源
+     */
+    @DeleteMapping("/{courseId}/resources/{resourceId}")
+    @PreAuthorize("hasAuthority('ROLE_TEACHER')")
+    public Result<Void> deleteResource(@PathVariable Long courseId, @PathVariable Long resourceId) {
+        Long userId = (Long) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        courseService.deleteResource(courseId, resourceId, userId);
+        return Result.success();
     }
 
     private String getResourceType(String filename) {

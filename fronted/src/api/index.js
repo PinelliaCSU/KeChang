@@ -21,6 +21,7 @@ export const courseApi = {
   updateChapter: (id, chapterId, data) => request.put(`/courses/${id}/chapters/${chapterId}`, data),
   deleteChapter: (id, chapterId) => request.delete(`/courses/${id}/chapters/${chapterId}`),
   uploadResource: (id, formData) => request.post(`/courses/${id}/resources`, formData),
+  deleteResource: (courseId, resourceId) => request.delete(`/courses/${courseId}/resources/${resourceId}`),
   getStudents: (id, params) => request.get(`/courses/${id}/students`, { params }),
   getResources: (id, params) => request.get(`/courses/${id}/resources`, { params }),
   enroll: (id) => request.post(`/courses/${id}/enroll`),
@@ -61,7 +62,7 @@ export const assignmentApi = {
   detail: (id) => request.get(`/assignments/${id}`),
   update: (id, data) => request.put(`/assignments/${id}`, data),
   delete: (id) => request.delete(`/assignments/${id}`),
-  submit: (id, data) => request.post(`/assignments/${id}/submit`, null, { params: data }),
+  submit: (id, data) => request.post(`/assignments/${id}/submit`, data),
   getSubmitList: (id, params) => request.get(`/assignments/${id}/submits`, { params }),
   grade: (submitId, params) => request.put(`/assignments/submits/${submitId}/grade`, null, { params })
 }
@@ -147,4 +148,9 @@ export const notificationApi = {
   markRead: (id) => request.put(`/notifications/${id}/read`),
   markAllRead: () => request.put('/notifications/read-all'),
   send: (data) => request.post('/notifications', data)
+}
+
+/** 文件上传 API */
+export const uploadApi = {
+  uploadFile: (formData) => request.post('/upload/file', formData)
 }

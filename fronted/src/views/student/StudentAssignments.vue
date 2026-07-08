@@ -68,9 +68,12 @@
           <div class="section-content">{{ currentAssignment.content || '教师暂未填写作业说明' }}</div>
         </div>
 
-        <div v-if="currentAssignment.attachmentUrl" class="detail-section">
-          <div class="section-label">附件链接</div>
-          <a :href="currentAssignment.attachmentUrl" target="_blank" rel="noreferrer">
+        <div v-if="(currentAssignment.attachments && currentAssignment.attachments.length > 0) || currentAssignment.attachmentUrl" class="detail-section">
+          <div class="section-label">教师附件</div>
+          <div v-if="currentAssignment.attachments && currentAssignment.attachments.length > 0" style="display:flex;flex-direction:column;gap:4px">
+            <el-link v-for="att in currentAssignment.attachments" :key="att.id" :href="att.fileUrl" target="_blank" type="primary">{{ att.fileName }}</el-link>
+          </div>
+          <a v-else-if="currentAssignment.attachmentUrl" :href="currentAssignment.attachmentUrl" target="_blank" rel="noreferrer">
             {{ currentAssignment.attachmentUrl }}
           </a>
         </div>
@@ -78,9 +81,14 @@
         <div v-if="currentAssignment.submitted" class="detail-section">
           <div class="section-label">已提交内容</div>
           <div class="section-content">{{ currentAssignment.submitContent || '无文字内容' }}</div>
-          <a v-if="currentAssignment.submitAttachmentUrl" :href="currentAssignment.submitAttachmentUrl" target="_blank" rel="noreferrer">
-            {{ currentAssignment.submitAttachmentUrl }}
-          </a>
+          <div v-if="(currentAssignment.submitAttachments && currentAssignment.submitAttachments.length > 0) || currentAssignment.submitAttachmentUrl" style="margin-top:8px">
+            <template v-if="currentAssignment.submitAttachments && currentAssignment.submitAttachments.length > 0">
+              <el-link v-for="att in currentAssignment.submitAttachments" :key="att.id" :href="att.fileUrl" target="_blank" type="primary" style="display:block;margin-bottom:2px">{{ att.fileName }}</el-link>
+            </template>
+            <a v-else-if="currentAssignment.submitAttachmentUrl" :href="currentAssignment.submitAttachmentUrl" target="_blank" rel="noreferrer">
+              {{ currentAssignment.submitAttachmentUrl }}
+            </a>
+          </div>
           <div class="detail-meta">
             <span>提交时间：{{ formatDate(currentAssignment.submitTime) }}</span>
             <span v-if="currentAssignment.myScore != null">得分：{{ currentAssignment.myScore }}</span>
@@ -104,11 +112,26 @@
             />
           </div>
 
-          <el-input
-            v-model="submitForm.attachmentUrl"
-            placeholder="附件链接（可选）"
-            :disabled="submitting || isOverdue(currentAssignment.deadline)"
-          />
+          <div class="detail-section" v-if="submitForm.files.length > 0">
+            <div class="section-label">已上传文件</div>
+            <div class="file-list">
+              <div v-for="(f, i) in submitForm.files" :key="i" class="file-item">
+                <span class="file-name">{{ f.name }}</span>
+                <span class="file-size">{{ formatFileSize(f.size) }}</span>
+                <el-button size="small" type="danger" link @click="submitForm.files.splice(i, 1)" :disabled="submitting">移除</el-button>
+              </div>
+            </div>
+          </div>
+
+          <div class="detail-section">
+            <el-upload
+              :http-request="uploadAttachment"
+              :show-file-list="false"
+              :disabled="submitting || isOverdue(currentAssignment.deadline)"
+            >
+              <el-button :loading="uploadLoading" :disabled="submitting || isOverdue(currentAssignment.deadline)">+ 上传文件</el-button>
+            </el-upload>
+          </div>
         </template>
 
         <p v-if="isOverdue(currentAssignment.deadline) && !currentAssignment.submitted" class="submit-tip">
@@ -134,7 +157,7 @@
 
 <script setup>
 import { computed, reactive, ref, onMounted } from 'vue'
-import { assignmentApi } from '@/api'
+import { assignmentApi, uploadApi } from '@/api'
 import { ElMessage } from 'element-plus'
 
 const assignments = ref([])
@@ -142,13 +165,21 @@ const statusFilter = ref('')
 const detailVisible = ref(false)
 const currentAssignment = ref(null)
 const submitting = ref(false)
-const submitForm = reactive({ content: '', attachmentUrl: '' })
+const uploadLoading = ref(false)
+const submitForm = reactive({ content: '', files: [] })
 
 const isOverdue = (deadline) => deadline && new Date(deadline) < new Date()
 
 const formatDate = (value) => {
   if (!value) return '未设定'
   return String(value).replace('T', ' ')
+}
+
+const formatFileSize = (size) => {
+  const n = Number(size || 0)
+  if (n < 1024) return `${n} B`
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`
+  return `${(n / 1024 / 1024).toFixed(1)} MB`
 }
 
 const submitLabel = (row) => {
@@ -179,8 +210,30 @@ const visibleAssignments = computed(() => {
 const handleClick = (row) => {
   currentAssignment.value = row
   submitForm.content = ''
-  submitForm.attachmentUrl = ''
+  submitForm.files = []
   detailVisible.value = true
+}
+
+const uploadAttachment = async ({ file }) => {
+  const raw = file instanceof File ? file : (file?.raw || file?.file || file)
+  const formData = new FormData()
+  formData.append('file', raw)
+  uploadLoading.value = true
+  try {
+    const res = await uploadApi.uploadFile(formData)
+    if (res.data.code === 200) {
+      submitForm.files.push({
+        url: res.data.data.url,
+        name: res.data.data.name || raw.name,
+        size: res.data.data.size || raw.size
+      })
+      ElMessage.success('文件上传成功')
+    }
+  } catch (e) {
+    ElMessage.error(e.response?.data?.message || '文件上传失败')
+  } finally {
+    uploadLoading.value = false
+  }
 }
 
 const fetchAssignments = async () => {
@@ -203,8 +256,8 @@ const fetchAssignments = async () => {
 
 const submitAssignment = async () => {
   if (!currentAssignment.value) return
-  if (!submitForm.content.trim() && !submitForm.attachmentUrl.trim()) {
-    ElMessage.warning('请填写作业内容或附件链接')
+  if (!submitForm.content.trim() && submitForm.files.length === 0) {
+    ElMessage.warning('请填写作业内容或上传文件')
     return
   }
 
@@ -212,7 +265,10 @@ const submitAssignment = async () => {
   try {
     await assignmentApi.submit(currentAssignment.value.id, {
       content: submitForm.content,
-      attachmentUrl: submitForm.attachmentUrl
+      attachmentUrl: submitForm.files.length > 0 ? submitForm.files[0].url : '',
+      attachmentUrls: submitForm.files.map(f => f.url),
+      attachmentNames: submitForm.files.map(f => f.name),
+      attachmentSizes: submitForm.files.map(f => f.size)
     })
     ElMessage.success('作业提交成功')
     detailVisible.value = false
@@ -338,4 +394,9 @@ onMounted(fetchAssignments)
   color: #f56c6c;
   font-size: 13px;
 }
+
+.file-list { display: flex; flex-direction: column; gap: 6px; }
+.file-item { display: flex; align-items: center; gap: 10px; padding: 6px 10px; background: #f0f9eb; border-radius: 6px; font-size: 13px; }
+.file-name { flex: 1; color: #303133; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.file-size { color: #909399; white-space: nowrap; }
 </style>

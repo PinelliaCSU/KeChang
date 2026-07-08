@@ -73,8 +73,20 @@
             </el-form-item>
           </el-col>
         </el-row>
-        <el-form-item label="附件链接">
-          <el-input v-model="form.attachmentUrl" placeholder="可选，附件 URL" />
+        <el-form-item label="附件">
+          <div v-if="form.files && form.files.length > 0" class="file-list" style="margin-bottom:8px">
+            <div v-for="(f, i) in form.files" :key="i" class="file-item">
+              <span class="file-name">{{ f.name }}</span>
+              <span class="file-size">{{ f.size }}</span>
+              <el-button size="small" type="danger" link @click="form.files.splice(i, 1)">移除</el-button>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;width:100%">
+            <el-upload :http-request="uploadAttachment" :show-file-list="false">
+              <el-button :loading="uploadLoading">上传文件</el-button>
+            </el-upload>
+            <span style="font-size:12px;color:#909399">可上传多个文件</span>
+          </div>
         </el-form-item>
       </el-form>
       <template #footer>
@@ -83,11 +95,22 @@
       </template>
     </el-dialog>
 
-    <el-dialog v-model="submitDialogVisible" title="作业提交列表" width="850px">
+    <el-dialog v-model="submitDialogVisible" title="作业提交列表" width="950px">
       <el-table :data="submits" v-loading="subLoading" stripe border>
         <el-table-column prop="studentName" label="学生姓名" width="120" />
         <el-table-column prop="studentNo" label="学号" width="130" />
-        <el-table-column prop="content" label="提交内容" min-width="180" show-overflow-tooltip />
+        <el-table-column prop="content" label="提交内容" min-width="160" show-overflow-tooltip />
+        <el-table-column label="附件" width="150">
+          <template #default="{ row }">
+            <div v-if="(row.attachments && row.attachments.length > 0) || row.attachmentUrl" style="display:flex;flex-wrap:wrap;gap:4px">
+              <template v-if="row.attachments && row.attachments.length > 0">
+                <el-link v-for="(att, i) in row.attachments" :key="att.id" :href="att.fileUrl" target="_blank" type="primary" style="font-size:12px">文件{{ i + 1 }}</el-link>
+              </template>
+              <el-link v-else-if="row.attachmentUrl" :href="row.attachmentUrl" target="_blank" type="primary" style="font-size:12px">文件1</el-link>
+            </div>
+            <span v-else style="color:#c0c4cc">无</span>
+          </template>
+        </el-table-column>
         <el-table-column prop="submitTime" label="提交时间" width="170" />
         <el-table-column label="评分" width="80">
           <template #default="{ row }">{{ row.score != null ? row.score : '未评' }}</template>
@@ -107,6 +130,14 @@
         <el-form-item label="提交内容">
           <div class="submit-content">{{ currentSubmit?.content || '无内容' }}</div>
         </el-form-item>
+        <el-form-item label="提交附件" v-if="currentSubmit?.attachmentUrl || (currentSubmit?.attachments && currentSubmit.attachments.length > 0)">
+          <div style="display:flex;flex-direction:column;gap:4px">
+            <template v-if="currentSubmit?.attachments && currentSubmit.attachments.length > 0">
+              <el-link v-for="att in currentSubmit.attachments" :key="att.id" :href="att.fileUrl" target="_blank" type="primary">{{ att.fileName }}</el-link>
+            </template>
+            <el-link v-else-if="currentSubmit?.attachmentUrl" :href="currentSubmit.attachmentUrl" target="_blank" type="primary">查看附件</el-link>
+          </div>
+        </el-form-item>
         <el-form-item label="分数">
           <el-input-number v-model="gradeForm.score" :min="0" :max="100" style="width:150px" />
         </el-form-item>
@@ -124,7 +155,7 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
-import { assignmentApi, courseApi } from '@/api'
+import { assignmentApi, courseApi, uploadApi } from '@/api'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
 const assignments = ref([])
@@ -138,6 +169,7 @@ const dialogVisible = ref(false)
 const isEdit = ref(false)
 const editId = ref(null)
 const submitting = ref(false)
+const uploadLoading = ref(false)
 const submitDialogVisible = ref(false)
 const submits = ref([])
 const subLoading = ref(false)
@@ -152,7 +184,8 @@ const form = reactive({
   content: '',
   deadline: '',
   totalScore: 100,
-  attachmentUrl: ''
+  attachmentUrl: '',
+  files: []
 })
 
 const gradeForm = reactive({ score: 0, comment: '' })
@@ -196,13 +229,35 @@ const loadFormChapters = async () => {
   formChapters.value = await loadChaptersByCourse(form.courseId)
 }
 
+const uploadAttachment = async ({ file }) => {
+  const raw = file instanceof File ? file : (file?.raw || file?.file || file)
+  const formData = new FormData()
+  formData.append('file', raw)
+  uploadLoading.value = true
+  try {
+    const res = await uploadApi.uploadFile(formData)
+    if (res.data.code === 200) {
+      form.files.push({
+        url: res.data.data.url,
+        name: res.data.data.name || raw.name,
+        size: res.data.data.size || raw.size
+      })
+      ElMessage.success('文件上传成功')
+    }
+  } catch (e) {
+    ElMessage.error(e.response?.data?.message || '文件上传失败')
+  } finally {
+    uploadLoading.value = false
+  }
+}
+
 const chapterName = (chapterId) => {
   const all = [...filterChapters.value, ...formChapters.value]
   return all.find(chapter => chapter.id === chapterId)?.chapterName || (chapterId ? '未知章节' : '未分配')
 }
 
 const resetForm = () => {
-  Object.assign(form, { title: '', courseId: null, chapterId: null, content: '', deadline: '', totalScore: 100, attachmentUrl: '' })
+  Object.assign(form, { title: '', courseId: null, chapterId: null, content: '', deadline: '', totalScore: 100, attachmentUrl: '', files: [] })
   formChapters.value = []
 }
 
@@ -237,11 +292,18 @@ const handleSubmit = async () => {
   }
   submitting.value = true
   try {
+    const payload = {
+      ...form,
+      attachmentUrl: form.files.length > 0 ? form.files[0].url : form.attachmentUrl,
+      attachmentUrls: form.files.map(f => f.url),
+      attachmentNames: form.files.map(f => f.name),
+      attachmentSizes: form.files.map(f => f.size)
+    }
     if (isEdit.value) {
-      await assignmentApi.update(editId.value, form)
+      await assignmentApi.update(editId.value, payload)
       ElMessage.success('作业更新成功')
     } else {
-      await assignmentApi.create(form)
+      await assignmentApi.create(payload)
       ElMessage.success('作业布置成功')
     }
     dialogVisible.value = false
@@ -297,6 +359,13 @@ const doGrade = async () => {
   }
 }
 
+const formatFileSize = (size) => {
+  const n = Number(size || 0)
+  if (n < 1024) return `${n} B`
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`
+  return `${(n / 1024 / 1024).toFixed(1)} MB`
+}
+
 onMounted(() => { fetchCourses(); fetchAssignments() })
 </script>
 
@@ -307,4 +376,8 @@ onMounted(() => { fetchCourses(); fetchAssignments() })
 .panel { background: #fff; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,.05); padding: 24px; }
 .search-bar { display: flex; gap: 12px; margin-bottom: 16px; }
 .submit-content { background: #f5f7fa; padding: 12px; border-radius: 8px; max-height: 200px; overflow-y: auto; }
+.file-list { display: flex; flex-direction: column; gap: 6px; }
+.file-item { display: flex; align-items: center; gap: 10px; padding: 6px 10px; background: #f0f9eb; border-radius: 6px; font-size: 13px; }
+.file-name { flex: 1; color: #303133; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.file-size { color: #909399; white-space: nowrap; font-size: 12px; }
 </style>

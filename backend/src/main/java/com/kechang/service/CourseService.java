@@ -239,6 +239,21 @@ public class CourseService {
     }
 
     /**
+     * 删除课程资源
+     */
+    public void deleteResource(Long courseId, Long resourceId, Long teacherId) {
+        checkCourseOwner(courseId, teacherId);
+        CourseResource resource = resourceMapper.selectById(resourceId);
+        if (resource == null) {
+            throw BusinessException.notFound("资源不存在");
+        }
+        if (!courseId.equals(resource.getCourseId())) {
+            throw BusinessException.badRequest("资源不属于该课程");
+        }
+        resourceMapper.deleteById(resourceId);
+    }
+
+    /**
      * 查询课程资源列表
      */
     public List<CourseResource> getResources(Long courseId, Long chapterId) {

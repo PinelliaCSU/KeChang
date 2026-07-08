@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * 作业创建 DTO
@@ -21,6 +22,9 @@ public class AssignmentDTO {
 
     private String content;
     private String attachmentUrl;
+    private List<String> attachmentUrls;
+    private List<String> attachmentNames;
+    private List<Long> attachmentSizes;
 
     @NotNull(message = "截止时间不能为空")
     private LocalDateTime deadline;
