@@ -223,6 +223,7 @@ const onCourseChange = () => { bankQuestions.value = []; selectedQuestions.value
 const openCreateDialog = () => {
   paperForm.paperName = ''; paperForm.courseId = null; paperForm.totalScore = 100; paperForm.duration = 90; paperForm.passScore = 60
   bankQuestions.value = []; selectedQuestions.value = []
+  Object.keys(selectedScoreMap).forEach(k => delete selectedScoreMap[k])
   createDialogVisible.value = true
 }
 
@@ -234,6 +235,24 @@ const onSelectionChange = (rows) => {
 const handleCreatePaper = async () => {
   if (!paperForm.paperName || !paperForm.courseId) { ElMessage.warning('请填写试卷名称和所属课程'); return }
   if (selectedQuestions.value.length === 0) { ElMessage.warning('请至少选择一道试题'); return }
+  // 校验及格分不能大于总分
+  if (paperForm.passScore > paperForm.totalScore) {
+    ElMessage.warning(`及格分(${paperForm.passScore})不能大于总分(${paperForm.totalScore})`)
+    return
+  }
+  // 校验总分与题目分值合计是否一致
+  if (paperForm.totalScore !== selectedTotalScore.value) {
+    try {
+      await ElMessageBox.confirm(
+        `试卷总分(${paperForm.totalScore})与题目分值合计(${selectedTotalScore.value})不一致，是否自动将总分修正为合计值？`,
+        '分数不一致',
+        { confirmButtonText: '自动修正', cancelButtonText: '保持不变', type: 'warning' }
+      )
+      paperForm.totalScore = selectedTotalScore.value
+    } catch (e) {
+      // 用户选择保持不变，继续提交
+    }
+  }
   submitting.value = true
   try {
     const data = {
@@ -243,10 +262,14 @@ const handleCreatePaper = async () => {
         questionId: q.id, questionScore: selectedScoreMap[q.id] || q.score || 5, sortOrder: i + 1
       }))
     }
-    await examApi.createPaper(data)
-    ElMessage.success('试卷创建成功')
-    createDialogVisible.value = false
-    fetchPapers()
+    const res = await examApi.createPaper(data)
+    if (res.data.code === 200) {
+      ElMessage.success('试卷创建成功')
+      createDialogVisible.value = false
+      fetchPapers()
+    } else {
+      ElMessage.error(res.data.message || '创建失败')
+    }
   } catch (e) { /* ignore */ }
   finally { submitting.value = false }
 }
