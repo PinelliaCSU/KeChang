@@ -4,50 +4,87 @@
       <h2 class="page-title">我的成绩</h2>
     </div>
 
-    <div class="panel" v-if="grades.length > 0">
-      <el-table :data="grades" style="width:100%" row-class-name="table-row">
-        <el-table-column prop="courseName" label="课程" min-width="160" />
-        <el-table-column prop="examAvgScore" label="考试均分" width="110" />
-        <el-table-column prop="assignmentAvgScore" label="作业均分" width="110" />
-        <el-table-column prop="totalScore" label="总评" width="100" />
+    <div class="summary-row" v-if="scoredGrades.length">
+      <div class="summary-card">
+        <div class="summary-num">{{ averageScore }}</div>
+        <div class="summary-label">平均总评</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-num">{{ passedCount }}</div>
+        <div class="summary-label">通过课程</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-num">{{ scoredGrades.length }}</div>
+        <div class="summary-label">有成绩课程</div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <el-table :data="grades" stripe border v-loading="loading">
+        <el-table-column prop="courseName" label="课程" min-width="180" />
+        <el-table-column v-if="hasExamScores" prop="examAvgScore" label="考试均分" width="110">
+          <template #default="{ row }">{{ formatScore(row.examAvgScore) }}</template>
+        </el-table-column>
+        <el-table-column v-if="hasAssignmentScores" prop="assignmentAvgScore" label="作业均分" width="110">
+          <template #default="{ row }">{{ formatScore(row.assignmentAvgScore) }}</template>
+        </el-table-column>
+        <el-table-column prop="totalScore" label="总评" width="100">
+          <template #default="{ row }">
+            <b :class="scoreClass(row.totalScore)">{{ formatScore(row.totalScore) }}</b>
+          </template>
+        </el-table-column>
         <el-table-column prop="gradeLevel" label="等级" width="100">
           <template #default="{ row }">
-            <el-tag :type="levelTagType(row.gradeLevel)" size="small">{{ row.gradeLevel || '--' }}</el-tag>
+            <el-tag v-if="row.gradeLevel" :type="levelType(row.gradeLevel)" size="small">{{ row.gradeLevel }}</el-tag>
+            <span v-else class="muted">--</span>
           </template>
         </el-table-column>
       </el-table>
-    </div>
 
-    <div class="panel empty-panel" v-else>
-      <div class="empty-state">
-        <svg class="empty-illustration" width="120" height="90" viewBox="0 0 120 90" fill="none">
-          <rect x="20" y="10" width="80" height="70" rx="4" fill="#e8ecf1" />
-          <line x1="32" y1="30" x2="88" y2="30" stroke="#d0d5dd" stroke-width="2" />
-          <line x1="32" y1="42" x2="75" y2="42" stroke="#dce1e8" stroke-width="1.5" />
-        </svg>
-        <p class="empty-text">暂无成绩数据</p>
-      </div>
+      <el-empty v-if="!loading && grades.length === 0" description="暂无成绩数据" :image-size="100" />
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { gradeApi } from '@/api'
 
 const grades = ref([])
+const loading = ref(false)
 
-const levelTagType = (level) => {
-  const map = { '优秀': 'success', '良好': '', '中等': 'warning', '及格': '', '不及格': 'danger' }
-  return map[level] || 'info'
+const scoredGrades = computed(() => grades.value.filter(item => item.totalScore != null))
+const hasExamScores = computed(() => grades.value.some(item => item.examAvgScore != null))
+const hasAssignmentScores = computed(() => grades.value.some(item => item.assignmentAvgScore != null))
+
+const averageScore = computed(() => {
+  if (!scoredGrades.value.length) return '--'
+  const avg = scoredGrades.value.reduce((sum, item) => sum + Number(item.totalScore), 0) / scoredGrades.value.length
+  return avg.toFixed(1)
+})
+const passedCount = computed(() => scoredGrades.value.filter(item => Number(item.totalScore) >= 60).length)
+
+const levelType = (level) => ({ 优秀: 'success', 良好: 'primary', 中等: 'warning', 及格: 'info', 不及格: 'danger' }[level] || 'info')
+const formatScore = (score) => score == null ? '--' : Number(score).toFixed(1)
+const scoreClass = (score) => {
+  if (score == null) return 'score-empty'
+  const value = Number(score)
+  if (value >= 90) return 'score-good'
+  if (value >= 60) return 'score-pass'
+  return 'score-fail'
 }
 
-onMounted(async () => {
+const fetchGrades = async () => {
+  loading.value = true
   try {
     const res = await gradeApi.myGrades()
     if (res.data.code === 200) grades.value = res.data.data || []
-  } catch (e) { /* ignore */ }
-})
+  } finally {
+    loading.value = false
+  }
+}
+
+onMounted(fetchGrades)
 </script>
 
 <style scoped>
@@ -61,43 +98,63 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 4px;
 }
 
 .page-title {
+  margin: 0;
   font-size: 20px;
   font-weight: 600;
   color: #303133;
-  margin: 0;
 }
 
-.panel {
-  background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-  padding: 24px;
-}
-
-.empty-panel {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 60px 24px;
-}
-
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+.summary-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
   gap: 16px;
 }
 
-.empty-illustration {
-  opacity: 0.6;
+.summary-card,
+.panel {
+  background: #fff;
+  border: 1px solid rgba(163, 177, 138, 0.1);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
-.empty-text {
-  color: #c0c4cc;
-  font-size: 14px;
+.summary-card {
+  padding: 20px 24px;
+}
+
+.summary-num {
+  font-size: 28px;
+  font-weight: 700;
+  color: #303133;
+}
+
+.summary-label {
+  margin-top: 4px;
+  color: #909399;
+  font-size: 13px;
+}
+
+.panel {
+  padding: 24px;
+}
+
+.muted,
+.score-empty {
+  color: #909399;
+}
+
+.score-good {
+  color: #67c23a;
+}
+
+.score-pass {
+  color: #409eff;
+}
+
+.score-fail {
+  color: #f56c6c;
 }
 </style>

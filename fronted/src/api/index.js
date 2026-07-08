@@ -71,7 +71,8 @@ export const gradeApi = {
   studentGrades: (studentId) => request.get(`/grades/student/${studentId}`),
   myGrades: () => request.get('/grades/my'),
   courseGrades: (courseId) => request.get(`/grades/course/${courseId}`),
-  courseStats: (courseId) => request.get(`/grades/course/${courseId}/stats`)
+  courseStats: (courseId) => request.get(`/grades/course/${courseId}/stats`),
+  platformOverview: () => request.get('/grades/platform/overview')
 }
 
 /** 实训 API */

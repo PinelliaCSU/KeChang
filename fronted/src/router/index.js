@@ -2,46 +2,31 @@ import { createRouter, createWebHistory } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 
 const routes = [
-  // ==================== 根路径（由路由守卫处理重定向） ====================
-  {
-    path: '/',
-    name: 'Root',
-    meta: { title: '课畅' }
-  },
-
-  // ==================== 系统仪表盘（登录后主页面） ====================
+  { path: '/', name: 'Root', meta: { title: '课畅' } },
   {
     path: '/dashboard',
     name: 'Dashboard',
     component: () => import('@/views/Dashboard.vue'),
     meta: { title: '课畅 - 仪表盘', requiresAuth: true }
   },
-
-  // ==================== 日历 ====================
   {
     path: '/calendar',
     name: 'Calendar',
     component: () => import('@/views/Calendar.vue'),
     meta: { title: '日历 - 课畅', requiresAuth: true }
   },
-
-  // ==================== 个人中心 ====================
   {
     path: '/profile',
     name: 'Profile',
     component: () => import('@/views/Profile.vue'),
     meta: { title: '个人中心 - 课畅', requiresAuth: true }
   },
-
-  // ==================== 登录 ====================
   {
     path: '/login',
     name: 'Login',
     component: () => import('@/views/Login.vue'),
     meta: { title: '登录 - 课畅' }
   },
-
-  // ==================== 教师端 ====================
   {
     path: '/teacher',
     redirect: '/teacher/dashboard',
@@ -62,18 +47,16 @@ const routes = [
       { path: 'posts', name: 'TeacherPosts', component: () => import('@/views/teacher/TeacherPosts.vue'), meta: { title: '互动问答' } }
     ]
   },
-
-  // ==================== 学生端 ====================
   {
     path: '/admin',
     redirect: '/admin/courses',
     component: () => import('@/views/teacher/TeacherLayout.vue'),
     meta: { role: 'ROLE_ADMIN' },
     children: [
-      { path: 'courses', name: 'AdminCourses', component: () => import('@/views/admin/AdminCourses.vue'), meta: { title: '课程总览' } }
+      { path: 'courses', name: 'AdminCourses', component: () => import('@/views/admin/AdminCourses.vue'), meta: { title: '课程总览' } },
+      { path: 'grades', name: 'AdminGrades', component: () => import('@/views/admin/AdminGrades.vue'), meta: { title: '成绩概览' } }
     ]
   },
-
   {
     path: '/student',
     redirect: '/student/dashboard',
@@ -102,7 +85,6 @@ const router = createRouter({
   scrollBehavior: () => ({ top: 0 })
 })
 
-// 路由守卫
 router.beforeEach((to, from, next) => {
   document.title = to.meta.title || '课畅'
 
@@ -113,10 +95,8 @@ router.beforeEach((to, from, next) => {
     if (userStore.roleCode === 'ROLE_STUDENT') return '/student/dashboard'
     return '/dashboard'
   }
-  const requiredRole = to.meta.role || to.matched.find(r => r.meta.role)?.meta?.role
-  const requiresAuth = to.meta.requiresAuth
+  const requiredRole = to.meta.role || to.matched.find(route => route.meta.role)?.meta?.role
 
-  // 访问根路径 / ：已登录→仪表盘，未登录→登录页
   if (to.path === '/') {
     next(userStore.token ? roleHome() : '/login')
     return
@@ -127,13 +107,11 @@ router.beforeEach((to, from, next) => {
     return
   }
 
-  // 需要登录的页面
-  if (requiresAuth && !userStore.token) {
+  if (to.meta.requiresAuth && !userStore.token) {
     next('/login')
     return
   }
 
-  // 已登录用户访问登录页，重定向到仪表盘
   if (to.path === '/login' && userStore.token) {
     next(roleHome())
     return
@@ -149,6 +127,7 @@ router.beforeEach((to, from, next) => {
       return
     }
   }
+
   next()
 })
 

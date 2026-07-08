@@ -69,7 +69,8 @@ const studentMenus = [
 ]
 
 const adminMenus = [
-  { path: '/admin/courses', title: '课程总览', icon: 'Reading' }
+  { path: '/admin/courses', title: '课程总览', icon: 'Reading' },
+  { path: '/admin/grades', title: '成绩概览', icon: 'TrendCharts' }
 ]
 
 const menuItems = computed(() => {

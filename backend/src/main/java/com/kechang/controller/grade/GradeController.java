@@ -37,18 +37,27 @@ public class GradeController {
     @GetMapping("/course/{courseId}")
     @PreAuthorize("hasAuthority('ROLE_TEACHER')")
     public Result<List<GradeVO>> courseGrades(@PathVariable Long courseId) {
+        gradeService.checkCourseOwner(courseId, getUserId());
         return Result.success(gradeService.getCourseGrades(courseId));
     }
 
     @GetMapping("/course/{courseId}/stats")
     @PreAuthorize("hasAuthority('ROLE_TEACHER')")
     public Result<Map<String, Object>> courseStats(@PathVariable Long courseId) {
+        gradeService.checkCourseOwner(courseId, getUserId());
         return Result.success(gradeService.getCourseStats(courseId));
     }
 
     @GetMapping("/course/{courseId}/export")
     @PreAuthorize("hasAuthority('ROLE_TEACHER')")
     public Result<List<GradeVO>> exportGrades(@PathVariable Long courseId) {
+        gradeService.checkCourseOwner(courseId, getUserId());
         return Result.success(gradeService.exportGrades(courseId));
+    }
+
+    @GetMapping("/platform/overview")
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+    public Result<Map<String, Object>> platformOverview() {
+        return Result.success(gradeService.getPlatformOverview());
     }
 }
