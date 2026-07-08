@@ -92,8 +92,16 @@ class TrainingController {
 
     @PostMapping("/tasks/{taskId}/report")
     @PreAuthorize("hasAuthority('ROLE_STUDENT')")
-    public Result<Void> submitReport(@PathVariable Long taskId, @RequestParam(required = false) String content, @RequestParam(required = false) String attachmentUrl) {
-        trainingService.submitReport(taskId, uid(), content, attachmentUrl);
+    public Result<Void> submitReport(@PathVariable Long taskId, @RequestBody java.util.Map<String, Object> body) {
+        String content = body.get("content") != null ? body.get("content").toString() : null;
+        String attachmentUrl = body.get("attachmentUrl") != null ? body.get("attachmentUrl").toString() : null;
+        List<String> attachmentUrls = body.get("attachmentUrls") instanceof List
+                ? ((List<?>) body.get("attachmentUrls")).stream().map(Object::toString).toList() : null;
+        List<String> attachmentNames = body.get("attachmentNames") instanceof List
+                ? ((List<?>) body.get("attachmentNames")).stream().map(Object::toString).toList() : null;
+        List<Long> attachmentSizes = body.get("attachmentSizes") instanceof List
+                ? ((List<?>) body.get("attachmentSizes")).stream().map(o -> o instanceof Number ? ((Number) o).longValue() : Long.parseLong(o.toString())).toList() : null;
+        trainingService.submitReport(taskId, uid(), content, attachmentUrl, attachmentUrls, attachmentNames, attachmentSizes);
         return Result.success();
     }
 

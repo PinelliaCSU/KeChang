@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.annotation.*;
 import lombok.Data;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * 实训任务实体
@@ -45,6 +46,17 @@ public class TrainingTask {
 
     @TableField(exist = false)
     private String reportStatus;
+
+    // 多文件附件（输入）
+    @TableField(exist = false)
+    private List<String> attachmentUrls;
+    @TableField(exist = false)
+    private List<String> attachmentNames;
+    @TableField(exist = false)
+    private List<Long> attachmentSizes;
+    // 多文件附件（输出）
+    @TableField(exist = false)
+    private List<AttachmentFile> attachments;
 
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createTime;

@@ -85,7 +85,7 @@ export const trainingApi = {
   createTask: (projectId, data) => request.post(`/trainings/${projectId}/tasks`, data),
   listTasks: (projectId, params) => request.get(`/trainings/${projectId}/tasks`, { params }),
   deleteTask: (taskId) => request.delete(`/trainings/tasks/${taskId}`),
-  submitReport: (taskId, params) => request.post(`/trainings/tasks/${taskId}/report`, null, { params }),
+  submitReport: (taskId, data) => request.post(`/trainings/tasks/${taskId}/report`, data),
   listReports: (taskId, params) => request.get(`/trainings/tasks/${taskId}/reports`, { params }),
   gradeReport: (reportId, params) => request.put(`/trainings/reports/${reportId}/grade`, null, { params })
 }

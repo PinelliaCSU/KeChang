@@ -59,14 +59,31 @@
         <el-form-item label="任务说明">
           <div class="task-desc">{{ currentTask?.description || '--' }}</div>
         </el-form-item>
-        <el-form-item label="资料附件" v-if="currentTask?.attachmentUrl">
-          <span class="link-text">{{ currentTask.attachmentUrl }}</span>
+        <el-form-item label="教师附件" v-if="(currentTask?.attachments && currentTask.attachments.length > 0) || currentTask?.attachmentUrl">
+          <div style="display:flex;flex-direction:column;gap:4px">
+            <template v-if="currentTask?.attachments && currentTask.attachments.length > 0">
+              <el-link v-for="att in currentTask.attachments" :key="att.id" :href="att.fileUrl" target="_blank" type="primary">{{ att.fileName }}</el-link>
+            </template>
+            <el-link v-else-if="currentTask?.attachmentUrl" :href="currentTask.attachmentUrl" target="_blank" type="primary" style="word-break:break-all">{{ currentTask.attachmentUrl }}</el-link>
+          </div>
         </el-form-item>
         <el-form-item label="报告内容" required>
           <el-input v-model="reportForm.content" type="textarea" :rows="6" :disabled="currentTask?.reportStatus === '已批改'" />
         </el-form-item>
-        <el-form-item label="附件地址">
-          <el-input v-model="reportForm.attachmentUrl" placeholder="可填写网盘/文档链接" :disabled="currentTask?.reportStatus === '已批改'" />
+        <el-form-item label="附件">
+          <div v-if="reportForm.files.length > 0" class="file-list" style="margin-bottom:8px">
+            <div v-for="(f, i) in reportForm.files" :key="i" class="file-item">
+              <span class="file-name">{{ f.name }}</span>
+              <span class="file-size">{{ formatFileSize(f.size) }}</span>
+              <el-button size="small" type="danger" link @click="reportForm.files.splice(i, 1)" :disabled="currentTask?.reportStatus === '已批改'">移除</el-button>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;width:100%">
+            <el-upload :http-request="uploadAttachment" :show-file-list="false" :disabled="currentTask?.reportStatus === '已批改'">
+              <el-button :loading="uploadLoading" :disabled="currentTask?.reportStatus === '已批改'">+ 上传文件</el-button>
+            </el-upload>
+            <span style="font-size:12px;color:#909399">可上传多个文件</span>
+          </div>
         </el-form-item>
         <el-form-item label="老师评分" v-if="currentTask?.score != null">
           <strong>{{ currentTask.score }}</strong>
@@ -88,7 +105,7 @@
 <script setup>
 import { onMounted, reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
-import { trainingApi } from '@/api'
+import { trainingApi, uploadApi } from '@/api'
 import EmptyIllustration from '@/components/EmptyIllustration.vue'
 
 const trainings = ref([])
@@ -99,7 +116,8 @@ const taskDialogVisible = ref(false)
 const taskLoading = ref(false)
 const submitDialogVisible = ref(false)
 const submitting = ref(false)
-const reportForm = reactive({ content: '', attachmentUrl: '' })
+const reportForm = reactive({ content: '', attachmentUrl: '', files: [] })
+const uploadLoading = ref(false)
 
 const gradientPalette = [
   'linear-gradient(135deg, #3b5998, #4c6da7)',
@@ -132,21 +150,57 @@ const fetchTasks = async () => {
   }
 }
 
+const formatFileSize = (size) => {
+  const n = Number(size || 0)
+  if (n < 1024) return `${n} B`
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`
+  return `${(n / 1024 / 1024).toFixed(1)} MB`
+}
+
+const uploadAttachment = async ({ file }) => {
+  const raw = file instanceof File ? file : (file?.raw || file?.file || file)
+  const formData = new FormData()
+  formData.append('file', raw)
+  uploadLoading.value = true
+  try {
+    const res = await uploadApi.uploadFile(formData)
+    if (res.data.code === 200) {
+      reportForm.files.push({
+        url: res.data.data.url,
+        name: res.data.data.name || raw.name,
+        size: res.data.data.size || raw.size
+      })
+      ElMessage.success('文件上传成功')
+    }
+  } catch (e) {
+    ElMessage.error(e.response?.data?.message || '文件上传失败')
+  } finally {
+    uploadLoading.value = false
+  }
+}
+
 const openSubmit = (task) => {
   currentTask.value = task
   reportForm.content = task.reportContent || ''
   reportForm.attachmentUrl = task.reportAttachmentUrl || ''
+  reportForm.files = []
   submitDialogVisible.value = true
 }
 
 const submitReport = async () => {
-  if (!reportForm.content && !reportForm.attachmentUrl) {
-    ElMessage.warning('请填写报告内容或附件地址')
+  if (!reportForm.content.trim() && reportForm.files.length === 0) {
+    ElMessage.warning('请填写报告内容或上传附件')
     return
   }
   submitting.value = true
   try {
-    await trainingApi.submitReport(currentTask.value.id, { ...reportForm })
+    await trainingApi.submitReport(currentTask.value.id, {
+      content: reportForm.content,
+      attachmentUrl: reportForm.files.length > 0 ? reportForm.files[0].url : reportForm.attachmentUrl,
+      attachmentUrls: reportForm.files.map(f => f.url),
+      attachmentNames: reportForm.files.map(f => f.name),
+      attachmentSizes: reportForm.files.map(f => f.size)
+    })
     ElMessage.success(currentTask.value.myReportId ? '报告已更新' : '报告提交成功')
     submitDialogVisible.value = false
     await fetchTasks()
@@ -277,4 +331,8 @@ onMounted(fetchProjects)
   color: #409eff;
   word-break: break-all;
 }
+.file-list { display: flex; flex-direction: column; gap: 6px; }
+.file-item { display: flex; align-items: center; gap: 10px; padding: 6px 10px; background: #f0f9eb; border-radius: 6px; font-size: 13px; }
+.file-name { flex: 1; color: #303133; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.file-size { color: #909399; white-space: nowrap; font-size: 12px; }
 </style>
