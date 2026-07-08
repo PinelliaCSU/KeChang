@@ -24,9 +24,13 @@
         <el-table-column prop="duration" label="时长" width="80">
           <template #default="{ row }">{{ row.duration || '-' }} 分钟</template>
         </el-table-column>
-        <el-table-column label="状态" width="100">
+        <el-table-column label="状态" width="170">
           <template #default="{ row }">
-            <el-tag :type="statusTag(row)" size="small">{{ statusLabel(row) }}</el-tag>
+            <div style="display:flex;align-items:center;gap:4px;white-space:nowrap">
+              <el-tag :type="statusTag(row)" size="small">{{ statusLabel(row) }}</el-tag>
+              <el-tag v-if="row.allowRetry === 1" type="success" size="small">可重考</el-tag>
+              <el-tag v-else type="danger" size="small">不可重考</el-tag>
+            </div>
           </template>
         </el-table-column>
         <el-table-column label="成绩" width="120">
@@ -37,7 +41,7 @@
         </el-table-column>
         <el-table-column label="操作" width="180" fixed="right">
           <template #default="{ row }">
-            <el-button v-if="canStart(row)" size="small" type="primary" @click="enterExam(row)">进入考试</el-button>
+            <el-button v-if="canStart(row)" size="small" type="primary" @click="enterExam(row)">{{ row.submitted === 1 ? '重新考试' : '进入考试' }}</el-button>
             <el-button v-else-if="row.submitted === 1" size="small" @click="openResult(row)">查看结果</el-button>
             <span v-else class="muted">--</span>
           </template>
@@ -92,7 +96,16 @@ const resultAnswers = ref([])
 const currentExam = ref(null)
 
 const statusLabel = (row) => {
-  if (row.submitted === 1) return '已交卷'
+  if (row.submitted === 1) {
+    // 允许重考且仍在考试时间窗口内，视为进行中
+    if (row.allowRetry === 1) {
+      const now = new Date()
+      if (row.startTime && new Date(row.startTime) <= now && row.endTime && new Date(row.endTime) >= now) {
+        return '进行中'
+      }
+    }
+    return '已交卷'
+  }
   const now = new Date()
   if (row.startTime && new Date(row.startTime) > now) return '未开始'
   if (row.endTime && new Date(row.endTime) < now) return '已结束'
@@ -114,7 +127,7 @@ const filteredExams = computed(() => {
   return exams.value.filter(exam => statusKey(exam) === statusFilter.value)
 })
 
-const canStart = (row) => statusKey(row) === 'ongoing' && row.submitted !== 1
+const canStart = (row) => statusKey(row) === 'ongoing' && (row.submitted !== 1 || row.allowRetry === 1)
 const enterExam = (row) => router.push(`/student/exams/${row.id}`)
 const formatTime = (value) => value ? String(value).replace('T', ' ').slice(0, 16) : '--'
 const displayAnswer = (value) => {

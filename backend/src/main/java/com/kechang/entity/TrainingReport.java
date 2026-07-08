@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.annotation.*;
 import lombok.Data;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * 实训报告实体
@@ -38,4 +39,8 @@ public class TrainingReport {
 
     @TableLogic
     private Integer isDeleted;
+
+    // 多文件附件（输出）
+    @TableField(exist = false)
+    private List<AttachmentFile> attachments;
 }

@@ -4,11 +4,13 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.kechang.common.BusinessException;
 import com.kechang.common.PageResult;
+import com.kechang.entity.AttachmentFile;
 import com.kechang.entity.StudentProfile;
 import com.kechang.entity.SysUser;
 import com.kechang.entity.TrainingProject;
 import com.kechang.entity.TrainingReport;
 import com.kechang.entity.TrainingTask;
+import com.kechang.mapper.AttachmentFileMapper;
 import com.kechang.mapper.StudentProfileMapper;
 import com.kechang.mapper.SysUserMapper;
 import com.kechang.mapper.TrainingProjectMapper;
@@ -30,6 +32,7 @@ public class TrainingService {
     private final TrainingProjectMapper projectMapper;
     private final TrainingTaskMapper taskMapper;
     private final TrainingReportMapper reportMapper;
+    private final AttachmentFileMapper attachmentFileMapper;
     private final StudentProfileMapper studentProfileMapper;
     private final SysUserMapper sysUserMapper;
 
@@ -99,7 +102,16 @@ public class TrainingService {
         if (task.getSortOrder() == null) {
             task.setSortOrder(0);
         }
+        // 如果传了多文件但没传单个 URL，用第一个文件的 URL
+        String effectiveUrl = task.getAttachmentUrl();
+        if ((effectiveUrl == null || effectiveUrl.isEmpty()) && task.getAttachmentUrls() != null && !task.getAttachmentUrls().isEmpty()) {
+            effectiveUrl = task.getAttachmentUrls().get(0);
+        }
+        task.setAttachmentUrl(effectiveUrl);
         taskMapper.insert(task);
+
+        // 保存多文件附件
+        saveAttachments("TASK", task.getId(), task.getAttachmentUrls(), task.getAttachmentNames(), task.getAttachmentSizes());
     }
 
     @Transactional
@@ -111,11 +123,22 @@ public class TrainingService {
     }
 
     @Transactional
-    public void submitReport(Long taskId, Long studentId, String content, String attachmentUrl) {
+    public void submitReport(Long taskId, Long studentId, String content, String attachmentUrl,
+            List<String> attachmentUrls, List<String> attachmentNames, List<Long> attachmentSizes) {
         requireTask(taskId);
-        if (!StringUtils.hasText(content) && !StringUtils.hasText(attachmentUrl)) {
-            throw BusinessException.badRequest("请填写报告内容或附件地址");
+        boolean hasContent = StringUtils.hasText(content);
+        boolean hasSingleUrl = StringUtils.hasText(attachmentUrl);
+        boolean hasMultiFiles = attachmentUrls != null && !attachmentUrls.isEmpty();
+        if (!hasContent && !hasSingleUrl && !hasMultiFiles) {
+            throw BusinessException.badRequest("请填写报告内容或上传附件");
         }
+
+        // 如果传了多文件但没传单个 URL，用第一个文件的 URL
+        String effectiveUrl = attachmentUrl;
+        if ((effectiveUrl == null || effectiveUrl.isEmpty()) && hasMultiFiles) {
+            effectiveUrl = attachmentUrls.get(0);
+        }
+
         TrainingReport report = reportMapper.selectOne(new LambdaQueryWrapper<TrainingReport>()
                 .eq(TrainingReport::getTaskId, taskId)
                 .eq(TrainingReport::getStudentId, studentId));
@@ -126,18 +149,26 @@ public class TrainingService {
             report.setStatus("待批改");
             report.setSubmitTime(LocalDateTime.now());
             report.setReportContent(content);
-            report.setAttachmentUrl(attachmentUrl);
+            report.setAttachmentUrl(effectiveUrl);
             reportMapper.insert(report);
+            // 保存多文件附件
+            saveAttachments("REPORT", report.getId(), attachmentUrls, attachmentNames, attachmentSizes);
             return;
         }
         if ("已批改".equals(report.getStatus())) {
             throw BusinessException.badRequest("报告已批改，不能再次修改");
         }
         report.setReportContent(content);
-        report.setAttachmentUrl(attachmentUrl);
+        report.setAttachmentUrl(effectiveUrl);
         report.setSubmitTime(LocalDateTime.now());
         report.setStatus("待批改");
         reportMapper.updateById(report);
+
+        // 更新附件：先删旧附件，再保存新的
+        attachmentFileMapper.delete(new LambdaQueryWrapper<AttachmentFile>()
+                .eq(AttachmentFile::getTargetType, "REPORT")
+                .eq(AttachmentFile::getTargetId, report.getId()));
+        saveAttachments("REPORT", report.getId(), attachmentUrls, attachmentNames, attachmentSizes);
     }
 
     public PageResult<TrainingReport> listReports(Long taskId, int page, int size, Long teacherId) {
@@ -189,6 +220,8 @@ public class TrainingService {
     private void fillTaskExtra(TrainingTask task, Long userId, boolean student) {
         task.setReportCount(reportMapper.selectCount(new LambdaQueryWrapper<TrainingReport>()
                 .eq(TrainingReport::getTaskId, task.getId())));
+        // 填充任务附件
+        task.setAttachments(getAttachments("TASK", task.getId()));
         if (!student) {
             return;
         }
@@ -206,6 +239,8 @@ public class TrainingService {
         task.setScore(report.getScore());
         task.setComment(report.getComment());
         task.setReportStatus(report.getStatus());
+        // 填充学生提交的附件
+        task.setAttachments(getAttachments("REPORT", report.getId()));
     }
 
     private void fillReportStudent(TrainingReport report) {
@@ -214,10 +249,35 @@ public class TrainingService {
         if (profile != null) {
             report.setStudentNo(profile.getStudentNo());
             report.setStudentName(StringUtils.hasText(profile.getRealName()) ? profile.getRealName() : fallbackName(report.getStudentId()));
-            return;
+        } else {
+            report.setStudentNo(String.valueOf(report.getStudentId()));
+            report.setStudentName(fallbackName(report.getStudentId()));
         }
-        report.setStudentNo(String.valueOf(report.getStudentId()));
-        report.setStudentName(fallbackName(report.getStudentId()));
+        // 填充报告附件
+        report.setAttachments(getAttachments("REPORT", report.getId()));
+    }
+
+    private void saveAttachments(String targetType, Long targetId, List<String> urls, List<String> names, List<Long> sizes) {
+        if (urls == null || urls.isEmpty()) return;
+        for (int i = 0; i < urls.size(); i++) {
+            String url = urls.get(i);
+            if (url == null || url.isEmpty()) continue;
+            AttachmentFile af = new AttachmentFile();
+            af.setTargetType(targetType);
+            af.setTargetId(targetId);
+            af.setFileUrl(url);
+            af.setFileName(names != null && i < names.size() ? names.get(i) : url.substring(url.lastIndexOf('/') + 1));
+            af.setFileSize(sizes != null && i < sizes.size() ? sizes.get(i) : 0L);
+            af.setSortOrder(i);
+            attachmentFileMapper.insert(af);
+        }
+    }
+
+    private List<AttachmentFile> getAttachments(String targetType, Long targetId) {
+        return attachmentFileMapper.selectList(new LambdaQueryWrapper<AttachmentFile>()
+                .eq(AttachmentFile::getTargetType, targetType)
+                .eq(AttachmentFile::getTargetId, targetId)
+                .orderByAsc(AttachmentFile::getSortOrder));
     }
 
     private TrainingProject requireProject(Long projectId) {

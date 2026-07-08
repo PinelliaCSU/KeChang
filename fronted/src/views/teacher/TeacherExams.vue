@@ -52,7 +52,7 @@
           </el-select>
         </el-form-item>
         <el-form-item label="关联试卷" required>
-          <el-select v-model="form.paperId" placeholder="选择试卷" style="width:100%">
+          <el-select v-model="form.paperId" placeholder="选择试卷" style="width:100%" @change="onPaperSelect">
             <el-option v-for="p in paperList" :key="p.id" :label="p.paperName + ' (' + p.totalScore + '分)'"
               :value="p.id" />
           </el-select>
@@ -70,21 +70,17 @@
           </el-col>
         </el-row>
         <el-row :gutter="16">
-          <el-col :span="8">
+          <el-col :span="10">
             <el-form-item label="时长(分)"><el-input-number v-model="form.duration" :min="1"
-                style="width:100%" /></el-form-item>
-          </el-col>
-          <el-col :span="8">
-            <el-form-item label="允许重考">
-              <el-switch v-model="allowRetry" active-text="是" inactive-text="否" />
+                style="width:100%" />
+              <span v-if="form.paperId && selectedPaper" style="font-size:12px;color:#909399">
+                试卷原始时长: {{ selectedPaper.duration }}分钟
+              </span>
             </el-form-item>
           </el-col>
-          <el-col :span="8">
-            <el-form-item label="状态">
-              <el-select v-model="form.status" style="width:100%">
-                <el-option label="未开始" value="未开始" /><el-option label="进行中" value="进行中" /><el-option label="已结束"
-                  value="已结束" />
-              </el-select>
+          <el-col :span="6">
+            <el-form-item label="允许重考">
+              <el-switch v-model="allowRetry" active-text="是" inactive-text="否" />
             </el-form-item>
           </el-col>
         </el-row>
@@ -159,7 +155,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 import { examApi, courseApi } from '@/api'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
@@ -170,7 +166,7 @@ const courseList = ref([]); const paperList = ref([])
 
 // 创建/编辑
 const dialogVisible = ref(false); const isEdit = ref(false); const editId = ref(null); const submitting = ref(false)
-const form = reactive({ examName: '', courseId: null, paperId: null, startTime: '', endTime: '', duration: 90, status: '未开始' })
+const form = reactive({ examName: '', courseId: null, paperId: null, startTime: '', endTime: '', duration: 90 })
 const allowRetry = ref(false)
 
 // 记录
@@ -211,10 +207,22 @@ const onCourseSelect = async (courseId) => {
   } catch (e) { /* ignore */ }
 }
 
+const selectedPaper = computed(() => {
+  return paperList.value.find(p => p.id === form.paperId) || null
+})
+
+const onPaperSelect = (paperId) => {
+  if (!paperId) return
+  const paper = paperList.value.find(p => p.id === paperId)
+  if (paper && paper.duration) {
+    form.duration = paper.duration
+  }
+}
+
 const openCreateDialog = () => {
   isEdit.value = false; editId.value = null
   form.examName = ''; form.courseId = null; form.paperId = null; form.startTime = ''; form.endTime = ''
-  form.duration = 90; form.status = '未开始'
+  form.duration = 90
   allowRetry.value = false; paperList.value = []
   dialogVisible.value = true
 }
@@ -223,9 +231,9 @@ const openEditDialog = async (row) => {
   isEdit.value = true; editId.value = row.id
   form.examName = row.examName; form.courseId = row.courseId; form.paperId = row.paperId
   form.startTime = row.startTime; form.endTime = row.endTime; form.duration = row.duration || 90
-  form.status = row.status || '未开始'
   allowRetry.value = row.allowRetry === 1
   await onCourseSelect(row.courseId)
+  onPaperSelect(row.paperId)
   dialogVisible.value = true
 }
 
@@ -236,15 +244,19 @@ const handleSubmit = async () => {
   submitting.value = true
   try {
     const data = { ...form, allowRetry: allowRetry.value ? 1 : 0 }
+    let res
     if (isEdit.value) {
-      await examApi.updateExam(editId.value, data)
-      ElMessage.success('考试更新成功')
+      res = await examApi.updateExam(editId.value, data)
     } else {
-      await examApi.createExam(data)
-      ElMessage.success('考试创建成功')
+      res = await examApi.createExam(data)
     }
-    dialogVisible.value = false
-    fetchExams()
+    if (res.data.code === 200) {
+      ElMessage.success(isEdit.value ? '考试更新成功' : '考试创建成功')
+      dialogVisible.value = false
+      fetchExams()
+    } else {
+      ElMessage.error(res.data.message || '操作失败')
+    }
   } catch (e) { /* ignore */ }
   finally { submitting.value = false }
 }

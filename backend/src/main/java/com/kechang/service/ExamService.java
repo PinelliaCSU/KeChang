@@ -86,15 +86,36 @@ public class ExamService {
 
     @Transactional
     public void createPaper(PaperCreateDTO dto, Long teacherId) {
+        // 应用默认值
+        double totalScore = dto.getTotalScore() != null ? dto.getTotalScore() : 100.0;
+        int duration = dto.getDuration() != null ? dto.getDuration() : 120;
+        double passScore = dto.getPassScore() != null ? dto.getPassScore() : 60.0;
+
+        // 校验及格分不能大于总分
+        if (passScore > totalScore) {
+            throw BusinessException.badRequest("及格分不能大于总分");
+        }
+
+        // 校验题目分值合计，不一致时自动修正总分
+        if (dto.getQuestions() != null && !dto.getQuestions().isEmpty()) {
+            double questionSum = dto.getQuestions().stream()
+                    .mapToDouble(PaperCreateDTO.PaperQuestionItem::getQuestionScore)
+                    .sum();
+            if (Math.abs(totalScore - questionSum) > 0.01) {
+                totalScore = questionSum;
+            }
+        }
+
         ExamPaper paper = new ExamPaper();
         paper.setPaperName(dto.getPaperName());
         paper.setCourseId(dto.getCourseId());
-        paper.setTotalScore(dto.getTotalScore() != null ? dto.getTotalScore() : 100.0);
-        paper.setDuration(dto.getDuration() != null ? dto.getDuration() : 120);
-        paper.setPassScore(dto.getPassScore() != null ? dto.getPassScore() : 60.0);
+        paper.setTotalScore(totalScore);
+        paper.setDuration(duration);
+        paper.setPassScore(passScore);
         paper.setStatus("已发布");
         paper.setCreateBy(teacherId);
         paperMapper.insert(paper);
+
         // 关联题目
         if (dto.getQuestions() != null) {
             for (PaperCreateDTO.PaperQuestionItem item : dto.getQuestions()) {
@@ -201,7 +222,8 @@ public class ExamService {
             vo.setStartTime(e.getStartTime());
             vo.setEndTime(e.getEndTime());
             vo.setDuration(e.getDuration());
-            vo.setStatus(e.getStatus());
+            // 根据时间自动计算状态
+            vo.setStatus(computeStatus(e.getStartTime(), e.getEndTime()));
             vo.setAllowRetry(e.getAllowRetry());
             vo.setCreateTime(e.getCreateTime());
             if ("ROLE_STUDENT".equals(role) && currentUserId != null) {
@@ -228,10 +250,46 @@ public class ExamService {
     }
 
     public void createExam(Exam exam) {
+        // 校验试卷存在
+        ExamPaper paper = paperMapper.selectById(exam.getPaperId());
+        if (paper == null) {
+            throw BusinessException.notFound("关联试卷不存在");
+        }
+        // 校验课程一致性
+        if (!paper.getCourseId().equals(exam.getCourseId())) {
+            throw BusinessException.badRequest("试卷所属课程与考试所属课程不一致");
+        }
+        // 校验时间顺序
+        if (exam.getStartTime() != null && exam.getEndTime() != null
+                && !exam.getStartTime().isBefore(exam.getEndTime())) {
+            throw BusinessException.badRequest("考试开始时间必须早于结束时间");
+        }
+        // 时长回退：未设置时从试卷继承
+        if (exam.getDuration() == null || exam.getDuration() <= 0) {
+            exam.setDuration(paper.getDuration());
+        }
         examMapper.insert(exam);
     }
 
     public void updateExam(Long id, Exam exam) {
+        // 校验试卷存在
+        ExamPaper paper = paperMapper.selectById(exam.getPaperId());
+        if (paper == null) {
+            throw BusinessException.notFound("关联试卷不存在");
+        }
+        // 校验课程一致性
+        if (!paper.getCourseId().equals(exam.getCourseId())) {
+            throw BusinessException.badRequest("试卷所属课程与考试所属课程不一致");
+        }
+        // 校验时间顺序
+        if (exam.getStartTime() != null && exam.getEndTime() != null
+                && !exam.getStartTime().isBefore(exam.getEndTime())) {
+            throw BusinessException.badRequest("考试开始时间必须早于结束时间");
+        }
+        // 时长回退：未设置时从试卷继承
+        if (exam.getDuration() == null || exam.getDuration() <= 0) {
+            exam.setDuration(paper.getDuration());
+        }
         exam.setId(id);
         examMapper.updateById(exam);
     }
@@ -277,13 +335,26 @@ public class ExamService {
         if (exam.getEndTime() != null && now.isAfter(exam.getEndTime())) {
             throw BusinessException.badRequest("考试已结束");
         }
-        // 检查是否已有记录
+        // 查询该学生考试记录（唯一约束 exam_id + student_id）
         ExamRecord exist = recordMapper.selectOne(new LambdaQueryWrapper<ExamRecord>()
                 .eq(ExamRecord::getExamId, examId).eq(ExamRecord::getStudentId, studentId));
         if (exist != null && exist.getIsSubmitted() == 1) {
-            throw BusinessException.badRequest("您已完成该考试");
-        }
-        if (exist == null) {
+            // 不允许重考则拒绝
+            if (exam.getAllowRetry() == null || exam.getAllowRetry() != 1) {
+                throw BusinessException.badRequest("您已完成该考试");
+            }
+            // 允许重考：重置已有记录
+            exist.setStartTime(LocalDateTime.now());
+            exist.setSubmitTime(null);
+            exist.setIsSubmitted(0);
+            exist.setTotalScore(null);
+            exist.setPassStatus(0);
+            exist.setCheatCount(0);
+            recordMapper.updateById(exist);
+            // 删除旧的答题记录
+            answerMapper.delete(new LambdaQueryWrapper<ExamRecordAnswer>()
+                    .eq(ExamRecordAnswer::getRecordId, exist.getId()));
+        } else if (exist == null) {
             ExamRecord record = new ExamRecord();
             record.setExamId(examId);
             record.setStudentId(studentId);
@@ -469,5 +540,22 @@ public class ExamService {
                 .sorted()
                 .collect(Collectors.toList());
         return values;
+    }
+
+    /**
+     * 根据开始/结束时间自动计算考试状态
+     */
+    private String computeStatus(LocalDateTime startTime, LocalDateTime endTime) {
+        if (startTime == null || endTime == null) {
+            return "未开始";
+        }
+        LocalDateTime now = LocalDateTime.now();
+        if (now.isBefore(startTime)) {
+            return "未开始";
+        } else if (now.isAfter(endTime)) {
+            return "已结束";
+        } else {
+            return "进行中";
+        }
     }
 }
