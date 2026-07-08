@@ -43,14 +43,7 @@
     </div>
 
     <div class="panel empty-panel" v-else>
-      <div class="empty-state">
-        <svg class="empty-illustration" width="120" height="90" viewBox="0 0 120 90" fill="none">
-          <rect x="20" y="10" width="80" height="70" rx="4" fill="#e8ecf1" />
-          <rect x="28" y="20" width="28" height="4" rx="2" fill="#d0d5dd" />
-          <rect x="28" y="30" width="50" height="3" rx="1.5" fill="#dce1e8" />
-        </svg>
-        <p class="empty-text">暂无作业任务，请先在课程中心加入课程</p>
-      </div>
+      <EmptyIllustration text="暂无作业任务，请先在课程中心加入课程" />
     </div>
 
     <el-dialog v-model="detailVisible" title="作业详情" width="680px" destroy-on-close>
@@ -78,7 +71,8 @@
         <div v-if="currentAssignment.submitted" class="detail-section">
           <div class="section-label">已提交内容</div>
           <div class="section-content">{{ currentAssignment.submitContent || '无文字内容' }}</div>
-          <a v-if="currentAssignment.submitAttachmentUrl" :href="currentAssignment.submitAttachmentUrl" target="_blank" rel="noreferrer">
+          <a v-if="currentAssignment.submitAttachmentUrl" :href="currentAssignment.submitAttachmentUrl" target="_blank"
+            rel="noreferrer">
             {{ currentAssignment.submitAttachmentUrl }}
           </a>
           <div class="detail-meta">
@@ -95,20 +89,12 @@
         <template v-if="!currentAssignment.submitted">
           <div class="detail-section">
             <div class="section-label">我的提交</div>
-            <el-input
-              v-model="submitForm.content"
-              type="textarea"
-              :rows="6"
-              placeholder="请输入作业答案、说明或提交内容"
-              :disabled="submitting || isOverdue(currentAssignment.deadline)"
-            />
+            <el-input v-model="submitForm.content" type="textarea" :rows="6" placeholder="请输入作业答案、说明或提交内容"
+              :disabled="submitting || isOverdue(currentAssignment.deadline)" />
           </div>
 
-          <el-input
-            v-model="submitForm.attachmentUrl"
-            placeholder="附件链接（可选）"
-            :disabled="submitting || isOverdue(currentAssignment.deadline)"
-          />
+          <el-input v-model="submitForm.attachmentUrl" placeholder="附件链接（可选）"
+            :disabled="submitting || isOverdue(currentAssignment.deadline)" />
         </template>
 
         <p v-if="isOverdue(currentAssignment.deadline) && !currentAssignment.submitted" class="submit-tip">
@@ -118,13 +104,8 @@
 
       <template #footer>
         <el-button @click="detailVisible = false">关闭</el-button>
-        <el-button
-          v-if="currentAssignment && !currentAssignment.submitted"
-          type="primary"
-          :loading="submitting"
-          :disabled="isOverdue(currentAssignment.deadline)"
-          @click="submitAssignment"
-        >
+        <el-button v-if="currentAssignment && !currentAssignment.submitted" type="primary" :loading="submitting"
+          :disabled="isOverdue(currentAssignment.deadline)" @click="submitAssignment">
           提交作业
         </el-button>
       </template>

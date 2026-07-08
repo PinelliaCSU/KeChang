@@ -15,11 +15,9 @@
         <div class="header-right">
             <!-- 我的主页 -->
             <el-dropdown trigger="click" @command="handleMyHomeCmd">
-                <span class="header-action">我的主页<svg width="10" height="6" viewBox="0 0 10 6" fill="none"
-                        style="margin-left:4px">
-                        <path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
-                            stroke-linejoin="round" />
-                    </svg></span>
+                <span class="header-action">我的主页<el-icon style="margin-left:4px">
+                        <ArrowDown />
+                    </el-icon></span>
                 <template #dropdown>
                     <el-dropdown-menu>
                         <el-dropdown-item command="dashboard">我的课程</el-dropdown-item>
@@ -32,24 +30,18 @@
 
             <!-- 日历 -->
             <span class="header-action header-icon" title="日历" @click="router.push('/calendar')" style="cursor:pointer">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                    stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-                    <line x1="16" y1="2" x2="16" y2="6" />
-                    <line x1="8" y1="2" x2="8" y2="6" />
-                    <line x1="3" y1="10" x2="21" y2="10" />
-                </svg>
+                <el-icon :size="18">
+                    <Calendar />
+                </el-icon>
             </span>
 
             <!-- 通知 -->
             <el-popover placement="bottom" :width="340" trigger="click" @show="fetchNotifications">
                 <template #reference>
                     <span class="header-action header-icon" title="通知">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-                            <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-                        </svg>
+                        <el-icon :size="18">
+                            <Bell />
+                        </el-icon>
                         <span class="badge-dot" v-if="unreadCount > 0"></span>
                     </span>
                 </template>
@@ -72,12 +64,9 @@
             <el-popover placement="bottom" :width="200" trigger="click">
                 <template #reference>
                     <span class="header-action header-icon" title="帮助">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="12" cy="12" r="10" />
-                            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
-                            <line x1="12" y1="17" x2="12.01" y2="17" />
-                        </svg>
+                        <el-icon :size="18">
+                            <QuestionFilled />
+                        </el-icon>
                     </span>
                 </template>
                 <div class="help-popover">

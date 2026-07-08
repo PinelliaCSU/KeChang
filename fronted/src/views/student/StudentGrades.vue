@@ -19,14 +19,7 @@
     </div>
 
     <div class="panel empty-panel" v-else>
-      <div class="empty-state">
-        <svg class="empty-illustration" width="120" height="90" viewBox="0 0 120 90" fill="none">
-          <rect x="20" y="10" width="80" height="70" rx="4" fill="#e8ecf1" />
-          <line x1="32" y1="30" x2="88" y2="30" stroke="#d0d5dd" stroke-width="2" />
-          <line x1="32" y1="42" x2="75" y2="42" stroke="#dce1e8" stroke-width="1.5" />
-        </svg>
-        <p class="empty-text">暂无成绩数据</p>
-      </div>
+      <EmptyIllustration variant="lines" text="暂无成绩数据" />
     </div>
   </div>
 </template>
@@ -34,6 +27,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { gradeApi } from '@/api'
+import EmptyIllustration from '@/components/EmptyIllustration.vue'
 
 const grades = ref([])
 

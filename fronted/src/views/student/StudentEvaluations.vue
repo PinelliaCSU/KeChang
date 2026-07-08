@@ -17,13 +17,7 @@
     </div>
 
     <div class="panel empty-panel" v-else>
-      <div class="empty-state">
-        <svg class="empty-illustration" width="120" height="90" viewBox="0 0 120 90" fill="none">
-          <rect x="20" y="10" width="80" height="70" rx="4" fill="#e8ecf1" />
-          <polygon points="60,28 68,48 90,48 73,60 79,80 60,70 41,80 47,60 30,48 52,48" fill="#dce1e8" />
-        </svg>
-        <p class="empty-text">暂无待评价内容</p>
-      </div>
+      <EmptyIllustration variant="star" text="暂无待评价内容" />
     </div>
   </div>
 </template>
@@ -31,6 +25,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { evaluationApi } from '@/api'
+import EmptyIllustration from '@/components/EmptyIllustration.vue'
 
 const evaluations = ref([])
 

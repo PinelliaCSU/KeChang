@@ -19,14 +19,7 @@
     </div>
 
     <div class="panel empty-panel" v-else>
-      <div class="empty-state">
-        <svg class="empty-illustration" width="120" height="90" viewBox="0 0 120 90" fill="none">
-          <rect x="20" y="10" width="80" height="70" rx="4" fill="#e8ecf1" />
-          <rect x="28" y="20" width="20" height="4" rx="2" fill="#d0d5dd" />
-          <rect x="28" y="30" width="50" height="3" rx="1.5" fill="#dce1e8" />
-        </svg>
-        <p class="empty-text">暂无笔记，去课程学习中记录吧</p>
-      </div>
+      <EmptyIllustration text="暂无笔记，去课程学习中记录吧" />
     </div>
 
     <!-- 新建笔记弹窗 -->
@@ -47,6 +40,7 @@
 import { ref, onMounted } from 'vue'
 import { knowledgeApi } from '@/api'
 import { ElMessage } from 'element-plus'
+import EmptyIllustration from '@/components/EmptyIllustration.vue'
 
 const notes = ref([])
 const showCreate = ref(false)
