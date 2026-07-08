@@ -7,6 +7,7 @@ import com.kechang.dto.SurveySubmitDTO;
 import com.kechang.entity.*;
 import com.kechang.service.*;
 import com.kechang.vo.AdminSurveyStatsVO;
+import com.kechang.vo.EvaluationVO;
 import com.kechang.vo.SurveyStatsVO;
 import com.kechang.vo.SurveyVO;
 import jakarta.validation.Valid;
@@ -223,29 +224,82 @@ class EvaluationController {
         return (Long) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
     }
 
+    private String role() {
+        return SecurityContextHolder.getContext().getAuthentication().getAuthorities()
+                .stream().findFirst().map(Object::toString).orElse("");
+    }
+
     @GetMapping
-    public Result<PageResult<Evaluation>> list(@RequestParam(defaultValue = "1") int page, @RequestParam(defaultValue = "10") int size, @RequestParam(required = false) Long courseId) {
-        return Result.success(evalService.list(page, size, courseId));
+    public Result<PageResult<EvaluationVO>> list(@RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) Long courseId) {
+        return Result.success(evalService.list(page, size, courseId, uid(), role()));
+    }
+
+    @GetMapping("/{id}")
+    public Result<EvaluationVO> detail(@PathVariable Long id) {
+        return Result.success(evalService.getDetail(id, uid()));
     }
 
     @PostMapping
     @PreAuthorize("hasAuthority('ROLE_TEACHER')")
-    public Result<Void> create(@RequestBody Evaluation e) {
-        evalService.create(e);
+    public Result<Void> create(@RequestBody Map<String, Object> body) {
+        evalService.create(body);
         return Result.success();
     }
 
+    /**
+     * 批量提交评价结果（学生评教使用）
+     */
     @PostMapping("/{id}/submit")
-    public Result<Void> submit(@PathVariable Long id, @RequestBody EvaluationResult r) {
-        r.setEvaluatorId(uid());
-        evalService.submitResult(r);
+    public Result<Void> submit(@PathVariable Long id, @RequestBody List<EvaluationResult> results) {
+        evalService.submitResults(id, uid(), results);
+        return Result.success();
+    }
+
+    /**
+     * 获取评价指标项列表
+     */
+    @GetMapping("/{id}/items")
+    public Result<List<EvaluationItem>> items(@PathVariable Long id) {
+        return Result.success(evalService.getItems(id));
+    }
+
+    /**
+     * 检查当前用户是否已提交评价
+     */
+    @GetMapping("/{id}/check-submitted")
+    public Result<Boolean> checkSubmitted(@PathVariable Long id) {
+        return Result.success(evalService.checkSubmitted(id, uid()));
+    }
+
+    /**
+     * 获取评价结果列表（教师/管理员查看）
+     */
+    /**
+     * 更新评价（含指标项）
+     */
+    @PutMapping("/{id}")
+    @PreAuthorize("hasAuthority('ROLE_TEACHER')")
+    public Result<Void> update(@PathVariable Long id, @RequestBody Map<String, Object> body) {
+        evalService.update(id, body);
+        return Result.success();
+    }
+
+    /**
+     * 删除评价（含指标项和评价结果）
+     */
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasAuthority('ROLE_TEACHER')")
+    public Result<Void> delete(@PathVariable Long id) {
+        evalService.delete(id);
         return Result.success();
     }
 
     @GetMapping("/{id}/results")
     @PreAuthorize("hasAuthority('ROLE_TEACHER')")
-    public Result<List<EvaluationResult>> results(@PathVariable Long id) {
-        return Result.success(evalService.getResults(id));
+    public Result<List<Map<String, Object>>> results(@PathVariable Long id) {
+        return Result.success(evalService.getResultsWithItems(id));
     }
 }
 

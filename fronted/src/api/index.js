@@ -118,8 +118,13 @@ export const dashboardApi = {
 /** 评价 API */
 export const evaluationApi = {
   list: (params) => request.get('/evaluations', { params }),
+  detail: (id) => request.get(`/evaluations/${id}`),
   create: (data) => request.post('/evaluations', data),
+  update: (id, data) => request.put(`/evaluations/${id}`, data),
+  delete: (id) => request.delete(`/evaluations/${id}`),
   submit: (id, data) => request.post(`/evaluations/${id}/submit`, data),
+  getItems: (id) => request.get(`/evaluations/${id}/items`),
+  checkSubmitted: (id) => request.get(`/evaluations/${id}/check-submitted`),
   getResults: (id) => request.get(`/evaluations/${id}/results`)
 }
 
