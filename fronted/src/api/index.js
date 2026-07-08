@@ -72,7 +72,8 @@ export const gradeApi = {
   studentGrades: (studentId) => request.get(`/grades/student/${studentId}`),
   myGrades: () => request.get('/grades/my'),
   courseGrades: (courseId) => request.get(`/grades/course/${courseId}`),
-  courseStats: (courseId) => request.get(`/grades/course/${courseId}/stats`)
+  courseStats: (courseId) => request.get(`/grades/course/${courseId}/stats`),
+  platformOverview: () => request.get('/grades/platform/overview')
 }
 
 /** 实训 API */
@@ -123,10 +124,19 @@ export const evaluationApi = {
 /** 问卷 API */
 export const surveyApi = {
   list: (params) => request.get('/surveys', { params }),
+  detail: (id) => request.get(`/surveys/${id}`),
   create: (data) => request.post('/surveys', data),
-  submit: (id, data) => request.post(`/surveys/${id}/submit`, data),
+  update: (id, data) => request.put(`/surveys/${id}`, data),
+  delete: (id) => request.delete(`/surveys/${id}`),
   getQuestions: (id) => request.get(`/surveys/${id}/questions`),
-  getStats: (id) => request.get(`/surveys/${id}/stats`)
+  addQuestion: (id, data) => request.post(`/surveys/${id}/questions`, data),
+  updateQuestion: (id, qid, data) => request.put(`/surveys/${id}/questions/${qid}`, data),
+  deleteQuestion: (id, qid) => request.delete(`/surveys/${id}/questions/${qid}`),
+  submit: (id, data) => request.post(`/surveys/${id}/submit`, data),
+  getMySubmission: (id) => request.get(`/surveys/${id}/my-submission`),
+  getStats: (id) => request.get(`/surveys/${id}/stats`),
+  getResponses: (id) => request.get(`/surveys/${id}/responses`),
+  getAdminStats: () => request.get('/surveys/admin/overview')
 }
 
 /** 知识库 API */

@@ -1,7 +1,7 @@
 <template>
   <div class="sidebar-wrapper" :class="{ collapsed }">
-    <el-menu :default-active="activeMenu" :collapse="collapsed" :router="true" background-color="transparent"
-      text-color="#4a544c" active-text-color="#606c38" class="sidebar-menu">
+    <el-menu :default-active="activeMenu" :default-openeds="openMenus" :collapse="collapsed" :router="true"
+      background-color="transparent" text-color="#4a544c" active-text-color="#606c38" class="sidebar-menu">
       <template v-for="item in menuItems" :key="item.path">
         <el-sub-menu v-if="item.children" :index="item.path">
           <template #title>
@@ -43,16 +43,37 @@ const activeMenu = computed(() => route.path)
 
 const teacherMenus = [
   { path: '/teacher/dashboard', title: '主页', icon: 'Odometer' },
-  { path: '/teacher/courses', title: '课程管理', icon: 'Reading' },
-  { path: '/teacher/questions', title: '试题管理', icon: 'EditPen' },
-  { path: '/teacher/papers', title: '试卷管理', icon: 'Document' },
-  { path: '/teacher/exams', title: '考试管理', icon: 'Timer' },
-  { path: '/teacher/assignments', title: '作业管理', icon: 'Notebook' },
-  { path: '/teacher/grades', title: '成绩管理', icon: 'TrendCharts' },
-  { path: '/teacher/trainings', title: '实训管理', icon: 'Monitor' },
-  { path: '/teacher/posts', title: '互动问答', icon: 'ChatDotRound' },
-  { path: '/teacher/surveys', title: '问卷管理', icon: 'List' },
-  { path: '/teacher/evaluations', title: '教学评价', icon: 'Star' }
+  {
+    path: 'res-sub',
+    title: '资源管理',
+    icon: 'Folder',
+    children: [
+      { path: '/teacher/questions', title: '试题管理' },
+      { path: '/teacher/papers', title: '试卷管理' },
+      { path: '/teacher/exams', title: '考试管理' },
+      { path: '/teacher/assignments', title: '作业管理' }
+    ]
+  },
+  {
+    path: 'teach-sub',
+    title: '教学管理',
+    icon: 'Reading',
+    children: [
+      { path: '/teacher/courses', title: '课程管理' },
+      { path: '/teacher/grades', title: '成绩管理' },
+      { path: '/teacher/trainings', title: '实训管理' }
+    ]
+  },
+  {
+    path: 'interact-sub',
+    title: '互动管理',
+    icon: 'ChatDotRound',
+    children: [
+      { path: '/teacher/posts', title: '互动问答' },
+      { path: '/teacher/surveys', title: '问卷管理' },
+      { path: '/teacher/evaluations', title: '教学评价' }
+    ]
+  }
 ]
 
 const studentMenus = [
@@ -65,17 +86,32 @@ const studentMenus = [
   { path: '/student/trainings', title: '实训中心', icon: 'Monitor' },
   { path: '/student/posts', title: '互动问答', icon: 'ChatDotRound' },
   { path: '/student/knowledge', title: '知识库', icon: 'Collection' },
-  { path: '/student/evaluations', title: '教学评价', icon: 'Star' }
+  { path: '/student/evaluations', title: '教学评价', icon: 'Star' },
+  { path: '/student/surveys', title: '问卷调查', icon: 'DocumentChecked' }
 ]
 
 const adminMenus = [
-  { path: '/admin/courses', title: '课程总览', icon: 'Reading' }
+  { path: '/admin/courses', title: '课程总览', icon: 'Reading' },
+  { path: '/admin/surveys', title: '问卷统计', icon: 'DataAnalysis' }
 ]
 
 const menuItems = computed(() => {
   if (userStore.isTeacher) return teacherMenus
   if (userStore.isAdmin) return adminMenus
   return studentMenus
+})
+
+// 根据当前路由自动展开对应的子菜单
+const openMenus = computed(() => {
+  const path = route.path
+  const items = menuItems.value
+  const opens = []
+  for (const item of items) {
+    if (item.children && item.children.some(c => path === c.path || path.startsWith(c.path + '/'))) {
+      opens.push(item.path)
+    }
+  }
+  return opens
 })
 </script>
 

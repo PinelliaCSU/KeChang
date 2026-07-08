@@ -37,6 +37,7 @@ public class ExamService {
     private final SysUserMapper userMapper;
     private final CourseMapper courseMapper;
     private final CourseStudentMapper courseStudentMapper;
+    private final GradeService gradeService;
 
     // ==================== 试题库 ====================
     public PageResult<Question> getQuestionList(int page, int size, String questionType,
@@ -349,6 +350,7 @@ public class ExamService {
         double passScore = paper != null ? paper.getPassScore() : 60.0;
         record.setPassStatus(totalScore >= passScore ? 1 : 0);
         recordMapper.updateById(record);
+        gradeService.recalculateGrade(exam.getCourseId(), studentId);
     }
 
     /**
@@ -417,6 +419,9 @@ public class ExamService {
             double passScore = paper != null ? paper.getPassScore() : 60.0;
             record.setPassStatus(total >= passScore ? 1 : 0);
             recordMapper.updateById(record);
+            if (exam != null) {
+                gradeService.recalculateGrade(exam.getCourseId(), record.getStudentId());
+            }
         }
     }
 

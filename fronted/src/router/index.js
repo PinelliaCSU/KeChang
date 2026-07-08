@@ -2,14 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 
 const routes = [
-  // ==================== 根路径（由路由守卫处理重定向） ====================
-  {
-    path: '/',
-    name: 'Root',
-    meta: { title: '课畅' }
-  },
-
-  // ==================== 系统仪表盘（登录后主页面） ====================
+  { path: '/', name: 'Root', meta: { title: '课畅' } },
   {
     path: '/dashboard',
     name: 'Dashboard',
@@ -70,7 +63,9 @@ const routes = [
     component: () => import('@/views/teacher/TeacherLayout.vue'),
     meta: { role: 'ROLE_ADMIN' },
     children: [
-      { path: 'courses', name: 'AdminCourses', component: () => import('@/views/admin/AdminCourses.vue'), meta: { title: '课程总览' } }
+      { path: 'courses', name: 'AdminCourses', component: () => import('@/views/admin/AdminCourses.vue'), meta: { title: '课程总览' } },
+      { path: 'grades', name: 'AdminGrades', component: () => import('@/views/admin/AdminGrades.vue'), meta: { title: '成绩概览' } },
+      { path: 'surveys', name: 'AdminSurveys', component: () => import('@/views/admin/AdminSurveys.vue'), meta: { title: '问卷统计' } }
     ]
   },
 
@@ -91,7 +86,8 @@ const routes = [
       { path: 'trainings', name: 'StudentTrainings', component: () => import('@/views/student/StudentTrainings.vue'), meta: { title: '实训中心' } },
       { path: 'posts', name: 'StudentPosts', component: () => import('@/views/student/StudentPosts.vue'), meta: { title: '互动问答' } },
       { path: 'knowledge', name: 'StudentKnowledge', component: () => import('@/views/student/StudentKnowledge.vue'), meta: { title: '知识库' } },
-      { path: 'evaluations', name: 'StudentEvaluations', component: () => import('@/views/student/StudentEvaluations.vue'), meta: { title: '教学评价' } }
+      { path: 'evaluations', name: 'StudentEvaluations', component: () => import('@/views/student/StudentEvaluations.vue'), meta: { title: '教学评价' } },
+      { path: 'surveys', name: 'StudentSurveys', component: () => import('@/views/student/StudentSurveys.vue'), meta: { title: '问卷调查' } }
     ]
   }
 ]
@@ -113,8 +109,7 @@ router.beforeEach((to, from, next) => {
     if (userStore.roleCode === 'ROLE_STUDENT') return '/student/dashboard'
     return '/dashboard'
   }
-  const requiredRole = to.meta.role || to.matched.find(r => r.meta.role)?.meta?.role
-  const requiresAuth = to.meta.requiresAuth
+  const requiredRole = to.meta.role || to.matched.find(route => route.meta.role)?.meta?.role
 
   // 访问根路径 / ：已登录→仪表盘，未登录→登录页
   if (to.path === '/') {
@@ -127,13 +122,11 @@ router.beforeEach((to, from, next) => {
     return
   }
 
-  // 需要登录的页面
-  if (requiresAuth && !userStore.token) {
+  if (to.meta.requiresAuth && !userStore.token) {
     next('/login')
     return
   }
 
-  // 已登录用户访问登录页，重定向到仪表盘
   if (to.path === '/login' && userStore.token) {
     next(roleHome())
     return
@@ -149,6 +142,7 @@ router.beforeEach((to, from, next) => {
       return
     }
   }
+
   next()
 })
 

@@ -7,7 +7,7 @@
 </script>
 
 <style>
-@import '@/styles/biophilic-theme.css';
+@import '@/styles/theme.css';
 
 * {
   margin: 0;

@@ -23,14 +23,7 @@
     </div>
 
     <div class="panel empty-panel" v-else>
-      <div class="empty-state">
-        <svg class="empty-illustration" width="120" height="90" viewBox="0 0 120 90" fill="none">
-          <rect x="20" y="10" width="80" height="70" rx="4" fill="#e8ecf1" />
-          <circle cx="60" cy="45" r="20" fill="#dce1e8" />
-          <path d="M54 45l4 4 8-8" stroke="#b0bec5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-        </svg>
-        <p class="empty-text">暂无实训项目</p>
-      </div>
+      <EmptyIllustration variant="check" text="暂无实训项目" />
     </div>
   </div>
 </template>
@@ -38,6 +31,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { trainingApi } from '@/api'
+import EmptyIllustration from '@/components/EmptyIllustration.vue'
 
 const trainings = ref([])
 

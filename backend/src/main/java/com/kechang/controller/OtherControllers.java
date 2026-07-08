@@ -2,8 +2,14 @@ package com.kechang.controller;
 
 import com.kechang.common.PageResult;
 import com.kechang.common.Result;
+import com.kechang.dto.SurveyCreateDTO;
+import com.kechang.dto.SurveySubmitDTO;
 import com.kechang.entity.*;
 import com.kechang.service.*;
+import com.kechang.vo.AdminSurveyStatsVO;
+import com.kechang.vo.SurveyStatsVO;
+import com.kechang.vo.SurveyVO;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -100,7 +106,6 @@ class QAController {
     }
 
     // ---------- 帖子 ----------
-
     @GetMapping("/posts")
     public Result<PageResult<QuestionPost>> listPosts(@RequestParam(defaultValue = "1") int page, @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) Long courseId, @RequestParam(defaultValue = "time") String orderBy) {
@@ -127,7 +132,6 @@ class QAController {
     }
 
     // ---------- 回答 ----------
-
     @PostMapping("/posts/{id}/answer")
     public Result<Void> createAnswer(@PathVariable Long id, @RequestParam String content) {
         qaService.createAnswer(id, content, uid());
@@ -158,7 +162,6 @@ class QAController {
     }
 
     // ---------- 评论 ----------
-
     @PostMapping("/answers/{id}/comment")
     public Result<Void> addCommentToAnswer(@PathVariable Long id, @RequestParam String content) {
         qaService.createComment("ANSWER", id, content, uid());
@@ -232,36 +235,107 @@ class SurveyController {
         return (Long) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
     }
 
+    private String role() {
+        return SecurityContextHolder.getContext().getAuthentication().getAuthorities()
+                .stream().findFirst().map(Object::toString).orElse("");
+    }
+
+    // ---------- 问卷 CRUD ----------
     @GetMapping
-    public Result<PageResult<Survey>> list(@RequestParam(defaultValue = "1") int page, @RequestParam(defaultValue = "10") int size, @RequestParam(required = false) Long courseId) {
-        return Result.success(surveyService.list(page, size, courseId));
+    public Result<PageResult<SurveyVO>> list(@RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) Long courseId) {
+        return Result.success(surveyService.list(page, size, courseId, uid(), role()));
+    }
+
+    @GetMapping("/{id}")
+    public Result<SurveyVO> detail(@PathVariable Long id) {
+        return Result.success(surveyService.getDetail(id, uid()));
     }
 
     @PostMapping
     @PreAuthorize("hasAuthority('ROLE_TEACHER')")
-    public Result<Void> create(@RequestBody Survey s) {
-        s.setCreateBy(uid());
-        surveyService.create(s);
+    public Result<Void> create(@Valid @RequestBody SurveyCreateDTO dto) {
+        surveyService.create(dto, uid());
         return Result.success();
     }
 
-    @PostMapping("/{id}/submit")
-    @PreAuthorize("hasAuthority('ROLE_STUDENT')")
-    public Result<Void> submit(@PathVariable Long id, @RequestBody SurveyResponse r) {
-        r.setRespondentId(uid());
-        surveyService.submitResponse(r);
+    @PutMapping("/{id}")
+    @PreAuthorize("hasAuthority('ROLE_TEACHER')")
+    public Result<Void> update(@PathVariable Long id, @Valid @RequestBody SurveyCreateDTO dto) {
+        surveyService.update(id, dto, uid());
         return Result.success();
     }
 
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasAuthority('ROLE_TEACHER')")
+    public Result<Void> delete(@PathVariable Long id) {
+        surveyService.delete(id, uid());
+        return Result.success();
+    }
+
+    // ---------- 题目管理 ----------
     @GetMapping("/{id}/questions")
     public Result<List<SurveyQuestion>> questions(@PathVariable Long id) {
         return Result.success(surveyService.getQuestions(id));
     }
 
-    @GetMapping("/{id}/stats")
+    @PostMapping("/{id}/questions")
     @PreAuthorize("hasAuthority('ROLE_TEACHER')")
-    public Result<List<SurveyResponse>> stats(@PathVariable Long id) {
+    public Result<Void> addQuestion(@PathVariable Long id, @RequestBody SurveyQuestion question) {
+        surveyService.addQuestion(id, question, uid());
+        return Result.success();
+    }
+
+    @PutMapping("/{id}/questions/{qid}")
+    @PreAuthorize("hasAuthority('ROLE_TEACHER')")
+    public Result<Void> updateQuestion(@PathVariable Long id, @PathVariable Long qid,
+            @RequestBody SurveyQuestion question) {
+        surveyService.updateQuestion(id, qid, question, uid());
+        return Result.success();
+    }
+
+    @DeleteMapping("/{id}/questions/{qid}")
+    @PreAuthorize("hasAuthority('ROLE_TEACHER')")
+    public Result<Void> deleteQuestion(@PathVariable Long id, @PathVariable Long qid) {
+        surveyService.deleteQuestion(id, qid, uid());
+        return Result.success();
+    }
+
+    // ---------- 问卷提交 ----------
+    @PostMapping("/{id}/submit")
+    @PreAuthorize("hasAuthority('ROLE_STUDENT')")
+    public Result<Void> submit(@PathVariable Long id, @Valid @RequestBody SurveySubmitDTO dto) {
+        surveyService.submitResponse(id, dto, uid());
+        return Result.success();
+    }
+
+    @GetMapping("/{id}/my-submission")
+    @PreAuthorize("hasAuthority('ROLE_STUDENT')")
+    public Result<Map<String, Object>> mySubmission(@PathVariable Long id) {
+        Boolean submitted = surveyService.checkSubmitted(id, uid());
+        List<SurveyResponse> responses = submitted ? surveyService.getMySubmission(id, uid()) : null;
+        return Result.success(Map.of("submitted", submitted, "responses", responses != null ? responses : List.of()));
+    }
+
+    // ---------- 统计 ----------
+    @GetMapping("/{id}/stats")
+    @PreAuthorize("hasAnyAuthority('ROLE_TEACHER','ROLE_ADMIN')")
+    public Result<SurveyStatsVO> stats(@PathVariable Long id) {
         return Result.success(surveyService.getStats(id));
+    }
+
+    @GetMapping("/{id}/responses")
+    @PreAuthorize("hasAnyAuthority('ROLE_TEACHER','ROLE_ADMIN')")
+    public Result<List<SurveyResponse>> responses(@PathVariable Long id) {
+        return Result.success(surveyService.getRawResponses(id));
+    }
+
+    // ---------- 管理端统计 ----------
+    @GetMapping("/admin/overview")
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+    public Result<AdminSurveyStatsVO> adminOverview() {
+        return Result.success(surveyService.getAdminStats());
     }
 }
 

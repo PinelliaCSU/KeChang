@@ -33,6 +33,7 @@ public class AssignmentService {
     private final CourseStudentMapper courseStudentMapper;
     private final StudentProfileMapper studentProfileMapper;
     private final SysUserMapper sysUserMapper;
+    private final GradeService gradeService;
 
     public PageResult<AssignmentVO> list(int page, int size, Long courseId, Long chapterId, Long userId, String role) {
         LambdaQueryWrapper<Assignment> w = new LambdaQueryWrapper<>();
@@ -237,6 +238,10 @@ public class AssignmentService {
             gradeMapper.insert(g);
         } else {
             gradeMapper.updateById(g);
+        }
+        Assignment assignment = assignmentMapper.selectById(s.getAssignmentId());
+        if (assignment != null) {
+            gradeService.recalculateGrade(assignment.getCourseId(), s.getStudentId());
         }
     }
 
