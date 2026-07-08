@@ -9,8 +9,6 @@
                     @click="goToCourses">课程</a>
                 <a href="javascript:;" class="nav-item" :class="{ active: topNavActive === 'resources' }"
                     @click="goToResources">资源</a>
-                <a href="javascript:;" class="nav-item" :class="{ active: topNavActive === 'questions' }"
-                    @click="goToQuestions">题库</a>
             </nav>
         </div>
 
@@ -33,20 +31,15 @@
             </el-dropdown>
 
             <!-- 日历 -->
-            <el-popover placement="bottom" :width="280" trigger="click">
-                <template #reference>
-                    <span class="header-action header-icon" title="日历" @click="router.push('/calendar')">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-                            <line x1="16" y1="2" x2="16" y2="6" />
-                            <line x1="8" y1="2" x2="8" y2="6" />
-                            <line x1="3" y1="10" x2="21" y2="10" />
-                        </svg>
-                    </span>
-                </template>
-                <el-calendar v-model="calendarDate" style="--el-calendar-cell-width:36px" />
-            </el-popover>
+            <span class="header-action header-icon" title="日历" @click="router.push('/calendar')" style="cursor:pointer">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                    <line x1="16" y1="2" x2="16" y2="6" />
+                    <line x1="8" y1="2" x2="8" y2="6" />
+                    <line x1="3" y1="10" x2="21" y2="10" />
+                </svg>
+            </span>
 
             <!-- 通知 -->
             <el-popover placement="bottom" :width="340" trigger="click" @show="fetchNotifications">
@@ -123,7 +116,6 @@ const router = useRouter()
 const userStore = useUserStore()
 
 const topNavActive = ref('courses')
-const calendarDate = ref(new Date())
 const unreadCount = ref(0)
 const notifications = ref([])
 
@@ -157,8 +149,7 @@ const formatTime = (t) => {
 
 // ==================== 导航 ====================
 const goToCourses = () => { topNavActive.value = 'courses'; router.push(userStore.isTeacher ? '/teacher/courses' : '/student/courses') }
-const goToResources = () => { topNavActive.value = 'resources'; ElMessage.info('资源模块开发中，敬请期待') }
-const goToQuestions = () => { topNavActive.value = 'questions'; userStore.isTeacher ? router.push('/teacher/questions') : ElMessage.info('题库模块仅教师可用') }
+const goToResources = () => { topNavActive.value = 'resources'; userStore.isTeacher ? router.push('/teacher/questions') : ElMessage.info('资源模块仅教师可用') }
 
 // ==================== 用户操作 ====================
 const handleMyHomeCmd = (cmd) => {
