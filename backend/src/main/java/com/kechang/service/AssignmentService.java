@@ -10,13 +10,22 @@ import com.kechang.mapper.*;
 import com.kechang.vo.AssignmentSubmitVO;
 import com.kechang.vo.AssignmentVO;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 /**
  * 作业管理服务
@@ -34,6 +43,10 @@ public class AssignmentService {
     private final StudentProfileMapper studentProfileMapper;
     private final SysUserMapper sysUserMapper;
     private final GradeService gradeService;
+    private final FileProcessingService fileProcessingService;
+
+    @Value("${kechang.upload.path:./uploads}")
+    private String uploadBasePath;
 
     public PageResult<AssignmentVO> list(int page, int size, Long courseId, Long chapterId, Long userId, String role) {
         LambdaQueryWrapper<Assignment> w = new LambdaQueryWrapper<>();
@@ -215,10 +228,14 @@ public class AssignmentService {
         return PageResult.of(records, p.getTotal(), page, size);
     }
 
-    public void grade(Long submitId, Double score, String comment, Long teacherId) {
+    @Transactional
+    public void grade(Long submitId, Double score, String comment, String feedbackMarks, Long teacherId) {
         AssignmentSubmit s = submitMapper.selectById(submitId);
         if (s == null) {
             throw BusinessException.notFound("提交记录不存在");
+        }
+        if (score == null || score < 0 || score > 100) {
+            throw BusinessException.badRequest("评分必须在 0 到 100 之间");
         }
         s.setScore(score);
         s.setStatus("已批改");
@@ -232,6 +249,7 @@ public class AssignmentService {
         }
         g.setScore(score);
         g.setComment(comment);
+        g.setFeedbackMarks(feedbackMarks);
         g.setGradedBy(teacherId);
         g.setGradedTime(LocalDateTime.now());
         if (g.getId() == null) {
@@ -239,10 +257,73 @@ public class AssignmentService {
         } else {
             gradeMapper.updateById(g);
         }
+
+        attachmentFileMapper.delete(new LambdaQueryWrapper<AttachmentFile>()
+                .eq(AttachmentFile::getTargetType, "FEEDBACK_SUBMIT")
+                .eq(AttachmentFile::getTargetId, submitId));
+        List<AttachmentFile> feedbackFiles = fileProcessingService.buildAnnotatedFiles(
+                submitId,
+                getAttachments("SUBMIT", submitId),
+                feedbackMarks
+        );
+        for (AttachmentFile feedbackFile : feedbackFiles) {
+            attachmentFileMapper.insert(feedbackFile);
+        }
+
         Assignment assignment = assignmentMapper.selectById(s.getAssignmentId());
         if (assignment != null) {
             gradeService.recalculateGrade(assignment.getCourseId(), s.getStudentId());
         }
+    }
+
+    public void writeSubmitArchive(Long assignmentId, Long teacherId, OutputStream outputStream) throws IOException {
+        Assignment assignment = assignmentMapper.selectById(assignmentId);
+        if (assignment == null) {
+            throw BusinessException.notFound("作业不存在");
+        }
+        if (!teacherId.equals(assignment.getCreateBy())) {
+            throw BusinessException.forbidden("只能下载自己发布作业的提交附件");
+        }
+        List<AssignmentSubmit> submitList = submitMapper.selectList(new LambdaQueryWrapper<AssignmentSubmit>()
+                .eq(AssignmentSubmit::getAssignmentId, assignmentId)
+                .orderByAsc(AssignmentSubmit::getStudentId));
+        try (ZipOutputStream zip = new ZipOutputStream(outputStream, StandardCharsets.UTF_8)) {
+            for (AssignmentSubmit submit : submitList) {
+                StudentProfile profile = studentProfileMapper.selectOne(new LambdaQueryWrapper<StudentProfile>()
+                        .eq(StudentProfile::getUserId, submit.getStudentId())
+                        .last("limit 1"));
+                String folder = studentArchiveName(profile, submit);
+                List<AttachmentFile> files = getAttachments("SUBMIT", submit.getId());
+                if (files.isEmpty() && submit.getAttachmentUrl() != null) {
+                    AttachmentFile file = new AttachmentFile();
+                    file.setFileUrl(submit.getAttachmentUrl());
+                    file.setFileName(submit.getAttachmentUrl().substring(submit.getAttachmentUrl().lastIndexOf('/') + 1));
+                    files = List.of(file);
+                }
+                if (files.isEmpty()) {
+                    zip.putNextEntry(new ZipEntry(folder + "/未上传附件.txt"));
+                    zip.write("该学生没有上传附件。".getBytes(StandardCharsets.UTF_8));
+                    zip.closeEntry();
+                    continue;
+                }
+                for (int i = 0; i < files.size(); i++) {
+                    AttachmentFile file = files.get(i);
+                    Path path = resolveUploadPath(file.getFileUrl());
+                    if (!Files.exists(path)) {
+                        continue;
+                    }
+                    String entryName = folder + "/" + (i + 1) + "-" + safeArchivePart(file.getFileName());
+                    zip.putNextEntry(new ZipEntry(entryName));
+                    Files.copy(path, zip);
+                    zip.closeEntry();
+                }
+            }
+        }
+    }
+
+    public String archiveFileName(Long assignmentId) {
+        Assignment assignment = assignmentMapper.selectById(assignmentId);
+        return fileProcessingService.archiveFileName(assignment != null ? assignment.getTitle() : "作业附件");
     }
 
     private AssignmentVO toAssignmentVO(Assignment assignment, Long studentId) {
@@ -292,6 +373,7 @@ public class AssignmentService {
         vo.setSubmitContent(submit.getContent());
         vo.setSubmitAttachmentUrl(submit.getAttachmentUrl());
         vo.setSubmitAttachments(getAttachments("SUBMIT", submit.getId()));
+        vo.setFeedbackAttachments(getAttachments("FEEDBACK_SUBMIT", submit.getId()));
         vo.setSubmitTime(submit.getSubmitTime());
         vo.setMySubmitStatus(submit.getStatus());
         vo.setMyScore(submit.getScore());
@@ -302,6 +384,7 @@ public class AssignmentService {
         if (grade != null) {
             vo.setMyScore(grade.getScore());
             vo.setGradeComment(grade.getComment());
+            vo.setFeedbackMarks(grade.getFeedbackMarks());
             vo.setGradedTime(grade.getGradedTime());
         }
     }
@@ -318,6 +401,7 @@ public class AssignmentService {
         vo.setStatus(submit.getStatus());
         vo.setCreateTime(submit.getCreateTime());
         vo.setAttachments(getAttachments("SUBMIT", submit.getId()));
+        vo.setFeedbackAttachments(getAttachments("FEEDBACK_SUBMIT", submit.getId()));
 
         AssignmentGrade grade = gradeMapper.selectOne(new LambdaQueryWrapper<AssignmentGrade>()
                 .eq(AssignmentGrade::getSubmitId, submit.getId())
@@ -325,6 +409,7 @@ public class AssignmentService {
         if (grade != null) {
             vo.setScore(grade.getScore());
             vo.setComment(grade.getComment());
+            vo.setFeedbackMarks(grade.getFeedbackMarks());
             vo.setGradedTime(grade.getGradedTime());
         }
 
@@ -334,6 +419,8 @@ public class AssignmentService {
         if (profile != null) {
             vo.setStudentName(profile.getRealName());
             vo.setStudentNo(profile.getStudentNo());
+            vo.setStudentMajor(profile.getMajor());
+            vo.setClassName(profile.getClassName());
         }
         if (vo.getStudentName() == null) {
             SysUser user = sysUserMapper.selectById(submit.getStudentId());
@@ -342,5 +429,23 @@ public class AssignmentService {
             }
         }
         return vo;
+    }
+
+    private String studentArchiveName(StudentProfile profile, AssignmentSubmit submit) {
+        String studentNo = profile != null && profile.getStudentNo() != null ? profile.getStudentNo() : String.valueOf(submit.getStudentId());
+        String name = profile != null && profile.getRealName() != null ? profile.getRealName() : "学生";
+        String major = profile != null && profile.getMajor() != null ? profile.getMajor() : "未填专业";
+        return safeArchivePart(studentNo + "-" + name + "-" + major);
+    }
+
+    private String safeArchivePart(String value) {
+        return (value == null ? "file" : value).replaceAll("[\\\\/:*?\"<>|\\r\\n]+", "_");
+    }
+
+    private Path resolveUploadPath(String fileUrl) {
+        String value = fileUrl == null ? "" : fileUrl;
+        int uploads = value.indexOf("/uploads/");
+        String relative = uploads >= 0 ? value.substring(uploads + "/uploads/".length()) : value.replaceFirst("^/+", "");
+        return Paths.get(uploadBasePath).toAbsolutePath().normalize().resolve(relative).normalize();
     }
 }

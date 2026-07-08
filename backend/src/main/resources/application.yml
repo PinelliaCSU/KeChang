@@ -53,3 +53,7 @@ springdoc:
 kechang:
   upload:
     path: ./uploads
+  office:
+    # 安装 LibreOffice 后建议显式配置，Word 转 PDF 才能保留表格、图片和复杂格式
+    # Windows 示例："C:/Program Files/LibreOffice/program/soffice.exe"
+    soffice-path:

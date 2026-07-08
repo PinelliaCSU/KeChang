@@ -18,6 +18,7 @@ public class AssignmentGrade {
     private Long submitId;
     private Double score;
     private String comment;
+    private String feedbackMarks;
     private Long gradedBy;
     private LocalDateTime gradedTime;
 

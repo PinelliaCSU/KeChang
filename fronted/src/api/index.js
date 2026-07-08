@@ -64,7 +64,8 @@ export const assignmentApi = {
   delete: (id) => request.delete(`/assignments/${id}`),
   submit: (id, data) => request.post(`/assignments/${id}/submit`, data),
   getSubmitList: (id, params) => request.get(`/assignments/${id}/submits`, { params }),
-  grade: (submitId, params) => request.put(`/assignments/submits/${submitId}/grade`, null, { params })
+  downloadArchive: (id) => request.get(`/assignments/${id}/submits/archive`, { responseType: 'blob' }),
+  grade: (submitId, data) => request.put(`/assignments/submits/${submitId}/grade`, data)
 }
 
 /** 成绩 API */
@@ -164,5 +165,7 @@ export const notificationApi = {
 
 /** 文件上传 API */
 export const uploadApi = {
-  uploadFile: (formData) => request.post('/upload/file', formData)
+  uploadFile: (formData) => request.post('/upload/file', formData),
+  preview: (params) => request.get('/upload/preview', { params }),
+  pdfPages: (params) => request.get('/upload/pdf-pages', { params })
 }

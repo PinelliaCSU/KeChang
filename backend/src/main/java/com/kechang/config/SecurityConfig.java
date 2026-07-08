@@ -31,6 +31,8 @@ public class SecurityConfig {
         http
                 // 禁用 CSRF（前后端分离 + JWT）
                 .csrf(AbstractHttpConfigurer::disable)
+                // 允许前端 iframe 内嵌 /uploads 下的 PDF、图片等教学文件进行在线预览
+                .headers(headers -> headers.frameOptions(frame -> frame.disable()))
                 // 无状态 Session
                 .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS))

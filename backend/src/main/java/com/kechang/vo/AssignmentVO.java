@@ -29,9 +29,11 @@ public class AssignmentVO {
     private String submitContent;
     private String submitAttachmentUrl;
     private List<AttachmentFile> submitAttachments;
+    private List<AttachmentFile> feedbackAttachments;
     private LocalDateTime submitTime;
     private String mySubmitStatus;
     private Double myScore;
     private String gradeComment;
+    private String feedbackMarks;
     private LocalDateTime gradedTime;
 }

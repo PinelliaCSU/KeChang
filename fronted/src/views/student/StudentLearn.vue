@@ -30,7 +30,7 @@
             <div v-for="resource in resourcesByChapter(chapter.id)" :key="`r-${resource.id}`" class="learn-item">
               <span class="item-icon">📎</span>
               <span class="item-name">{{ resource.resourceName }}</span>
-              <el-link :href="resource.fileUrl" target="_blank" type="primary">查看文件</el-link>
+              <el-button size="small" type="primary" link @click="previewFile(resource)">预览</el-button>
             </div>
 
             <div v-for="assignment in assignmentsByChapter(chapter.id)" :key="`a-${assignment.id}`" class="learn-item">
@@ -60,6 +60,10 @@
         <el-button type="primary" @click="saveNote">保存笔记</el-button>
       </div>
     </div>
+
+    <el-dialog v-model="previewVisible" title="资源预览" width="80%" top="5vh" destroy-on-close>
+      <FilePreview v-if="previewResource" :url="previewResource.fileUrl" :name="previewResource.resourceName" :type="previewResource.resourceType" />
+    </el-dialog>
   </div>
 </template>
 
@@ -68,6 +72,7 @@ import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { assignmentApi, courseApi, knowledgeApi } from '@/api'
 import { ElMessage } from 'element-plus'
+import FilePreview from '@/components/FilePreview.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -77,6 +82,8 @@ const resources = ref([])
 const assignments = ref([])
 const openChapterNames = ref([])
 const noteContent = ref('')
+const previewVisible = ref(false)
+const previewResource = ref(null)
 
 const courseId = () => route.params.id
 
@@ -102,6 +109,11 @@ const fetchCourseData = async () => {
 const resourcesByChapter = (chapterId) => resources.value.filter(resource => resource.chapterId === chapterId)
 const assignmentsByChapter = (chapterId) => assignments.value.filter(assignment => assignment.chapterId === chapterId)
 const formatDate = (value) => value ? String(value).replace('T', ' ').slice(0, 16) : '--'
+
+const previewFile = (resource) => {
+  previewResource.value = resource
+  previewVisible.value = true
+}
 
 const saveNote = async () => {
   if (!noteContent.value.trim()) {

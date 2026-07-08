@@ -305,6 +305,7 @@ CREATE TABLE `assignment_grade` (
   `submit_id`   BIGINT        NOT NULL COMMENT '提交ID',
   `score`       DECIMAL(5,2)  DEFAULT NULL COMMENT '评分',
   `comment`     TEXT          DEFAULT NULL COMMENT '评语',
+  `feedback_marks` TEXT       DEFAULT NULL COMMENT '结构化批注JSON',
   `graded_by`   BIGINT        DEFAULT NULL COMMENT '评分教师ID',
   `graded_time` DATETIME      DEFAULT CURRENT_TIMESTAMP COMMENT '评分时间',
   `create_time` DATETIME      DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',

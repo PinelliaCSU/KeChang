@@ -469,7 +469,10 @@ class NotificationController {
 // ==================== 通用文件上传 ====================
 @RestController
 @RequestMapping("/api/upload")
+@RequiredArgsConstructor
 class UploadController {
+
+    private final FileProcessingService fileProcessingService;
 
     @Value("${kechang.upload.path:./uploads}")
     private String uploadBasePath;
@@ -491,5 +494,20 @@ class UploadController {
 
         String url = "/uploads/common/" + fileName;
         return Result.success(Map.of("url", url, "name", safeName, "size", Files.size(destFile)));
+    }
+
+    @GetMapping("/preview")
+    @PreAuthorize("hasAnyAuthority('ROLE_TEACHER','ROLE_STUDENT')")
+    public Result<Map<String, Object>> preview(@RequestParam String url,
+            @RequestParam(required = false) String name) {
+        String previewUrl = fileProcessingService.ensurePdfPreview(url, name);
+        return Result.success(Map.of("url", previewUrl));
+    }
+
+    @GetMapping("/pdf-pages")
+    @PreAuthorize("hasAnyAuthority('ROLE_TEACHER','ROLE_STUDENT')")
+    public Result<Map<String, Object>> pdfPages(@RequestParam String url,
+            @RequestParam(required = false) String name) {
+        return Result.success(fileProcessingService.renderPdfPages(url, name));
     }
 }

@@ -55,7 +55,7 @@
                     <span class="item-title">{{ resource.resourceName }}</span>
                     <span class="item-meta">{{ formatFileSize(resource.fileSize) }}</span>
                     <div class="item-actions">
-                      <el-link v-if="resource.fileUrl" :href="resource.fileUrl" target="_blank" type="primary">查看</el-link>
+                      <el-button v-if="resource.fileUrl" size="small" type="primary" link @click="previewFile(resource)">预览</el-button>
                       <el-button size="small" type="danger" @click="deleteResource(resource)">删除</el-button>
                     </div>
                   </div>
@@ -113,6 +113,10 @@
         </el-button>
       </template>
     </el-dialog>
+
+    <el-dialog v-model="previewVisible" title="资源预览" width="80%" top="5vh" destroy-on-close>
+      <FilePreview v-if="previewResource" :url="previewResource.fileUrl" :name="previewResource.resourceName" :type="previewResource.resourceType" />
+    </el-dialog>
   </div>
 </template>
 
@@ -121,6 +125,7 @@ import { reactive, ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { assignmentApi, courseApi } from '@/api'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import FilePreview from '@/components/FilePreview.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -135,6 +140,8 @@ const chapterDialogVisible = ref(false)
 const savingChapter = ref(false)
 const uploading = ref(false)
 const editingChapterId = ref(null)
+const previewVisible = ref(false)
+const previewResource = ref(null)
 
 const chapterForm = reactive({ chapterName: '', sortOrder: 1, description: '' })
 const courseId = () => route.params.id
@@ -259,6 +266,11 @@ const deleteResource = async (resource) => {
   } catch (e) {
     if (e !== 'cancel') ElMessage.error(e.response?.data?.message || '删除资源失败')
   }
+}
+
+const previewFile = (resource) => {
+  previewResource.value = resource
+  previewVisible.value = true
 }
 
 const formatDate = (value) => value ? String(value).replace('T', ' ').slice(0, 16) : '--'
