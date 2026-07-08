@@ -86,11 +86,13 @@ const studentMenus = [
   { path: '/student/trainings', title: '实训中心', icon: 'Monitor' },
   { path: '/student/posts', title: '互动问答', icon: 'ChatDotRound' },
   { path: '/student/knowledge', title: '知识库', icon: 'Collection' },
-  { path: '/student/evaluations', title: '教学评价', icon: 'Star' }
+  { path: '/student/evaluations', title: '教学评价', icon: 'Star' },
+  { path: '/student/surveys', title: '问卷调查', icon: 'DocumentChecked' }
 ]
 
 const adminMenus = [
-  { path: '/admin/courses', title: '课程总览', icon: 'Reading' }
+  { path: '/admin/courses', title: '课程总览', icon: 'Reading' },
+  { path: '/admin/surveys', title: '问卷统计', icon: 'DataAnalysis' }
 ]
 
 const menuItems = computed(() => {

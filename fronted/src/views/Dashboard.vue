@@ -420,7 +420,7 @@ const goToCourses = () => { sidebarActive.value = 'courses'; router.push(userSto
 const goToResources = () => { sidebarActive.value = 'resources'; ElMessage.info('资源模块开发中，敬请期待') }
 const goToQuestions = () => { userStore.isTeacher ? router.push('/teacher/questions') : ElMessage.info('题库模块仅教师可用') }
 const goToEvaluations = () => router.push(userStore.isTeacher ? '/teacher/evaluations' : '/student/evaluations')
-const goToLearn = () => { if (courses.value.length > 0) enterCourse(courses.value[0]); else ElMessage.info('请先选择课程') }
+const goToLearn = () => { if (courses.value.length > 0) enterCourse(courses.value[0]); else ElMessage.info('暂无课程') }
 const goToPosts = () => router.push(userStore.isTeacher ? '/teacher/posts' : '/student/posts')
 
 // ==================== 生命周期 ====================
