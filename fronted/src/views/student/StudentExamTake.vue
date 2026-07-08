@@ -130,10 +130,14 @@ function startTimer() {
 }
 
 function parseOptions(options) {
+  if (currentQuestion.value?.questionType === 'JUDGE') {
+    return [{ key: '对', value: '正确' }, { key: '错', value: '错误' }]
+  }
   if (!options) return []
   try {
     const obj = typeof options === 'string' ? JSON.parse(options) : options
-    return Object.entries(obj).map(([k, v]) => ({ key: k, value: v }))
+    if (Array.isArray(obj)) return obj.map(value => ({ key: value, value }))
+    return Object.entries(obj).map(([k, v]) => ({ key: v, value: v || k }))
   } catch (e) { return [] }
 }
 
@@ -164,7 +168,7 @@ async function submitExam() {
   clearInterval(timer)
   // 处理多选题答案
   for (const qid in multiAnswers) {
-    answers[qid] = multiAnswers[qid].join(',')
+    answers[qid] = JSON.stringify(multiAnswers[qid])
   }
   const answerList = Object.entries(answers).map(([qid, ans]) => ({ questionId: Number(qid), answer: ans }))
   try {

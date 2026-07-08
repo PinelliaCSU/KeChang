@@ -44,6 +44,7 @@ export const examApi = {
   listExams: (params) => request.get('/exams', { params }),
   createExam: (data) => request.post('/exams', data),
   updateExam: (id, data) => request.put(`/exams/${id}`, data),
+  deleteExam: (id) => request.delete(`/exams/${id}`),
   getExam: (id) => request.get(`/exams/${id}`),
   startExam: (id) => request.post(`/exams/${id}/start`),
   submitExam: (id, data) => request.post(`/exams/${id}/submit`, data),

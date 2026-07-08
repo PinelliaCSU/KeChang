@@ -142,9 +142,9 @@
           </div>
           <div class="score-row" v-if="ans.questionType === 'ESSAY' || ans.questionType === 'FILL'">
             <span>得分：</span>
-            <el-input-number v-model="scoreMap[ans.id]" :min="0" :max="ans.questionScore" size="small"
+            <el-input-number v-model="scoreMap[ans.questionId]" :min="0" :max="ans.questionScore" size="small"
               style="width:100px" />
-            <el-button size="small" type="primary" @click="doMark(ans.id, ans.recordId)"
+            <el-button size="small" type="primary" @click="doMark(ans.questionId, ans.recordId)"
               style="margin-left:8px">确认评分</el-button>
           </div>
           <div v-else style="color:#909399;font-size:13px">
@@ -252,7 +252,9 @@ const handleSubmit = async () => {
 const handleDelete = async (id) => {
   try {
     await ElMessageBox.confirm('确定删除该考试？', '确认删除', { type: 'warning' })
-    ElMessage.warning('删除考试接口暂未实现，请联系管理员')
+    await examApi.deleteExam(id)
+    ElMessage.success('删除成功')
+    fetchExams()
   } catch (e) { /* ignore */ }
 }
 
@@ -274,7 +276,7 @@ const viewRecordDetail = async (row) => {
     const res = await examApi.getRecordDetail(row.id)
     if (res.data.code === 200) {
       recordAnswers.value = res.data.data || []
-      recordAnswers.value.forEach(a => { scoreMap[a.id] = a.score || 0 })
+      recordAnswers.value.forEach(a => { scoreMap[a.questionId] = a.score || 0 })
     }
   } catch (e) { /* ignore */ }
   finally { recLoading.value = false }

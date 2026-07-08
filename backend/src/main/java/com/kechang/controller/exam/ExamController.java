@@ -7,13 +7,14 @@ import com.kechang.dto.PaperCreateDTO;
 import com.kechang.entity.Exam;
 import com.kechang.entity.ExamPaper;
 import com.kechang.entity.ExamRecord;
-import com.kechang.entity.ExamRecordAnswer;
 import com.kechang.entity.Question;
 import com.kechang.service.ExamService;
 import com.kechang.vo.ExamListVO;
+import com.kechang.vo.ExamRecordAnswerVO;
 import com.kechang.vo.ExamVO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
@@ -28,6 +29,18 @@ public class ExamController {
 
     private Long getUserId() {
         return (Long) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+    }
+
+    private String currentRole() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null) {
+            return null;
+        }
+        return authentication.getAuthorities().stream()
+                .map(authority -> authority.getAuthority())
+                .filter(authority -> authority.startsWith("ROLE_"))
+                .findFirst()
+                .orElse(null);
     }
 
     // ==================== 试题库 ====================
@@ -105,7 +118,7 @@ public class ExamController {
     public Result<PageResult<ExamListVO>> listExams(@RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) Long courseId) {
-        return Result.success(examService.getExamList(page, size, courseId));
+        return Result.success(examService.getExamList(page, size, courseId, getUserId(), currentRole()));
     }
 
     @PostMapping("/api/exams")
@@ -119,6 +132,13 @@ public class ExamController {
     @PreAuthorize("hasAuthority('ROLE_TEACHER')")
     public Result<Void> updateExam(@PathVariable Long id, @RequestBody Exam exam) {
         examService.updateExam(id, exam);
+        return Result.success();
+    }
+
+    @DeleteMapping("/api/exams/{id}")
+    @PreAuthorize("hasAuthority('ROLE_TEACHER')")
+    public Result<Void> deleteExam(@PathVariable Long id) {
+        examService.deleteExam(id, getUserId());
         return Result.success();
     }
 
@@ -149,7 +169,7 @@ public class ExamController {
     }
 
     @GetMapping("/api/exams/records/{recordId}")
-    public Result<List<ExamRecordAnswer>> getRecordDetail(@PathVariable Long recordId) {
+    public Result<List<ExamRecordAnswerVO>> getRecordDetail(@PathVariable Long recordId) {
         return Result.success(examService.getRecordDetail(recordId));
     }
 

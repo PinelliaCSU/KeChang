@@ -2,84 +2,159 @@
   <div class="page-shell">
     <div class="page-title-bar">
       <h2 class="page-title">在线考试</h2>
-      <div class="page-actions">
-        <el-select v-model="statusFilter" placeholder="状态筛选" size="default" style="width:140px" clearable>
-          <el-option label="全部" value="" />
-          <el-option label="待参加" value="upcoming" />
-          <el-option label="进行中" value="ongoing" />
-          <el-option label="已结束" value="ended" />
-        </el-select>
-      </div>
+      <el-select v-model="statusFilter" placeholder="状态筛选" clearable style="width: 140px">
+        <el-option label="全部" value="" />
+        <el-option label="未开始" value="pending" />
+        <el-option label="进行中" value="ongoing" />
+        <el-option label="已结束" value="ended" />
+        <el-option label="已交卷" value="submitted" />
+      </el-select>
     </div>
 
-    <div class="panel" v-if="exams.length > 0">
-      <el-table :data="exams" style="width:100%" row-class-name="table-row">
-        <el-table-column prop="examName" label="考试名称" min-width="200">
-          <template #default="{ row }">
-            <span class="link-text" @click="enterExam(row)">{{ row.examName || row.name }}</span>
-          </template>
-        </el-table-column>
+    <div class="panel">
+      <el-table :data="filteredExams" stripe border v-loading="loading">
+        <el-table-column prop="examName" label="考试名称" min-width="180" />
         <el-table-column prop="courseName" label="所属课程" min-width="140" />
-        <el-table-column prop="startTime" label="开始时间" width="170" />
-        <el-table-column prop="endTime" label="结束时间" width="170" />
-        <el-table-column prop="duration" label="时长(分钟)" width="100" />
+        <el-table-column prop="startTime" label="开始时间" width="170">
+          <template #default="{ row }">{{ formatTime(row.startTime) }}</template>
+        </el-table-column>
+        <el-table-column prop="endTime" label="结束时间" width="170">
+          <template #default="{ row }">{{ formatTime(row.endTime) }}</template>
+        </el-table-column>
+        <el-table-column prop="duration" label="时长" width="80">
+          <template #default="{ row }">{{ row.duration || '-' }} 分钟</template>
+        </el-table-column>
         <el-table-column label="状态" width="100">
           <template #default="{ row }">
-            <el-tag :type="examStatusTagType(row)" size="small">{{ examStatusLabel(row) }}</el-tag>
+            <el-tag :type="statusTag(row)" size="small">{{ statusLabel(row) }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="120">
+        <el-table-column label="成绩" width="120">
           <template #default="{ row }">
-            <el-button v-if="canEnterExam(row)" size="small" type="primary" @click="enterExam(row)">进入考试</el-button>
-            <span v-else class="text-muted">--</span>
+            <span v-if="row.submitted === 1">{{ row.totalScore ?? 0 }} 分</span>
+            <span v-else class="muted">未交卷</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" width="180" fixed="right">
+          <template #default="{ row }">
+            <el-button v-if="canStart(row)" size="small" type="primary" @click="enterExam(row)">进入考试</el-button>
+            <el-button v-else-if="row.submitted === 1" size="small" @click="openResult(row)">查看结果</el-button>
+            <span v-else class="muted">--</span>
           </template>
         </el-table-column>
       </el-table>
+
+      <el-empty v-if="!loading && filteredExams.length === 0" description="暂无考试安排" :image-size="100" />
     </div>
 
-    <div class="panel empty-panel" v-else>
-      <div class="empty-state">
-        <svg class="empty-illustration" width="120" height="90" viewBox="0 0 120 90" fill="none">
-          <rect x="20" y="10" width="80" height="70" rx="4" fill="#e8ecf1" />
-          <rect x="28" y="20" width="28" height="4" rx="2" fill="#d0d5dd" />
-        </svg>
-        <p class="empty-text">暂无考试安排</p>
+    <el-dialog v-model="resultVisible" title="考试结果" width="760px">
+      <el-descriptions v-if="currentExam" :column="3" border>
+        <el-descriptions-item label="考试">{{ currentExam.examName }}</el-descriptions-item>
+        <el-descriptions-item label="课程">{{ currentExam.courseName }}</el-descriptions-item>
+        <el-descriptions-item label="总分">{{ currentExam.totalScore ?? 0 }}</el-descriptions-item>
+        <el-descriptions-item label="结果">
+          <el-tag :type="currentExam.passStatus === 1 ? 'success' : 'danger'">
+            {{ currentExam.passStatus === 1 ? '通过' : '未通过' }}
+          </el-tag>
+        </el-descriptions-item>
+      </el-descriptions>
+      <div class="answer-list" v-loading="resultLoading">
+        <div v-for="(answer, index) in resultAnswers" :key="answer.id" class="answer-item">
+          <div class="answer-title">{{ index + 1 }}. {{ answer.questionContent }}</div>
+          <div class="answer-meta">
+            我的答案：{{ displayAnswer(answer.studentAnswer) || '未作答' }}
+            <span>参考答案：{{ displayAnswer(answer.correctAnswer) || '-' }}</span>
+            <span>得分：{{ answer.score ?? 0 }} / {{ answer.questionScore ?? 0 }}</span>
+          </div>
+          <div v-if="answer.analysis" class="analysis">解析：{{ answer.analysis }}</div>
+        </div>
+        <el-empty v-if="!resultLoading && resultAnswers.length === 0" description="暂无答题明细" />
       </div>
-    </div>
+      <template #footer>
+        <el-button @click="resultVisible = false">关闭</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { examApi } from '@/api'
 
 const router = useRouter()
 const exams = ref([])
+const loading = ref(false)
 const statusFilter = ref('')
+const resultVisible = ref(false)
+const resultLoading = ref(false)
+const resultAnswers = ref([])
+const currentExam = ref(null)
 
-const examStatusLabel = (row) => {
+const statusLabel = (row) => {
+  if (row.submitted === 1) return '已交卷'
   const now = new Date()
-  if (row.startTime && new Date(row.startTime) > now) return '待参加'
+  if (row.startTime && new Date(row.startTime) > now) return '未开始'
   if (row.endTime && new Date(row.endTime) < now) return '已结束'
   return '进行中'
 }
-const examStatusTagType = (row) => {
-  const s = examStatusLabel(row)
-  return s === '进行中' ? 'success' : s === '待参加' ? 'warning' : 'info'
-}
-const canEnterExam = (row) => examStatusLabel(row) === '进行中'
-const enterExam = (row) => router.push(`/student/exams/${row.id}`)
 
-onMounted(async () => {
-  try {
-    const res = await examApi.listExams({ page: 1, size: 50 })
-    if (res.data.code === 200) {
-      const d = res.data.data
-      exams.value = Array.isArray(d?.records) ? d.records : Array.isArray(d?.list) ? d.list : Array.isArray(d) ? d : []
-    }
-  } catch (e) { /* ignore */ }
+const statusKey = (row) => {
+  const label = statusLabel(row)
+  return { 未开始: 'pending', 进行中: 'ongoing', 已结束: 'ended', 已交卷: 'submitted' }[label]
+}
+
+const statusTag = (row) => {
+  const key = statusKey(row)
+  return { pending: 'info', ongoing: 'success', ended: 'warning', submitted: 'primary' }[key] || 'info'
+}
+
+const filteredExams = computed(() => {
+  if (!statusFilter.value) return exams.value
+  return exams.value.filter(exam => statusKey(exam) === statusFilter.value)
 })
+
+const canStart = (row) => statusKey(row) === 'ongoing' && row.submitted !== 1
+const enterExam = (row) => router.push(`/student/exams/${row.id}`)
+const formatTime = (value) => value ? String(value).replace('T', ' ').slice(0, 16) : '--'
+const displayAnswer = (value) => {
+  if (!value) return ''
+  try {
+    const parsed = JSON.parse(value)
+    return Array.isArray(parsed) ? parsed.join('、') : String(parsed)
+  } catch {
+    return value
+  }
+}
+
+const fetchExams = async () => {
+  loading.value = true
+  try {
+    const res = await examApi.listExams({ page: 1, size: 100 })
+    if (res.data.code === 200) {
+      exams.value = res.data.data?.records || []
+    }
+  } finally {
+    loading.value = false
+  }
+}
+
+const openResult = async (row) => {
+  currentExam.value = row
+  resultVisible.value = true
+  resultLoading.value = true
+  resultAnswers.value = []
+  try {
+    const res = await examApi.getRecordDetail(row.recordId)
+    if (res.data.code === 200) {
+      resultAnswers.value = res.data.data || []
+    }
+  } finally {
+    resultLoading.value = false
+  }
+}
+
+onMounted(fetchExams)
 </script>
 
 <style scoped>
@@ -93,57 +168,54 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 4px;
 }
 
 .page-title {
+  margin: 0;
   font-size: 20px;
   font-weight: 600;
   color: #303133;
-  margin: 0;
 }
 
 .panel {
   background: #fff;
-  border-radius: 12px;
+  border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
   padding: 24px;
 }
 
-.link-text {
-  color: #409eff;
-  cursor: pointer;
+.muted {
+  color: #909399;
 }
 
-.link-text:hover {
-  color: #337ecc;
+.answer-list {
+  margin-top: 18px;
 }
 
-.text-muted {
-  color: #c0c4cc;
+.answer-item {
+  padding: 14px 0;
+  border-bottom: 1px solid #ebeef5;
+}
+
+.answer-title {
+  color: #303133;
+  font-weight: 600;
+  line-height: 1.6;
+}
+
+.answer-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+  margin-top: 8px;
+  color: #606266;
   font-size: 13px;
 }
 
-.empty-panel {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 60px 24px;
-}
-
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 16px;
-}
-
-.empty-illustration {
-  opacity: 0.6;
-}
-
-.empty-text {
-  color: #c0c4cc;
-  font-size: 14px;
+.analysis {
+  margin-top: 8px;
+  color: #909399;
+  font-size: 13px;
+  line-height: 1.6;
 }
 </style>

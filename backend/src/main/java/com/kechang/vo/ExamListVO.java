@@ -20,5 +20,9 @@ public class ExamListVO {
     private Integer duration;
     private String status;
     private Integer allowRetry;
+    private Long recordId;
+    private Integer submitted;
+    private Double totalScore;
+    private Integer passStatus;
     private LocalDateTime createTime;
 }

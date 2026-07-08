@@ -320,15 +320,25 @@ const toggleCourseSort = () => {
 const fetchCourses = async () => {
     coursesLoading.value = true
     try {
-        const res = await courseApi.list({ page: 1, size: 20 })
+        const res = await courseApi.list({
+            page: 1,
+            size: 20,
+            onlyEnrolled: userStore.isStudent ? true : undefined
+        })
         if (res.data.code === 200) {
             const list = res.data.data?.records || res.data.data?.list || res.data.data || []
-            courses.value = Array.isArray(list) ? list : []
+            courses.value = Array.isArray(list)
+                ? list.map(course => ({ ...course, name: course.courseName || course.name }))
+                : []
         }
     } catch (e) { console.error('获取课程失败', e) } finally { coursesLoading.value = false }
 }
 
 const enterCourse = (course) => {
+    if (userStore.isStudent && !course.enrolled) {
+        ElMessage.warning('请先在课程中心加入课程')
+        return
+    }
     router.push(userStore.isTeacher ? `/teacher/courses/${course.id}` : `/student/courses/${course.id}/learn`)
 }
 

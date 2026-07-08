@@ -39,8 +39,9 @@ public class CourseController {
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "12") int size,
             @RequestParam(required = false) String keyword,
-            @RequestParam(required = false) String status) {
-        return Result.success(courseService.getCourseList(page, size, keyword, status, currentUserId(), currentRole()));
+            @RequestParam(required = false) String status,
+            @RequestParam(defaultValue = "false") Boolean onlyEnrolled) {
+        return Result.success(courseService.getCourseList(page, size, keyword, status, currentUserId(), currentRole(), onlyEnrolled));
     }
 
     /**
@@ -48,7 +49,7 @@ public class CourseController {
      */
     @GetMapping("/{id}")
     public Result<CourseVO> detail(@PathVariable Long id) {
-        return Result.success(courseService.getCourseDetail(id));
+        return Result.success(courseService.getCourseDetail(id, currentUserId(), currentRole()));
     }
 
     /**
@@ -179,7 +180,7 @@ public class CourseController {
     @GetMapping("/{id}/resources")
     public Result<List<CourseResource>> listResources(@PathVariable Long id,
             @RequestParam(required = false) Long chapterId) {
-        return Result.success(courseService.getResources(id, chapterId));
+        return Result.success(courseService.getResources(id, chapterId, currentUserId(), currentRole()));
     }
 
     private String getResourceType(String filename) {

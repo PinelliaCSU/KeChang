@@ -42,6 +42,11 @@ public class CourseService {
 
     public PageResult<CourseVO> getCourseList(int page, int size, String keyword, String status, Long currentUserId,
             String role) {
+        return getCourseList(page, size, keyword, status, currentUserId, role, false);
+    }
+
+    public PageResult<CourseVO> getCourseList(int page, int size, String keyword, String status, Long currentUserId,
+            String role, Boolean onlyEnrolled) {
         LambdaQueryWrapper<Course> wrapper = new LambdaQueryWrapper<>();
         if (StringUtils.hasText(keyword)) {
             wrapper.like(Course::getCourseName, keyword);
@@ -51,6 +56,15 @@ public class CourseService {
         }
         if ("ROLE_TEACHER".equals(role) && currentUserId != null) {
             wrapper.eq(Course::getTeacherId, currentUserId);
+        }
+        if ("ROLE_STUDENT".equals(role) && Boolean.TRUE.equals(onlyEnrolled) && currentUserId != null) {
+            List<Long> courseIds = courseStudentMapper.selectList(new LambdaQueryWrapper<CourseStudent>()
+                    .eq(CourseStudent::getStudentId, currentUserId))
+                    .stream().map(CourseStudent::getCourseId).collect(Collectors.toList());
+            if (courseIds.isEmpty()) {
+                return PageResult.of(new ArrayList<>(), 0, page, size);
+            }
+            wrapper.in(Course::getId, courseIds);
         }
         wrapper.orderByDesc(Course::getCreateTime);
 
@@ -74,10 +88,15 @@ public class CourseService {
      * 课程详情
      */
     public CourseVO getCourseDetail(Long courseId) {
+        return getCourseDetail(courseId, null, null);
+    }
+
+    public CourseVO getCourseDetail(Long courseId, Long currentUserId, String role) {
         Course course = courseMapper.selectById(courseId);
         if (course == null) {
             throw BusinessException.notFound("课程不存在");
         }
+        checkCourseReadable(course, currentUserId, role);
         CourseVO vo = new CourseVO();
         copyCourseFields(course, vo);
         SysUser teacher = sysUserMapper.selectById(course.getTeacherId());
@@ -223,6 +242,15 @@ public class CourseService {
      * 查询课程资源列表
      */
     public List<CourseResource> getResources(Long courseId, Long chapterId) {
+        return getResources(courseId, chapterId, null, null);
+    }
+
+    public List<CourseResource> getResources(Long courseId, Long chapterId, Long currentUserId, String role) {
+        Course course = courseMapper.selectById(courseId);
+        if (course == null) {
+            throw BusinessException.notFound("课程不存在");
+        }
+        checkCourseReadable(course, currentUserId, role);
         LambdaQueryWrapper<CourseResource> wrapper = new LambdaQueryWrapper<CourseResource>()
                 .eq(CourseResource::getCourseId, courseId);
         if (chapterId != null) {
@@ -330,6 +358,21 @@ public class CourseService {
         }
         if (!course.getTeacherId().equals(teacherId)) {
             throw BusinessException.forbidden("只能管理自己创建的课程");
+        }
+    }
+
+    private void checkCourseReadable(Course course, Long currentUserId, String role) {
+        if (currentUserId == null || role == null || "ROLE_ADMIN".equals(role)) {
+            return;
+        }
+        if ("ROLE_TEACHER".equals(role)) {
+            if (!course.getTeacherId().equals(currentUserId)) {
+                throw BusinessException.forbidden("只能查看自己创建的课程");
+            }
+            return;
+        }
+        if ("ROLE_STUDENT".equals(role) && !isEnrolled(course.getId(), currentUserId)) {
+            throw BusinessException.forbidden("请先加入课程后再学习");
         }
     }
 }

@@ -9,6 +9,7 @@ import com.kechang.dto.PaperCreateDTO;
 import com.kechang.entity.*;
 import com.kechang.mapper.*;
 import com.kechang.vo.ExamListVO;
+import com.kechang.vo.ExamRecordAnswerVO;
 import com.kechang.vo.ExamVO;
 import com.kechang.vo.QuestionVO;
 import lombok.RequiredArgsConstructor;
@@ -35,6 +36,7 @@ public class ExamService {
     private final ExamRecordAnswerMapper answerMapper;
     private final SysUserMapper userMapper;
     private final CourseMapper courseMapper;
+    private final CourseStudentMapper courseStudentMapper;
 
     // ==================== 试题库 ====================
     public PageResult<Question> getQuestionList(int page, int size, String questionType,
@@ -161,9 +163,31 @@ public class ExamService {
 
     // ==================== 考试安排 ====================
     public PageResult<ExamListVO> getExamList(int page, int size, Long courseId) {
+        return getExamList(page, size, courseId, null, null);
+    }
+
+    public PageResult<ExamListVO> getExamList(int page, int size, Long courseId, Long currentUserId, String role) {
         LambdaQueryWrapper<Exam> w = new LambdaQueryWrapper<>();
         if (courseId != null) {
             w.eq(Exam::getCourseId, courseId);
+        }
+        if ("ROLE_TEACHER".equals(role) && currentUserId != null) {
+            List<Long> courseIds = courseMapper.selectList(new LambdaQueryWrapper<Course>()
+                    .eq(Course::getTeacherId, currentUserId))
+                    .stream().map(Course::getId).collect(Collectors.toList());
+            if (courseIds.isEmpty()) {
+                return PageResult.of(new ArrayList<>(), 0, page, size);
+            }
+            w.in(Exam::getCourseId, courseIds);
+        }
+        if ("ROLE_STUDENT".equals(role) && currentUserId != null) {
+            List<Long> courseIds = courseStudentMapper.selectList(new LambdaQueryWrapper<CourseStudent>()
+                    .eq(CourseStudent::getStudentId, currentUserId))
+                    .stream().map(CourseStudent::getCourseId).collect(Collectors.toList());
+            if (courseIds.isEmpty()) {
+                return PageResult.of(new ArrayList<>(), 0, page, size);
+            }
+            w.in(Exam::getCourseId, courseIds);
         }
         w.orderByDesc(Exam::getStartTime);
         Page<Exam> p = examMapper.selectPage(new Page<>(page, size), w);
@@ -179,6 +203,19 @@ public class ExamService {
             vo.setStatus(e.getStatus());
             vo.setAllowRetry(e.getAllowRetry());
             vo.setCreateTime(e.getCreateTime());
+            if ("ROLE_STUDENT".equals(role) && currentUserId != null) {
+                ExamRecord record = recordMapper.selectOne(new LambdaQueryWrapper<ExamRecord>()
+                        .eq(ExamRecord::getExamId, e.getId())
+                        .eq(ExamRecord::getStudentId, currentUserId));
+                if (record != null) {
+                    vo.setRecordId(record.getId());
+                    vo.setSubmitted(record.getIsSubmitted());
+                    vo.setTotalScore(record.getTotalScore());
+                    vo.setPassStatus(record.getPassStatus());
+                } else {
+                    vo.setSubmitted(0);
+                }
+            }
             // 查询课程名称
             Course course = courseMapper.selectById(e.getCourseId());
             if (course != null) {
@@ -231,6 +268,14 @@ public class ExamService {
         if (exam == null) {
             throw BusinessException.notFound("考试不存在");
         }
+        checkStudentEnrolled(exam.getCourseId(), studentId);
+        LocalDateTime now = LocalDateTime.now();
+        if (exam.getStartTime() != null && now.isBefore(exam.getStartTime())) {
+            throw BusinessException.badRequest("考试尚未开始");
+        }
+        if (exam.getEndTime() != null && now.isAfter(exam.getEndTime())) {
+            throw BusinessException.badRequest("考试已结束");
+        }
         // 检查是否已有记录
         ExamRecord exist = recordMapper.selectOne(new LambdaQueryWrapper<ExamRecord>()
                 .eq(ExamRecord::getExamId, examId).eq(ExamRecord::getStudentId, studentId));
@@ -251,6 +296,11 @@ public class ExamService {
 
     @Transactional
     public void submitExam(Long examId, Long studentId, ExamSubmitDTO dto) {
+        Exam exam = examMapper.selectById(examId);
+        if (exam == null) {
+            throw BusinessException.notFound("考试不存在");
+        }
+        checkStudentEnrolled(exam.getCourseId(), studentId);
         ExamRecord record = recordMapper.selectOne(new LambdaQueryWrapper<ExamRecord>()
                 .eq(ExamRecord::getExamId, examId).eq(ExamRecord::getStudentId, studentId));
         if (record == null) {
@@ -267,7 +317,6 @@ public class ExamService {
         }
         // 保存答案并自动判客观题
         double totalScore = 0;
-        int objectiveTotal = 0;
         if (dto.getAnswers() != null) {
             for (ExamSubmitDTO.AnswerItem ans : dto.getAnswers()) {
                 Question q = questionMapper.selectById(ans.getQuestionId());
@@ -277,11 +326,12 @@ public class ExamService {
                 a.setStudentAnswer(ans.getAnswer());
                 if (q != null && ("SINGLE".equals(q.getQuestionType()) || "MULTI".equals(q.getQuestionType())
                         || "JUDGE".equals(q.getQuestionType()))) {
-                    boolean correct = q.getAnswer() != null && q.getAnswer().trim().equalsIgnoreCase(ans.getAnswer() != null ? ans.getAnswer().trim() : "");
+                    boolean correct = isAnswerCorrect(q, ans.getAnswer());
                     a.setIsCorrect(correct ? 1 : 0);
                     if (correct) {
                         // 查试卷中的分值
                         ExamPaperQuestion pq = paperQuestionMapper.selectOne(new LambdaQueryWrapper<ExamPaperQuestion>()
+                                .eq(ExamPaperQuestion::getPaperId, exam.getPaperId())
                                 .eq(ExamPaperQuestion::getQuestionId, ans.getQuestionId()));
                         double qScore = pq != null ? pq.getQuestionScore() : (q.getScore() != null ? q.getScore() : 0);
                         a.setScore(qScore);
@@ -295,7 +345,6 @@ public class ExamService {
         }
         record.setTotalScore(totalScore);
         // 判断及格
-        Exam exam = examMapper.selectById(examId);
         ExamPaper paper = paperMapper.selectById(exam.getPaperId());
         double passScore = paper != null ? paper.getPassScore() : 60.0;
         record.setPassStatus(totalScore >= passScore ? 1 : 0);
@@ -312,8 +361,35 @@ public class ExamService {
     /**
      * 答卷详情
      */
-    public List<ExamRecordAnswer> getRecordDetail(Long recordId) {
-        return answerMapper.selectList(new LambdaQueryWrapper<ExamRecordAnswer>().eq(ExamRecordAnswer::getRecordId, recordId));
+    public List<ExamRecordAnswerVO> getRecordDetail(Long recordId) {
+        ExamRecord record = recordMapper.selectById(recordId);
+        Exam exam = record != null ? examMapper.selectById(record.getExamId()) : null;
+        Long paperId = exam != null ? exam.getPaperId() : null;
+        return answerMapper.selectList(new LambdaQueryWrapper<ExamRecordAnswer>().eq(ExamRecordAnswer::getRecordId, recordId))
+                .stream().map(answer -> {
+                    Question question = questionMapper.selectById(answer.getQuestionId());
+                    ExamPaperQuestion paperQuestion = paperId == null ? null : paperQuestionMapper.selectOne(
+                            new LambdaQueryWrapper<ExamPaperQuestion>()
+                                    .eq(ExamPaperQuestion::getPaperId, paperId)
+                                    .eq(ExamPaperQuestion::getQuestionId, answer.getQuestionId()));
+                    ExamRecordAnswerVO vo = new ExamRecordAnswerVO();
+                    vo.setId(answer.getId());
+                    vo.setRecordId(answer.getRecordId());
+                    vo.setQuestionId(answer.getQuestionId());
+                    vo.setStudentAnswer(answer.getStudentAnswer());
+                    vo.setIsCorrect(answer.getIsCorrect());
+                    vo.setScore(answer.getScore());
+                    vo.setMarkedBy(answer.getMarkedBy());
+                    if (question != null) {
+                        vo.setQuestionType(question.getQuestionType());
+                        vo.setQuestionContent(question.getContent());
+                        vo.setOptions(question.getOptions());
+                        vo.setCorrectAnswer(question.getAnswer());
+                        vo.setAnalysis(question.getAnalysis());
+                        vo.setQuestionScore(paperQuestion != null ? paperQuestion.getQuestionScore() : question.getScore());
+                    }
+                    return vo;
+                }).collect(Collectors.toList());
     }
 
     /**
@@ -336,7 +412,57 @@ public class ExamService {
         ExamRecord record = recordMapper.selectById(recordId);
         if (record != null) {
             record.setTotalScore(total);
+            Exam exam = examMapper.selectById(record.getExamId());
+            ExamPaper paper = exam != null ? paperMapper.selectById(exam.getPaperId()) : null;
+            double passScore = paper != null ? paper.getPassScore() : 60.0;
+            record.setPassStatus(total >= passScore ? 1 : 0);
             recordMapper.updateById(record);
         }
+    }
+
+    public void deleteExam(Long id, Long teacherId) {
+        Exam exam = examMapper.selectById(id);
+        if (exam == null) {
+            throw BusinessException.notFound("考试不存在");
+        }
+        Course course = courseMapper.selectById(exam.getCourseId());
+        if (course != null && !course.getTeacherId().equals(teacherId)) {
+            throw BusinessException.forbidden("只能删除自己课程的考试");
+        }
+        examMapper.deleteById(id);
+    }
+
+    private void checkStudentEnrolled(Long courseId, Long studentId) {
+        if (courseStudentMapper.selectCount(new LambdaQueryWrapper<CourseStudent>()
+                .eq(CourseStudent::getCourseId, courseId)
+                .eq(CourseStudent::getStudentId, studentId)) == 0) {
+            throw BusinessException.forbidden("请先加入课程后再参加考试");
+        }
+    }
+
+    private boolean isAnswerCorrect(Question question, String studentAnswer) {
+        if (question == null || question.getAnswer() == null) {
+            return false;
+        }
+        if ("MULTI".equals(question.getQuestionType())) {
+            return normalizeMulti(question.getAnswer()).equals(normalizeMulti(studentAnswer));
+        }
+        return question.getAnswer().trim().equalsIgnoreCase(studentAnswer == null ? "" : studentAnswer.trim());
+    }
+
+    private List<String> normalizeMulti(String answer) {
+        if (!StringUtils.hasText(answer)) {
+            return new ArrayList<>();
+        }
+        String text = answer.trim();
+        if (text.startsWith("[") && text.endsWith("]")) {
+            text = text.substring(1, text.length() - 1);
+        }
+        List<String> values = Arrays.stream(text.split(","))
+                .map(item -> item.replace("\"", "").replace("'", "").trim())
+                .filter(StringUtils::hasText)
+                .sorted()
+                .collect(Collectors.toList());
+        return values;
     }
 }

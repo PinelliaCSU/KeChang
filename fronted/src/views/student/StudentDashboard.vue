@@ -91,7 +91,7 @@ const fetchData = async () => {
   } catch (e) { /* ignore */ }
 
   try {
-    const cRes = await courseApi.list({ page: 1, size: 20 })
+    const cRes = await courseApi.list({ page: 1, size: 20, onlyEnrolled: true })
     if (cRes.data.code === 200) {
       const d = cRes.data.data
       const list = Array.isArray(d?.records) ? d.records : Array.isArray(d) ? d : []
