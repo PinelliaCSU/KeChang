@@ -24,6 +24,15 @@ public class TrainingProject {
     private String status;
     private Long createBy;
 
+    @TableField(exist = false)
+    private String courseName;
+
+    @TableField(exist = false)
+    private Long taskCount;
+
+    @TableField(exist = false)
+    private Long reportCount;
+
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createTime;
 

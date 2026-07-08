@@ -24,6 +24,12 @@ public class TrainingReport {
     private String comment;
     private String status;
 
+    @TableField(exist = false)
+    private String studentName;
+
+    @TableField(exist = false)
+    private String studentNo;
+
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createTime;
 

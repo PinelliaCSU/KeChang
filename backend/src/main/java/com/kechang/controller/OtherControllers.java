@@ -13,6 +13,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -38,38 +39,55 @@ class TrainingController {
         return (Long) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
     }
 
+    private boolean hasRole(String role) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        return auth != null && auth.getAuthorities().stream().anyMatch(a -> role.equals(a.getAuthority()));
+    }
+
     @GetMapping
     public Result<PageResult<TrainingProject>> listProjects(@RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(required = false) Long courseId) {
-        return Result.success(trainingService.listProjects(page, size, courseId));
+            @RequestParam(defaultValue = "10") int size) {
+        return Result.success(trainingService.listProjects(page, size, uid(), hasRole("ROLE_TEACHER")));
     }
 
     @PostMapping
     @PreAuthorize("hasAuthority('ROLE_TEACHER')")
     public Result<Void> createProject(@RequestBody TrainingProject p) {
-        p.setCreateBy(uid());
-        trainingService.createProject(p);
+        trainingService.createProject(p, uid());
         return Result.success();
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasAuthority('ROLE_TEACHER')")
     public Result<Void> updateProject(@PathVariable Long id, @RequestBody TrainingProject p) {
-        trainingService.updateProject(id, p);
+        trainingService.updateProject(id, p, uid());
+        return Result.success();
+    }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasAuthority('ROLE_TEACHER')")
+    public Result<Void> deleteProject(@PathVariable Long id) {
+        trainingService.deleteProject(id, uid());
         return Result.success();
     }
 
     @PostMapping("/{id}/tasks")
     @PreAuthorize("hasAuthority('ROLE_TEACHER')")
-    public Result<Void> createTask(@RequestBody TrainingTask t) {
-        trainingService.createTask(t);
+    public Result<Void> createTask(@PathVariable Long id, @RequestBody TrainingTask t) {
+        trainingService.createTask(id, t, uid());
         return Result.success();
     }
 
     @GetMapping("/{id}/tasks")
     public Result<PageResult<TrainingTask>> listTasks(@PathVariable Long id, @RequestParam(defaultValue = "1") int page, @RequestParam(defaultValue = "10") int size) {
-        return Result.success(trainingService.listTasks(id, page, size));
+        return Result.success(trainingService.listTasks(id, page, size, uid(), hasRole("ROLE_STUDENT")));
+    }
+
+    @DeleteMapping("/tasks/{taskId}")
+    @PreAuthorize("hasAuthority('ROLE_TEACHER')")
+    public Result<Void> deleteTask(@PathVariable Long taskId) {
+        trainingService.deleteTask(taskId, uid());
+        return Result.success();
     }
 
     @PostMapping("/tasks/{taskId}/report")
@@ -82,13 +100,13 @@ class TrainingController {
     @GetMapping("/tasks/{taskId}/reports")
     @PreAuthorize("hasAuthority('ROLE_TEACHER')")
     public Result<PageResult<TrainingReport>> listReports(@PathVariable Long taskId, @RequestParam(defaultValue = "1") int page, @RequestParam(defaultValue = "10") int size) {
-        return Result.success(trainingService.listReports(taskId, page, size));
+        return Result.success(trainingService.listReports(taskId, page, size, uid()));
     }
 
     @PutMapping("/reports/{reportId}/grade")
     @PreAuthorize("hasAuthority('ROLE_TEACHER')")
     public Result<Void> gradeReport(@PathVariable Long reportId, @RequestParam Double score, @RequestParam(required = false) String comment) {
-        trainingService.gradeReport(reportId, score, comment);
+        trainingService.gradeReport(reportId, score, comment, uid());
         return Result.success();
     }
 }

@@ -22,6 +22,30 @@ public class TrainingTask {
     private LocalDateTime deadline;
     private Integer sortOrder;
 
+    @TableField(exist = false)
+    private Long reportCount;
+
+    @TableField(exist = false)
+    private Long myReportId;
+
+    @TableField(exist = false)
+    private String reportContent;
+
+    @TableField(exist = false)
+    private String reportAttachmentUrl;
+
+    @TableField(exist = false)
+    private LocalDateTime submitTime;
+
+    @TableField(exist = false)
+    private Double score;
+
+    @TableField(exist = false)
+    private String comment;
+
+    @TableField(exist = false)
+    private String reportStatus;
+
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createTime;
 
