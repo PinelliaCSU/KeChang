@@ -9,24 +9,32 @@ const routes = [
     component: () => import('@/views/Dashboard.vue'),
     meta: { title: '课畅 - 仪表盘', requiresAuth: true }
   },
+
+  // ==================== 日历 ====================
   {
     path: '/calendar',
     name: 'Calendar',
     component: () => import('@/views/Calendar.vue'),
     meta: { title: '日历 - 课畅', requiresAuth: true }
   },
+
+  // ==================== 个人中心 ====================
   {
     path: '/profile',
     name: 'Profile',
     component: () => import('@/views/Profile.vue'),
     meta: { title: '个人中心 - 课畅', requiresAuth: true }
   },
+
+  // ==================== 登录 ====================
   {
     path: '/login',
     name: 'Login',
     component: () => import('@/views/Login.vue'),
     meta: { title: '登录 - 课畅' }
   },
+
+  // ==================== 教师端 ====================
   {
     path: '/teacher',
     redirect: '/teacher/dashboard',
@@ -47,6 +55,8 @@ const routes = [
       { path: 'posts', name: 'TeacherPosts', component: () => import('@/views/teacher/TeacherPosts.vue'), meta: { title: '互动问答' } }
     ]
   },
+
+  // ==================== 学生端 ====================
   {
     path: '/admin',
     redirect: '/admin/courses',
@@ -54,9 +64,11 @@ const routes = [
     meta: { role: 'ROLE_ADMIN' },
     children: [
       { path: 'courses', name: 'AdminCourses', component: () => import('@/views/admin/AdminCourses.vue'), meta: { title: '课程总览' } },
-      { path: 'grades', name: 'AdminGrades', component: () => import('@/views/admin/AdminGrades.vue'), meta: { title: '成绩概览' } }
+      { path: 'grades', name: 'AdminGrades', component: () => import('@/views/admin/AdminGrades.vue'), meta: { title: '成绩概览' } },
+      { path: 'surveys', name: 'AdminSurveys', component: () => import('@/views/admin/AdminSurveys.vue'), meta: { title: '问卷统计' } }
     ]
   },
+
   {
     path: '/student',
     redirect: '/student/dashboard',
@@ -74,7 +86,8 @@ const routes = [
       { path: 'trainings', name: 'StudentTrainings', component: () => import('@/views/student/StudentTrainings.vue'), meta: { title: '实训中心' } },
       { path: 'posts', name: 'StudentPosts', component: () => import('@/views/student/StudentPosts.vue'), meta: { title: '互动问答' } },
       { path: 'knowledge', name: 'StudentKnowledge', component: () => import('@/views/student/StudentKnowledge.vue'), meta: { title: '知识库' } },
-      { path: 'evaluations', name: 'StudentEvaluations', component: () => import('@/views/student/StudentEvaluations.vue'), meta: { title: '教学评价' } }
+      { path: 'evaluations', name: 'StudentEvaluations', component: () => import('@/views/student/StudentEvaluations.vue'), meta: { title: '教学评价' } },
+      { path: 'surveys', name: 'StudentSurveys', component: () => import('@/views/student/StudentSurveys.vue'), meta: { title: '问卷调查' } }
     ]
   }
 ]
@@ -85,6 +98,7 @@ const router = createRouter({
   scrollBehavior: () => ({ top: 0 })
 })
 
+// 路由守卫
 router.beforeEach((to, from, next) => {
   document.title = to.meta.title || '课畅'
 
@@ -97,6 +111,7 @@ router.beforeEach((to, from, next) => {
   }
   const requiredRole = to.meta.role || to.matched.find(route => route.meta.role)?.meta?.role
 
+  // 访问根路径 / ：已登录→仪表盘，未登录→登录页
   if (to.path === '/') {
     next(userStore.token ? roleHome() : '/login')
     return

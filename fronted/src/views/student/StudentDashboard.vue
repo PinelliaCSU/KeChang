@@ -7,43 +7,36 @@
     <div class="stat-row">
       <div class="stat-card">
         <div class="stat-icon" style="background:#e8eddf">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#7f8c52" stroke-width="2"
-            stroke-linecap="round" stroke-linejoin="round">
-            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
-          </svg>
+          <el-icon :size="28" color="#7f8c52">
+            <Reading />
+          </el-icon>
         </div>
         <div class="stat-num">{{ stats.courseCount || 0 }}</div>
         <div class="stat-label">在学课程</div>
       </div>
       <div class="stat-card">
         <div class="stat-icon" style="background:#f0ebe0">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#b08968" stroke-width="2"
-            stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 20h9" />
-            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
-          </svg>
+          <el-icon :size="28" color="#b08968">
+            <Edit />
+          </el-icon>
         </div>
         <div class="stat-num">{{ stats.pendingAssignmentCount ?? '--' }}</div>
         <div class="stat-label">待做作业</div>
       </div>
       <div class="stat-card">
         <div class="stat-icon" style="background:#f4e8e0">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#c4665a" stroke-width="2"
-            stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="10" />
-            <polyline points="12 6 12 12 16 14" />
-          </svg>
+          <el-icon :size="28" color="#c4665a">
+            <Timer />
+          </el-icon>
         </div>
         <div class="stat-num">{{ stats.upcomingExamCount ?? '--' }}</div>
         <div class="stat-label">待考试</div>
       </div>
       <div class="stat-card">
         <div class="stat-icon" style="background:#dde8d6">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#6b8e4e" stroke-width="2"
-            stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
-          </svg>
+          <el-icon :size="28" color="#6b8e4e">
+            <TrendCharts />
+          </el-icon>
         </div>
         <div class="stat-num">Top 15%</div>
         <div class="stat-label">综合排名</div>

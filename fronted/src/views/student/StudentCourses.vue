@@ -11,24 +11,18 @@
       <div class="course-grid">
         <div class="course-card" v-for="course in filteredCourses" :key="course.id">
           <div class="card-cover" :style="{ background: getCoverGradient(course.id) }">
-            <svg class="cover-pattern" width="100%" height="100%" viewBox="0 0 200 100" preserveAspectRatio="none">
-              <circle cx="160" cy="20" r="40" fill="rgba(255,255,255,0.08)" />
-              <circle cx="30" cy="70" r="55" fill="rgba(255,255,255,0.05)" />
-            </svg>
+            <CourseCoverPattern />
           </div>
           <div class="card-body">
             <h4 class="card-title" :title="course.courseName || course.name">{{ course.courseName || course.name }}</h4>
             <p class="card-meta">{{ course.teacherName || '未知教师' }}</p>
-            <p class="card-code" v-if="course.courseCode">{{ course.courseCode }}</p>
           </div>
           <div class="card-footer">
             <button class="btn-enter" :disabled="!course.enrolled" @click="enterLearn(course)">
               {{ course.enrolled ? '进入学习' : '先加入后学习' }}
             </button>
-            <button
-              :class="course.enrolled ? 'btn-unenroll' : 'btn-enroll'"
-              @click="course.enrolled ? unenrollCourse(course) : enrollCourse(course)"
-            >
+            <button :class="course.enrolled ? 'btn-unenroll' : 'btn-enroll'"
+              @click="course.enrolled ? unenrollCourse(course) : enrollCourse(course)">
               {{ course.enrolled ? '退出课程' : '加入课程' }}
             </button>
           </div>
@@ -37,14 +31,7 @@
     </div>
 
     <div class="panel empty-panel" v-else>
-      <div class="empty-state">
-        <svg class="empty-illustration" width="120" height="90" viewBox="0 0 120 90" fill="none">
-          <rect x="20" y="10" width="80" height="70" rx="4" fill="#e8ecf1" />
-          <rect x="28" y="20" width="28" height="4" rx="2" fill="#d0d5dd" />
-          <rect x="28" y="30" width="50" height="3" rx="1.5" fill="#dce1e8" />
-        </svg>
-        <p class="empty-text">暂无课程</p>
-      </div>
+      <EmptyIllustration text="暂无课程" />
     </div>
   </div>
 </template>
@@ -54,6 +41,8 @@ import { computed, ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { courseApi } from '@/api'
 import { ElMessage } from 'element-plus'
+import CourseCoverPattern from '@/components/CourseCoverPattern.vue'
+import EmptyIllustration from '@/components/EmptyIllustration.vue'
 
 const router = useRouter()
 const courses = ref([])

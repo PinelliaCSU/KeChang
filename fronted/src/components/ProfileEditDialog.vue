@@ -48,6 +48,7 @@ import { reactive, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/stores/user'
 import { authApi } from '@/api'
+import { requiredLength, phone, emailOptional, validateForm } from '@/utils/validators'
 
 const props = defineProps({
     modelValue: { type: Boolean, default: false },
@@ -70,16 +71,9 @@ const form = reactive({
 })
 
 const rules = {
-    nickname: [
-        { required: true, message: '请输入昵称', trigger: 'blur' },
-        { min: 1, max: 20, message: '昵称长度在 1 到 20 个字符', trigger: 'blur' }
-    ],
-    phone: [
-        { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号', trigger: 'blur' }
-    ],
-    email: [
-        { type: 'email', message: '请输入正确的邮箱地址', trigger: 'blur' }
-    ]
+    nickname: requiredLength(1, 20, '请输入昵称'),
+    phone: [phone()],
+    email: [emailOptional()]
 }
 
 // 当弹窗打开时，同步外部传入的用户数据到表单
@@ -97,8 +91,7 @@ watch(() => props.modelValue, (visible) => {
 })
 
 const handleSave = async () => {
-    const valid = await formRef.value.validate().catch(() => false)
-    if (!valid) return
+    if (!await validateForm(formRef.value)) return
 
     saving.value = true
     try {

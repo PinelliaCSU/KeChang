@@ -8,26 +8,21 @@
                 <nav class="sidebar-nav">
                     <a href="javascript:;" class="sidebar-item" :class="{ active: sidebarActive === 'home' }"
                         @click="sidebarActive = 'home'; router.push('/dashboard')" title="首页">
-                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-                            <polyline points="9 22 9 12 15 12 15 22" />
-                        </svg><span>首页</span>
+                        <el-icon :size="22">
+                            <HomeFilled />
+                        </el-icon><span>首页</span>
                     </a>
                     <a href="javascript:;" class="sidebar-item" :class="{ active: sidebarActive === 'courses' }"
                         @click="goToCourses" title="我的课程">
-                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-                            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
-                        </svg><span>我的课程</span>
+                        <el-icon :size="22">
+                            <Reading />
+                        </el-icon><span>我的课程</span>
                     </a>
                     <a href="javascript:;" class="sidebar-item" :class="{ active: sidebarActive === 'resources' }"
                         @click="goToResources" title="我的资源">
-                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
-                        </svg><span>我的资源</span>
+                        <el-icon :size="22">
+                            <Folder />
+                        </el-icon><span>我的资源</span>
                     </a>
                 </nav>
             </aside>
@@ -61,18 +56,7 @@
                         </div>
                     </div>
                     <div v-else class="empty-state">
-                        <svg class="empty-illustration" width="120" height="90" viewBox="0 0 120 90" fill="none">
-                            <rect x="20" y="10" width="80" height="70" rx="4" fill="#eef0e7" />
-                            <rect x="28" y="20" width="28" height="4" rx="2" fill="#d8ddce" />
-                            <rect x="28" y="30" width="50" height="3" rx="1.5" fill="#e2e7d8" />
-                            <rect x="28" y="38" width="42" height="3" rx="1.5" fill="#e2e7d8" />
-                            <rect x="28" y="46" width="36" height="3" rx="1.5" fill="#e2e7d8" />
-                            <rect x="28" y="56" width="20" height="6" rx="3" fill="#d0dac0" />
-                            <circle cx="95" cy="65" r="12" fill="#e8eddf" />
-                            <path d="M90 65l4 4 8-8" stroke="#8cb369" stroke-width="2" stroke-linecap="round"
-                                stroke-linejoin="round" />
-                        </svg>
-                        <p class="empty-text">暂无待办任务</p>
+                        <EmptyIllustration variant="detailed" text="暂无待办任务" />
                     </div>
                 </section>
 
@@ -86,14 +70,10 @@
                                     label="2025-2026 第一学期" value="2025-2026-1" />
                             </el-select>
                             <span class="sort-hint" @click="toggleCourseSort" style="cursor:pointer">{{ sortLabel
-                            }}</span>
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#909399"
-                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="cursor:pointer"
-                                @click="toggleCourseSort">
-                                <line x1="4" y1="6" x2="20" y2="6" />
-                                <line x1="4" y1="12" x2="14" y2="12" />
-                                <line x1="4" y1="18" x2="10" y2="18" />
-                            </svg>
+                                }}</span>
+                            <el-icon :size="14" color="#909399" style="cursor:pointer" @click="toggleCourseSort">
+                                <Sort />
+                            </el-icon>
                         </div>
                     </div>
                     <div v-if="coursesLoading" class="loading-state"><el-icon class="is-loading" :size="32">
@@ -107,13 +87,7 @@
                     <div v-else class="course-scroll">
                         <div class="course-card" v-for="course in courses" :key="course.id">
                             <div class="card-cover" :style="{ background: getCoverGradient(course.id) }">
-                                <svg class="cover-pattern" width="100%" height="100%" viewBox="0 0 200 100"
-                                    preserveAspectRatio="none">
-                                    <circle cx="160" cy="20" r="40" fill="rgba(255,255,255,0.08)" />
-                                    <circle cx="30" cy="70" r="55" fill="rgba(255,255,255,0.05)" />
-                                    <rect x="120" y="60" width="60" height="6" rx="3" fill="rgba(255,255,255,0.12)" />
-                                    <rect x="120" y="72" width="40" height="4" rx="2" fill="rgba(255,255,255,0.08)" />
-                                </svg>
+                                <CourseCoverPattern extended />
                             </div>
                             <div class="card-body">
                                 <h4 class="card-title" :title="course.name">{{ course.name }}</h4>
@@ -125,11 +99,9 @@
                                     '进入课程' }}</button>
                                 <el-dropdown trigger="click" @command="(cmd) => handleCourseAction(cmd, course)">
                                     <button class="btn-more" title="更多操作" @click.stop>
-                                        <svg width="16" height="4" viewBox="0 0 16 4" fill="none">
-                                            <circle cx="2" cy="2" r="2" fill="#909399" />
-                                            <circle cx="8" cy="2" r="2" fill="#909399" />
-                                            <circle cx="14" cy="2" r="2" fill="#909399" />
-                                        </svg>
+                                        <el-icon :size="16">
+                                            <MoreFilled />
+                                        </el-icon>
                                     </button>
                                     <template #dropdown>
                                         <el-dropdown-menu>
@@ -162,31 +134,16 @@
                         </div>
                     </div>
                     <div class="progress-ring-wrapper">
-                        <svg class="progress-ring" width="140" height="140" viewBox="0 0 140 140">
-                            <circle cx="70" cy="70" r="58" fill="none" stroke="#e8ecf1" stroke-width="10" />
-                            <circle cx="70" cy="70" r="58" fill="none" stroke="url(#progressGrad)" stroke-width="10"
-                                stroke-linecap="round" :stroke-dasharray="circumference"
-                                :stroke-dashoffset="progressDashOffset" transform="rotate(-90 70 70)"
-                                class="progress-arc" />
-                            <defs>
-                                <linearGradient id="progressGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                                    <stop offset="0%" stop-color="#8cb369" />
-                                    <stop offset="100%" stop-color="#5a7040" />
-                                </linearGradient>
-                            </defs>
-                        </svg>
-                        <div class="progress-text"><span class="progress-percent">{{ progressPercent }}%</span></div>
+                        <ProgressRing :percent="progressPercent" />
                     </div>
                     <p class="progress-desc">本学期进度：{{ progressPercent }}%</p>
                 </div>
 
                 <div class="right-card notice-card">
-                    <div class="notice-header"><span>最新通知</span><svg width="16" height="16" viewBox="0 0 24 24"
-                            fill="none" stroke="#909399" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                    <div class="notice-header"><span>最新通知</span><el-icon :size="16" color="#909399"
                             style="cursor:pointer" @click="fetchNotifications">
-                            <line x1="5" y1="12" x2="19" y2="12" />
-                            <polyline points="12 5 19 12 12 19" />
-                        </svg></div>
+                            <ArrowRight />
+                        </el-icon></div>
                     <div v-if="notifications.length === 0">
                         <p class="notice-empty">暂无公告</p>
                     </div>
@@ -198,54 +155,28 @@
 
                 <div class="right-card shortcut-card">
                     <div class="shortcut-header"><span>常用入口</span>
-                        <div class="shortcut-actions"><span class="manage-link">管理</span><svg width="14" height="14"
-                                viewBox="0 0 24 24" fill="none" stroke="#909399" stroke-width="2" stroke-linecap="round"
-                                stroke-linejoin="round">
-                                <rect x="3" y="3" width="7" height="7" />
-                                <rect x="14" y="3" width="7" height="7" />
-                                <rect x="3" y="14" width="7" height="7" />
-                                <rect x="14" y="14" width="7" height="7" />
-                            </svg></div>
+                        <div class="shortcut-actions"><span class="manage-link">管理</span><el-icon :size="14"
+                                color="#909399">
+                                <Grid />
+                            </el-icon></div>
                     </div>
                     <div class="shortcut-grid">
                         <a href="javascript:;" class="shortcut-item" style="--bg:#e8eddf;--color:#606c38"
-                            @click="goToEvaluations"><span class="shortcut-icon"><svg width="22" height="22"
-                                    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                                    stroke-linecap="round" stroke-linejoin="round">
-                                    <line x1="8" y1="6" x2="21" y2="6" />
-                                    <line x1="8" y1="12" x2="21" y2="12" />
-                                    <line x1="8" y1="18" x2="21" y2="18" />
-                                    <line x1="3" y1="6" x2="3.01" y2="6" />
-                                    <line x1="3" y1="12" x2="3.01" y2="12" />
-                                    <line x1="3" y1="18" x2="3.01" y2="18" />
-                                </svg></span><span class="shortcut-label">量规</span></a>
+                            @click="goToEvaluations"><span class="shortcut-icon"><el-icon :size="22">
+                                    <List />
+                                </el-icon></span><span class="shortcut-label">量规</span></a>
                         <a href="javascript:;" class="shortcut-item" style="--bg:#eddfd0;--color:#9c6644"
-                            @click="goToLearn"><span class="shortcut-icon"><svg width="22" height="22"
-                                    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                                    stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
-                                    <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
-                                </svg></span><span class="shortcut-label">互动教材</span></a>
+                            @click="goToLearn"><span class="shortcut-icon"><el-icon :size="22">
+                                    <Notebook />
+                                </el-icon></span><span class="shortcut-label">互动教材</span></a>
                         <a href="javascript:;" class="shortcut-item" style="--bg:#dce8f0;--color:#5c7a8a"
-                            @click="goToQuestions"><span class="shortcut-icon"><svg width="22" height="22"
-                                    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                                    stroke-linecap="round" stroke-linejoin="round">
-                                    <polyline points="16 3 21 3 21 8" />
-                                    <line x1="4" y1="20" x2="21" y2="3" />
-                                    <polyline points="21 16 21 21 16 21" />
-                                    <line x1="15" y1="15" x2="21" y2="21" />
-                                    <line x1="4" y1="4" x2="9" y2="9" />
-                                </svg></span><span class="shortcut-label">个人题库</span></a>
+                            @click="goToQuestions"><span class="shortcut-icon"><el-icon :size="22">
+                                    <Connection />
+                                </el-icon></span><span class="shortcut-label">个人题库</span></a>
                         <a href="javascript:;" class="shortcut-item" style="--bg:#dde8d6;--color:#6b8e4e"
-                            @click="goToPosts"><span class="shortcut-icon"><svg width="22" height="22"
-                                    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                                    stroke-linecap="round" stroke-linejoin="round">
-                                    <circle cx="18" cy="5" r="3" />
-                                    <circle cx="6" cy="12" r="3" />
-                                    <circle cx="18" cy="19" r="3" />
-                                    <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
-                                    <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
-                                </svg></span><span class="shortcut-label">我的分享</span></a>
+                            @click="goToPosts"><span class="shortcut-icon"><el-icon :size="22">
+                                    <Share />
+                                </el-icon></span><span class="shortcut-label">我的分享</span></a>
                     </div>
                 </div>
             </aside>
@@ -257,10 +188,12 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { Loading } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 import { courseApi, assignmentApi, examApi, trainingApi, dashboardApi, notificationApi } from '@/api'
 import DashboardHeader from '@/components/DashboardHeader.vue'
+import EmptyIllustration from '@/components/EmptyIllustration.vue'
+import CourseCoverPattern from '@/components/CourseCoverPattern.vue'
+import ProgressRing from '@/components/ProgressRing.vue'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -277,7 +210,6 @@ const allTodos = ref([])
 const filteredTodos = ref([])
 const semester = ref('2025-2026-2')
 const progressPercent = ref(0)
-const circumference = 2 * Math.PI * 58
 
 // ==================== 计算属性 ====================
 const displayName = computed(() => userStore.nickname || userStore.username || (userStore.isTeacher ? '老师' : '同学'))
@@ -297,7 +229,6 @@ const semesterInfo = computed(() => {
     return `2025-2026-第二学期·第 ${Math.max(1, Math.min(19, diffWeeks))} 周`
 })
 const sortLabel = computed(() => courseSortAsc.value ? '按名称排序' : '最近访问排序')
-const progressDashOffset = computed(() => circumference - (progressPercent.value / 100) * circumference)
 
 // ==================== 课程相关 ====================
 const gradientPalette = [
@@ -420,7 +351,7 @@ const goToCourses = () => { sidebarActive.value = 'courses'; router.push(userSto
 const goToResources = () => { sidebarActive.value = 'resources'; ElMessage.info('资源模块开发中，敬请期待') }
 const goToQuestions = () => { userStore.isTeacher ? router.push('/teacher/questions') : ElMessage.info('题库模块仅教师可用') }
 const goToEvaluations = () => router.push(userStore.isTeacher ? '/teacher/evaluations' : '/student/evaluations')
-const goToLearn = () => { if (courses.value.length > 0) enterCourse(courses.value[0]); else ElMessage.info('请先选择课程') }
+const goToLearn = () => { if (courses.value.length > 0) enterCourse(courses.value[0]); else ElMessage.info('暂无课程') }
 const goToPosts = () => router.push(userStore.isTeacher ? '/teacher/posts' : '/student/posts')
 
 // ==================== 生命周期 ====================
