@@ -106,11 +106,12 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useUserStore } from '@/stores/user'
 import { authApi, notificationApi } from '@/api'
+import { passwordInputValidator } from '@/utils/validators'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -118,11 +119,13 @@ const userStore = useUserStore()
 const topNavActive = ref('courses')
 const unreadCount = ref(0)
 const notifications = ref([])
+let notifyTimer = null
 
 const displayName = computed(() => userStore.nickname || userStore.username || '同学')
 
 // ==================== 通知相关 ====================
 const fetchNotifications = async () => {
+    if (!userStore.isLoggedIn) return
     try {
         const [listRes, countRes] = await Promise.allSettled([notificationApi.list({ page: 1, size: 10 }), notificationApi.unreadCount()])
         if (listRes.status === 'fulfilled' && listRes.value.data.code === 200) {
@@ -166,7 +169,7 @@ const handleUserCmd = (cmd) => {
 
 const changePassword = async () => {
     try {
-        const { value: newPwd } = await ElMessageBox.prompt('请输入新密码（至少6位）', '修改密码', { inputType: 'password', confirmButtonText: '确定', cancelButtonText: '取消', inputValidator: (v) => v && v.length >= 6 ? true : '密码至少6位' })
+        const { value: newPwd } = await ElMessageBox.prompt('请输入新密码（至少6位）', '修改密码', { inputType: 'password', confirmButtonText: '确定', cancelButtonText: '取消', inputValidator: passwordInputValidator() })
         await authApi.changePassword({ password: newPwd }); ElMessage.success('密码修改成功，请重新登录')
         userStore.clearLoginData(); router.push('/login')
     } catch (e) { /* cancelled */ }
@@ -174,7 +177,8 @@ const changePassword = async () => {
 
 const handleLogout = () => { userStore.clearLoginData(); ElMessage.success('已退出登录'); router.push('/login') }
 
-onMounted(() => { fetchNotifications(); setInterval(fetchNotifications, 30000) })
+onMounted(() => { fetchNotifications(); notifyTimer = setInterval(fetchNotifications, 30000) })
+onUnmounted(() => { if (notifyTimer) { clearInterval(notifyTimer); notifyTimer = null } })
 </script>
 
 <style scoped>

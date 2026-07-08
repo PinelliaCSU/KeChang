@@ -16,7 +16,8 @@
               <el-input v-model="form.username" placeholder="用户名 / 邮箱" :prefix-icon="User" clearable />
             </el-form-item>
             <el-form-item prop="password">
-              <el-input v-model="form.password" type="password" placeholder="密码" :prefix-icon="Lock" show-password @keyup.enter="handleLogin" />
+              <el-input v-model="form.password" type="password" placeholder="密码" :prefix-icon="Lock" show-password
+                @keyup.enter="handleLogin" />
             </el-form-item>
             <el-button type="primary" class="submit-btn" :loading="loading" @click="handleLogin">登录</el-button>
           </el-form>
@@ -65,10 +66,12 @@
             </template>
 
             <el-form-item prop="password">
-              <el-input v-model="registerForm.password" type="password" placeholder="密码（至少6位）" :prefix-icon="Lock" show-password />
+              <el-input v-model="registerForm.password" type="password" placeholder="密码（至少6位）" :prefix-icon="Lock"
+                show-password />
             </el-form-item>
             <el-form-item prop="confirmPassword">
-              <el-input v-model="registerForm.confirmPassword" type="password" placeholder="确认密码" :prefix-icon="Lock" show-password @keyup.enter="handleRegister" />
+              <el-input v-model="registerForm.confirmPassword" type="password" placeholder="确认密码" :prefix-icon="Lock"
+                show-password @keyup.enter="handleRegister" />
             </el-form-item>
             <el-button type="primary" class="submit-btn" :loading="loading" @click="handleRegister">注册并登录</el-button>
           </el-form>
@@ -86,6 +89,7 @@ import { ElMessage } from 'element-plus'
 import { User, Lock, Message } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 import { authApi } from '@/api'
+import { required, email, password, confirmPassword, validateForm } from '@/utils/validators'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -117,32 +121,24 @@ const registerForm = reactive({
 })
 
 const rules = {
-  username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
-  password: [{ required: true, message: '请输入密码', trigger: 'blur' }]
-}
-
-const validateConfirmPassword = (rule, value, callback) => {
-  if (!value) callback(new Error('请再次输入密码'))
-  else if (value !== registerForm.password) callback(new Error('两次输入的密码不一致'))
-  else callback()
+  username: [required('请输入用户名')],
+  password: [required('请输入密码')]
 }
 
 const registerRules = {
-  email: [
-    { required: true, message: '请输入邮箱', trigger: 'blur' },
-    { type: 'email', message: '邮箱格式不正确', trigger: 'blur' }
-  ],
-  realName: [{ required: true, message: '请输入真实姓名', trigger: 'blur' }],
-  password: [
-    { required: true, message: '请设置密码', trigger: 'blur' },
-    { min: 6, message: '密码至少6位', trigger: 'blur' }
-  ],
-  confirmPassword: [{ required: true, validator: validateConfirmPassword, trigger: 'blur' }]
+  ...(() => {
+    const getPwd = () => registerForm.password
+    return {
+      email: email(),
+      realName: [required('请输入真实姓名')],
+      password: password(),
+      confirmPassword: confirmPassword(getPwd)
+    }
+  })()
 }
 
 const handleLogin = async () => {
-  const valid = await formRef.value.validate().catch(() => false)
-  if (!valid) return
+  if (!await validateForm(formRef.value)) return
   loading.value = true
   try {
     const res = await authApi.login({ username: form.username, password: form.password })
@@ -159,8 +155,7 @@ const handleLogin = async () => {
 }
 
 const handleRegister = async () => {
-  const valid = await registerFormRef.value.validate().catch(() => false)
-  if (!valid) return
+  if (!await validateForm(registerFormRef.value)) return
   loading.value = true
   try {
     const res = await authApi.register({
@@ -197,6 +192,7 @@ const handleRegister = async () => {
   grid-template-columns: 1fr 1fr;
   background: #f7f8f2;
 }
+
 .brand-panel {
   background: linear-gradient(135deg, #4a5c38, #7f8c52);
   color: #fff;
@@ -206,27 +202,32 @@ const handleRegister = async () => {
   justify-content: center;
   padding: 48px;
 }
+
 .brand-logo {
   width: 86px;
   height: 86px;
   border-radius: 50%;
   margin-bottom: 24px;
 }
+
 .brand-panel h1 {
   font-size: 42px;
   letter-spacing: 8px;
   margin: 0 0 12px;
 }
+
 .brand-panel p {
-  color: rgba(255,255,255,.76);
+  color: rgba(255, 255, 255, .76);
   margin: 0;
 }
+
 .form-panel {
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 32px;
 }
+
 .login-card {
   width: 440px;
   max-height: calc(100vh - 64px);
@@ -236,31 +237,42 @@ const handleRegister = async () => {
   padding: 36px;
   box-shadow: 0 14px 40px rgba(44, 54, 30, .12);
 }
+
 .login-card h2 {
   margin: 0 0 8px;
   font-size: 28px;
   color: #303133;
 }
+
 .subtitle {
   margin: 0 0 28px;
   color: #909399;
 }
+
 .submit-btn {
   width: 100%;
   height: 44px;
 }
+
 .switch-text {
   margin: 22px 0 0;
   text-align: center;
   color: #606266;
 }
+
 .switch-text a {
   color: #409eff;
   text-decoration: none;
   font-weight: 600;
 }
+
 @media (max-width: 900px) {
-  .login-page { grid-template-columns: 1fr; }
-  .brand-panel { display: none; }
+  .login-page {
+    grid-template-columns: 1fr;
+  }
+
+  .brand-panel {
+    display: none;
+  }
 }
 </style>
