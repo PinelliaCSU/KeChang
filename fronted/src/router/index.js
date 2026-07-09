@@ -78,6 +78,7 @@ const routes = [
     children: [
       { path: 'dashboard', name: 'StudentDashboard', component: () => import('@/views/student/StudentDashboard.vue'), meta: { title: '学生仪表盘' } },
       { path: 'courses', name: 'StudentCourses', component: () => import('@/views/student/StudentCourses.vue'), meta: { title: '课程中心' } },
+      { path: 'courses/:id', name: 'StudentCourseDetail', component: () => import('@/views/student/StudentCourseDetail.vue'), meta: { title: '课程详情' } },
       { path: 'courses/:id/learn', name: 'StudentLearn', component: () => import('@/views/student/StudentLearn.vue'), meta: { title: '在线学习' } },
       { path: 'assignments', name: 'StudentAssignments', component: () => import('@/views/student/StudentAssignments.vue'), meta: { title: '我的作业' } },
       { path: 'exams', name: 'StudentExams', component: () => import('@/views/student/StudentExams.vue'), meta: { title: '在线考试' } },

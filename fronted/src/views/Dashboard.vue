@@ -98,7 +98,7 @@ const handleCourseAction = (cmd, course) => {
     if (cmd === 'enter') enterCourse(course)
     else if (cmd === 'detail') {
         if (userStore.isTeacher) router.push(`/teacher/courses/${course.id}`)
-        else ElMessage.info('课程详情功能开发中')
+        else router.push(`/student/courses/${course.id}`)
     } else if (cmd === 'edit') {
         router.push(`/teacher/courses/${course.id}`)
     } else if (cmd === 'enroll') {

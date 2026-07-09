@@ -25,7 +25,8 @@ export const courseApi = {
   getStudents: (id, params) => request.get(`/courses/${id}/students`, { params }),
   getResources: (id, params) => request.get(`/courses/${id}/resources`, { params }),
   enroll: (id) => request.post(`/courses/${id}/enroll`),
-  unenroll: (id) => request.delete(`/courses/${id}/enroll`)
+  unenroll: (id) => request.delete(`/courses/${id}/enroll`),
+  removeStudent: (courseId, studentId) => request.delete(`/courses/${courseId}/students/${studentId}`)
 }
 
 /** 试题/考试 API */

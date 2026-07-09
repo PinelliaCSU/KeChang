@@ -278,10 +278,16 @@ public class CourseService {
     }
 
     /**
-     * 查看选课学生
+     * 查看选课学生（教师可查看自己课程，已选课学生可查看同学）
      */
-    public PageResult<StudentProfile> getStudents(Long courseId, int page, int size, Long teacherId) {
-        checkCourseOwner(courseId, teacherId);
+    public PageResult<StudentProfile> getStudents(Long courseId, int page, int size, Long currentUserId, String role) {
+        if ("ROLE_TEACHER".equals(role)) {
+            checkCourseOwner(courseId, currentUserId);
+        } else if ("ROLE_STUDENT".equals(role)) {
+            if (!isEnrolled(courseId, currentUserId)) {
+                throw BusinessException.forbidden("请先加入课程");
+            }
+        }
         List<CourseStudent> enrollments = courseStudentMapper.selectList(
                 new LambdaQueryWrapper<CourseStudent>().eq(CourseStudent::getCourseId, courseId));
         List<Long> studentIds = enrollments.stream().map(CourseStudent::getStudentId).collect(Collectors.toList());
@@ -366,6 +372,15 @@ public class CourseService {
             course.setStudentCount(Math.max(0, course.getStudentCount() - 1));
             courseMapper.updateById(course);
         }
+    }
+
+    /**
+     * 教师踢出学生
+     */
+    @Transactional
+    public void removeStudent(Long courseId, Long studentId, Long teacherId) {
+        checkCourseOwner(courseId, teacherId);
+        unenrollCourse(courseId, studentId);
     }
 
     private void copyCourseFields(Course c, CourseVO vo) {
