@@ -37,9 +37,9 @@ const radius = computed(() => props.size / 2 - props.strokeWidth - 2)
 const circumference = computed(() => 2 * Math.PI * radius.value)
 const dashOffset = computed(() => circumference.value - (props.percent / 100) * circumference.value)
 
-// 唯一渐变 ID，防止多实例冲突
-let uid = 0
-const gradientId = computed(() => `progressGrad_${++uid}`)
+// 唯一渐变 ID，使用稳定随机字符串防止多实例冲突
+const instanceId = `pgr_${Math.random().toString(36).slice(2, 10)}`
+const gradientId = computed(() => `progressGrad_${instanceId}`)
 </script>
 
 <style scoped>
