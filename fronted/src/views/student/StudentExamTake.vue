@@ -17,7 +17,7 @@
           <div class="index-grid">
             <span v-for="(q, i) in questions" :key="q.id" :class="['index-item',
               currentIndex === i ? 'current' : '',
-              answers[q.id] ? 'answered' : '',
+              isQuestionAnswered(q) ? 'answered' : '',
               markedQuestions.has(q.id) ? 'marked' : '']" @click="currentIndex = i">
               {{ i + 1 }}
             </span>
@@ -27,7 +27,7 @@
             <span><span class="dot current-dot"></span> 当前</span>
             <span><span class="dot marked-dot"></span> 标记</span>
           </div>
-          <el-button type="danger" style="width:100%;margin-top:16px" @click="confirmSubmit">交卷</el-button>
+          <el-button type="danger" style="width:100%;margin-top:16px" :loading="submitting" @click="confirmSubmit">交卷</el-button>
         </div>
       </div>
 
@@ -46,14 +46,14 @@
             <div class="options">
               <template v-if="['SINGLE', 'JUDGE'].includes(currentQuestion.questionType)">
                 <el-radio-group v-model="answers[currentQuestion.id]" class="option-group">
-                  <el-radio v-for="(opt, oi) in parseOptions(currentQuestion.options)" :key="oi" :value="opt.key"
-                    class="option-item">{{ opt.key }}. {{ opt.value }}</el-radio>
+                  <el-radio v-for="(opt, oi) in parseOptions(currentQuestion)" :key="oi" :value="opt.label"
+                    class="option-item">{{ opt.label }}. {{ opt.content }}</el-radio>
                 </el-radio-group>
               </template>
               <template v-else-if="currentQuestion.questionType === 'MULTI'">
                 <el-checkbox-group v-model="multiAnswers[currentQuestion.id]" class="option-group">
-                  <el-checkbox v-for="(opt, oi) in parseOptions(currentQuestion.options)" :key="oi" :value="opt.key"
-                    class="option-item">{{ opt.key }}. {{ opt.value }}</el-checkbox>
+                  <el-checkbox v-for="(opt, oi) in parseOptions(currentQuestion)" :key="oi" :value="opt.label"
+                    class="option-item">{{ opt.label }}. {{ opt.content }}</el-checkbox>
                 </el-checkbox-group>
               </template>
               <template v-else-if="currentQuestion.questionType === 'FILL'">
@@ -90,6 +90,7 @@ const markedQuestions = ref(new Set())
 const currentIndex = ref(0)
 const remaining = ref(0)
 const cheatCount = ref(0)
+const submitting = ref(false)
 let timer = null
 
 const currentQuestion = computed(() => questions.value[currentIndex.value] || null)
@@ -105,6 +106,7 @@ onMounted(async () => {
       const data = res.data.data
       exam.value = data
       questions.value = data.questions || []
+      initializeAnswerState()
       remaining.value = (data.duration || 120) * 60
       startTimer()
     }
@@ -129,16 +131,47 @@ function startTimer() {
   }, 1000)
 }
 
-function parseOptions(options) {
-  if (currentQuestion.value?.questionType === 'JUDGE') {
-    return [{ key: '对', value: '正确' }, { key: '错', value: '错误' }]
+function initializeAnswerState() {
+  questions.value.forEach(q => {
+    if (q.questionType === 'MULTI' && !Array.isArray(multiAnswers[q.id])) {
+      multiAnswers[q.id] = []
+    } else if (!answers[q.id]) {
+      answers[q.id] = ''
+    }
+  })
+}
+
+function parseOptions(question) {
+  if (question?.questionType === 'JUDGE') {
+    return [{ label: '1', content: '正确' }, { label: '0', content: '错误' }]
   }
+  const options = question?.options
   if (!options) return []
   try {
     const obj = typeof options === 'string' ? JSON.parse(options) : options
-    if (Array.isArray(obj)) return obj.map(value => ({ key: value, value }))
-    return Object.entries(obj).map(([k, v]) => ({ key: v, value: v || k }))
+    if (Array.isArray(obj)) {
+      return obj.map((item, index) => {
+        if (typeof item === 'string') {
+          const label = String.fromCharCode(65 + index)
+          return { label, content: item }
+        }
+        return {
+          label: item.label || item.key || String.fromCharCode(65 + index),
+          content: item.content || item.value || ''
+        }
+      })
+    }
+    return Object.entries(obj).map(([label, content]) => ({ label, content: String(content || '') }))
   } catch (e) { return [] }
+}
+
+function isQuestionAnswered(question) {
+  if (!question) return false
+  if (question.questionType === 'MULTI') {
+    return Array.isArray(multiAnswers[question.id]) && multiAnswers[question.id].length > 0
+  }
+  const value = answers[question.id]
+  return value !== undefined && value !== null && String(value).trim() !== ''
 }
 
 function typeLabel(type) {
@@ -165,17 +198,25 @@ async function confirmSubmit() {
 }
 
 async function submitExam() {
+  if (submitting.value) return
+  submitting.value = true
   clearInterval(timer)
-  // 处理多选题答案
-  for (const qid in multiAnswers) {
-    answers[qid] = JSON.stringify(multiAnswers[qid])
-  }
-  const answerList = Object.entries(answers).map(([qid, ans]) => ({ questionId: Number(qid), answer: ans }))
+  const answerList = questions.value.map(q => ({
+    questionId: Number(q.id),
+    answer: q.questionType === 'MULTI'
+      ? (multiAnswers[q.id] || []).slice().sort().join(',')
+      : String(answers[q.id] ?? '')
+  }))
   try {
     await examApi.submitExam(route.params.id, { answers: answerList, cheatCount: cheatCount.value })
     ElMessage.success('交卷成功')
     router.push('/student/exams')
-  } catch (e) { /* ignore */ }
+  } catch (e) {
+    ElMessage.error(e?.response?.data?.message || '交卷失败，请稍后重试')
+    if (remaining.value > 0) startTimer()
+  } finally {
+    submitting.value = false
+  }
 }
 </script>
 

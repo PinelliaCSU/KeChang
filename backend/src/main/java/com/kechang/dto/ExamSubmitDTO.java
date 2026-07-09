@@ -14,6 +14,6 @@ public class ExamSubmitDTO {
     public static class AnswerItem {
 
         private Long questionId;
-        private String answer;
+        private Object answer;
     }
 }

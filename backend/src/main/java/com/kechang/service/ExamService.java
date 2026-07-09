@@ -392,13 +392,14 @@ public class ExamService {
         if (dto.getAnswers() != null) {
             for (ExamSubmitDTO.AnswerItem ans : dto.getAnswers()) {
                 Question q = questionMapper.selectById(ans.getQuestionId());
+                String studentAnswer = normalizeSubmittedAnswer(ans.getAnswer());
                 ExamRecordAnswer a = new ExamRecordAnswer();
                 a.setRecordId(record.getId());
                 a.setQuestionId(ans.getQuestionId());
-                a.setStudentAnswer(ans.getAnswer());
+                a.setStudentAnswer(studentAnswer);
                 if (q != null && ("SINGLE".equals(q.getQuestionType()) || "MULTI".equals(q.getQuestionType())
                         || "JUDGE".equals(q.getQuestionType()))) {
-                    boolean correct = isAnswerCorrect(q, ans.getAnswer());
+                    boolean correct = isAnswerCorrect(q, studentAnswer);
                     a.setIsCorrect(correct ? 1 : 0);
                     if (correct) {
                         // 查试卷中的分值
@@ -524,6 +525,26 @@ public class ExamService {
             return normalizeMulti(question.getAnswer()).equals(normalizeMulti(studentAnswer));
         }
         return question.getAnswer().trim().equalsIgnoreCase(studentAnswer == null ? "" : studentAnswer.trim());
+    }
+
+    private String normalizeSubmittedAnswer(Object answer) {
+        if (answer == null) {
+            return "";
+        }
+        if (answer instanceof Collection<?> values) {
+            return values.stream().map(this::normalizeSubmittedAnswer).filter(StringUtils::hasText).collect(Collectors.joining(","));
+        }
+        if (answer instanceof Map<?, ?> map) {
+            Object label = map.get("label");
+            if (label == null) {
+                label = map.get("key");
+            }
+            if (label != null) {
+                return String.valueOf(label).trim();
+            }
+            return map.values().stream().map(this::normalizeSubmittedAnswer).filter(StringUtils::hasText).collect(Collectors.joining(","));
+        }
+        return String.valueOf(answer).trim();
     }
 
     private List<String> normalizeMulti(String answer) {
