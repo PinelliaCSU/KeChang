@@ -30,7 +30,8 @@
         <el-table-column prop="endDate" label="结束日期" width="120" />
         <el-table-column label="状态" width="90">
           <template #default="{ row }">
-            <el-tag :type="row.status === '进行中' ? 'success' : 'info'" size="small">{{ row.status || '草稿' }}</el-tag>
+            <el-tag :type="statusTagType(computeStatus(row.startDate, row.endDate))" size="small">{{
+              computeStatus(row.startDate, row.endDate) }}</el-tag>
           </template>
         </el-table-column>
         <el-table-column label="操作" width="240" fixed="right">
@@ -154,6 +155,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { evaluationApi, courseApi } from '@/api'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { ArrowDown } from '@element-plus/icons-vue'
+import { computeStatus, statusTagType } from '@/utils/status'
 
 const evaluations = ref([]); const loading = ref(false)
 const page = ref(1); const pageSize = ref(10); const total = ref(0)

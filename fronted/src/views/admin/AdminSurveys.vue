@@ -38,8 +38,8 @@
                 <el-table-column prop="courseName" label="关联课程" min-width="120" />
                 <el-table-column label="状态" width="90">
                     <template #default="{ row }">
-                        <el-tag :type="row.status === '进行中' ? 'success' : row.status === '已结束' ? 'info' : 'warning'"
-                            size="small">{{ row.status }}</el-tag>
+                        <el-tag :type="statusTagType(computeStatus(row.startDate, row.endDate))" size="small">{{
+                            computeStatus(row.startDate, row.endDate) }}</el-tag>
                     </template>
                 </el-table-column>
                 <el-table-column prop="questionCount" label="题目数" width="80" align="center" />
@@ -75,7 +75,7 @@
                     <div v-if="qs.textAnswers && qs.textAnswers.length > 0" class="text-answers">
                         <el-tag size="small" v-for="(ta, tai) in qs.textAnswers" :key="tai" style="margin:4px">{{ ta ||
                             '(空)'
-                            }}</el-tag>
+                        }}</el-tag>
                     </div>
                 </div>
             </div>
@@ -88,6 +88,7 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { surveyApi } from '@/api'
+import { computeStatus, statusTagType } from '@/utils/status'
 
 const overview = reactive({
     totalSurveys: 0,

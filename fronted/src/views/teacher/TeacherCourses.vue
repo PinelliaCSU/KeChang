@@ -7,14 +7,8 @@
 
     <div class="panel">
       <div class="search-bar">
-        <el-input
-          v-model="keyword"
-          placeholder="搜索课程名称"
-          style="width:260px"
-          clearable
-          @change="fetchCourses"
-          @clear="fetchCourses"
-        />
+        <el-input v-model="keyword" placeholder="搜索课程名称" style="width:260px" clearable @change="fetchCourses"
+          @clear="fetchCourses" />
         <el-select v-model="statusFilter" placeholder="状态筛选" style="width:140px" clearable @change="fetchCourses">
           <el-option label="进行中" value="进行中" />
           <el-option label="已结束" value="已结束" />
@@ -23,9 +17,10 @@
 
       <div class="course-grid" v-if="courses.length > 0">
         <div class="course-card" v-for="course in courses" :key="course.id">
-          <div class="card-cover" :style="{ background: course.coverImg ? `url(${course.coverImg}) center/cover` : getCoverGradient(course.id) }">
-            <el-tag :type="course.status === '进行中' ? 'success' : 'info'" class="status-tag">
-              {{ course.status || '进行中' }}
+          <div class="card-cover"
+            :style="{ background: course.coverImg ? `url(${course.coverImg}) center/cover` : getCoverGradient(course.id) }">
+            <el-tag :type="statusTagType(computeStatus(course.startDate, course.endDate))" class="status-tag">
+              {{ computeStatus(course.startDate, course.endDate) }}
             </el-tag>
           </div>
           <div class="card-body">
@@ -46,15 +41,8 @@
 
       <el-empty v-else description="暂无课程，点击上方按钮创建" :image-size="120" />
 
-      <el-pagination
-        v-if="total > pageSize"
-        v-model:current-page="page"
-        :page-size="pageSize"
-        :total="total"
-        layout="prev, pager, next"
-        style="margin-top:20px;justify-content:center"
-        @current-change="fetchCourses"
-      />
+      <el-pagination v-if="total > pageSize" v-model:current-page="page" :page-size="pageSize" :total="total"
+        layout="prev, pager, next" style="margin-top:20px;justify-content:center" @current-change="fetchCourses" />
     </div>
 
     <el-dialog v-model="dialogVisible" :title="editingId ? '编辑课程' : '创建课程'" width="520px">
@@ -96,6 +84,7 @@ import { reactive, ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { courseApi } from '@/api'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { computeStatus, statusTagType } from '@/utils/status'
 
 const router = useRouter()
 const courses = ref([])

@@ -18,7 +18,8 @@
             <el-descriptions-item label="结束日期">{{ course.endDate || '--' }}</el-descriptions-item>
             <el-descriptions-item label="选课人数">{{ course.studentCount || 0 }} 人</el-descriptions-item>
             <el-descriptions-item label="状态">
-              <el-tag :type="course.status === '进行中' ? 'success' : 'info'">{{ course.status || '进行中' }}</el-tag>
+              <el-tag :type="statusTagType(computeStatus(course.startDate, course.endDate))">{{
+                computeStatus(course.startDate, course.endDate) }}</el-tag>
             </el-descriptions-item>
             <el-descriptions-item label="课程简介" :span="2">{{ course.description || '暂无课程简介' }}</el-descriptions-item>
           </el-descriptions>
@@ -73,7 +74,7 @@
                     <span class="item-kind assignment">作业</span>
                     <span class="item-title">{{ assignment.title }}</span>
                     <span class="item-meta">截止 {{ formatDate(assignment.deadline) }} · {{ assignment.submitCount || 0
-                      }}/{{
+                    }}/{{
                         assignment.totalStudents || 0 }}</span>
                     <el-button size="small" @click="router.push('/teacher/assignments')">管理</el-button>
                   </div>
@@ -127,11 +128,12 @@
 </template>
 
 <script setup>
-import { reactive, ref, onMounted } from 'vue'
+import { reactive, ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { assignmentApi, courseApi } from '@/api'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import FilePreview from '@/components/FilePreview.vue'
+import { computeStatus, statusTagType } from '@/utils/status'
 
 const route = useRoute()
 const router = useRouter()

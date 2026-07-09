@@ -29,14 +29,16 @@
                             </el-icon> {{ s.responseCount || 0 }} 人已填</span>
                     </div>
                     <div class="survey-actions">
-                        <el-tag :type="statusTag(s.status)" size="small">{{ s.status }}</el-tag>
-                        <el-button v-if="!s.submitted && s.status === '进行中'" type="primary" size="small"
-                            @click="openSurvey(s)">
+                        <el-tag :type="statusTagType(computeStatus(s.startDate, s.endDate))" size="small">{{
+                            computeStatus(s.startDate, s.endDate) }}</el-tag>
+                        <el-button v-if="!s.submitted && computeStatus(s.startDate, s.endDate) === '进行中'" type="primary"
+                            size="small" @click="openSurvey(s)">
                             开始填写
                         </el-button>
                         <el-button v-if="s.submitted" type="info" size="small" disabled>已提交</el-button>
-                        <span v-if="s.status !== '进行中' && !s.submitted" style="color:#909399;font-size:12px">
-                            {{ s.status === '未开始' ? '暂未开放' : '已结束' }}
+                        <span v-if="computeStatus(s.startDate, s.endDate) !== '进行中' && !s.submitted"
+                            style="color:#909399;font-size:12px">
+                            {{ computeStatus(s.startDate, s.endDate) === '未开始' ? '暂未开放' : '已结束' }}
                         </span>
                     </div>
                 </div>
@@ -66,7 +68,7 @@
                         <el-radio-group v-if="q.questionType === 'SINGLE'" v-model="answers[idx]"
                             class="fill-option-group">
                             <el-radio v-for="(opt, oi) in parseOptions(q.options)" :key="oi" :value="opt">{{ opt
-                                }}</el-radio>
+                            }}</el-radio>
                         </el-radio-group>
                         <!-- 多选题 -->
                         <el-checkbox-group v-if="q.questionType === 'MULTI'" v-model="multiAnswers[idx]"
@@ -95,6 +97,7 @@ import { surveyApi } from '@/api'
 import { ElMessage } from 'element-plus'
 import { School, Calendar, Document, User } from '@element-plus/icons-vue'
 import EmptyIllustration from '@/components/EmptyIllustration.vue'
+import { computeStatus, statusTagType } from '@/utils/status'
 
 const surveys = ref([]); const loading = ref(false)
 const page = ref(1); const pageSize = ref(10); const total = ref(0)
@@ -104,11 +107,7 @@ const fillDialogVisible = ref(false); const currentSurvey = ref({})
 const questions = ref([]); const answers = ref([]); const multiAnswers = ref([])
 const submittingFill = ref(false)
 
-const statusTag = (s) => {
-    if (s === '进行中') return 'success'
-    if (s === '已结束') return 'info'
-    return 'warning'
-}
+const statusTag = (s) => statusTagType(s)
 
 const parseOptions = (opts) => {
     try { return JSON.parse(opts || '[]') } catch (e) { return [] }

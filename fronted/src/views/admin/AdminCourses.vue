@@ -29,7 +29,8 @@
 
     <div class="panel">
       <div class="search-bar">
-        <el-input v-model="keyword" placeholder="搜索课程名称" clearable style="width:260px" @change="fetchCourses" @clear="fetchCourses" />
+        <el-input v-model="keyword" placeholder="搜索课程名称" clearable style="width:260px" @change="fetchCourses"
+          @clear="fetchCourses" />
         <el-select v-model="statusFilter" placeholder="状态筛选" clearable style="width:150px" @change="fetchCourses">
           <el-option label="进行中" value="进行中" />
           <el-option label="已结束" value="已结束" />
@@ -44,7 +45,8 @@
         <el-table-column prop="endDate" label="结束日期" width="130" />
         <el-table-column label="状态" width="110">
           <template #default="{ row }">
-            <el-tag :type="row.status === '进行中' ? 'success' : 'info'">{{ row.status || '进行中' }}</el-tag>
+            <el-tag :type="statusTagType(computeStatus(row.startDate, row.endDate))">{{ computeStatus(row.startDate,
+              row.endDate) }}</el-tag>
           </template>
         </el-table-column>
         <el-table-column prop="description" label="简介" min-width="220" show-overflow-tooltip />
@@ -57,6 +59,7 @@
 import { computed, ref, onMounted } from 'vue'
 import { courseApi } from '@/api'
 import { ElMessage } from 'element-plus'
+import { computeStatus, statusTagType } from '@/utils/status'
 
 const courses = ref([])
 const total = ref(0)
@@ -64,8 +67,8 @@ const loading = ref(false)
 const keyword = ref('')
 const statusFilter = ref('')
 
-const runningCount = computed(() => courses.value.filter(course => (course.status || '进行中') === '进行中').length)
-const endedCount = computed(() => courses.value.filter(course => course.status === '已结束').length)
+const runningCount = computed(() => courses.value.filter(course => computeStatus(course.startDate, course.endDate) === '进行中').length)
+const endedCount = computed(() => courses.value.filter(course => computeStatus(course.startDate, course.endDate) === '已结束').length)
 const totalStudents = computed(() => courses.value.reduce((sum, course) => sum + Number(course.studentCount || 0), 0))
 
 const fetchCourses = async () => {

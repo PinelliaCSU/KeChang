@@ -24,7 +24,8 @@
         <el-table-column prop="duration" label="时长(分)" width="80" />
         <el-table-column label="状态" width="90">
           <template #default="{ row }">
-            <el-tag :type="statusType(row.status)" size="small">{{ row.status || '未开始' }}</el-tag>
+            <el-tag :type="statusTagType(computeStatus(row.startTime, row.endTime))" size="small">{{
+              computeStatus(row.startTime, row.endTime) }}</el-tag>
           </template>
         </el-table-column>
         <el-table-column label="操作" width="240" fixed="right">
@@ -132,7 +133,7 @@
           </div>
           <div class="answer-row">
             <span>学生答案：<b :style="{ color: ans.isCorrect === 1 ? '#67c23a' : '#f56c6c' }">{{ ans.studentAnswer || '未作答'
-                }}</b></span>
+            }}</b></span>
             <span style="margin-left:20px">参考答案：<b style="color:#409eff">{{ ans.correctAnswer || '' }}</b></span>
           </div>
           <div class="score-row" v-if="ans.questionType === 'ESSAY' || ans.questionType === 'FILL'">
@@ -157,6 +158,7 @@
 import { ref, reactive, onMounted, computed } from 'vue'
 import { examApi, courseApi } from '@/api'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { computeStatus, statusTagType } from '@/utils/status'
 
 const exams = ref([]); const loading = ref(false)
 const page = ref(1); const pageSize = ref(10); const total = ref(0)

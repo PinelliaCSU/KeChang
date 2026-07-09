@@ -10,7 +10,8 @@
         <div class="training-card" v-for="p in projects" :key="p.id" @click="viewProject(p)">
           <div class="card-header">
             <h4>{{ p.projectName }}</h4>
-            <el-tag :type="p.status === '已结束' ? 'info' : 'success'" size="small">{{ p.status || '进行中' }}</el-tag>
+            <el-tag :type="statusTagType(computeStatus(p.startDate, p.endDate))" size="small">{{
+              computeStatus(p.startDate, p.endDate) }}</el-tag>
           </div>
           <p class="card-desc">{{ p.description || '暂无描述' }}</p>
           <div class="meta-row">
@@ -53,7 +54,7 @@
       <template #footer>
         <el-button @click="projDialogVisible = false">取消</el-button>
         <el-button type="primary" :loading="projSubmitting" @click="handleProjSubmit">{{ isEditProj ? '保存' : '创建'
-          }}</el-button>
+        }}</el-button>
       </template>
     </el-dialog>
 
@@ -151,7 +152,7 @@
       <el-form label-width="80px">
         <el-form-item label="学生">
           <span>{{ currentReport?.studentName || '--' }}（{{ currentReport?.studentNo || currentReport?.studentId
-            }}）</span>
+          }}）</span>
         </el-form-item>
         <el-form-item label="报告内容">
           <div class="report-preview">{{ currentReport?.reportContent || '--' }}</div>
@@ -182,6 +183,7 @@
 import { onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { trainingApi, uploadApi } from '@/api'
+import { computeStatus, statusTagType } from '@/utils/status'
 
 const projects = ref([])
 
