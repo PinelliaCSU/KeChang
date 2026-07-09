@@ -17,13 +17,21 @@
             <h4 class="card-title" :title="course.courseName || course.name">{{ course.courseName || course.name }}</h4>
             <p class="card-meta">{{ course.teacherName || '未知教师' }}</p>
           </div>
+          <div class="card-status">
+            <el-tag :type="statusTagType(computeStatus(course.startDate, course.endDate))" size="small">
+              {{ computeStatus(course.startDate, course.endDate) }}
+            </el-tag>
+          </div>
           <div class="card-footer">
             <button class="btn-enter" :disabled="!course.enrolled" @click="enterLearn(course)">
               {{ course.enrolled ? '进入学习' : '先加入后学习' }}
             </button>
-            <button :class="course.enrolled ? 'btn-unenroll' : 'btn-enroll'"
-              @click="course.enrolled ? unenrollCourse(course) : enrollCourse(course)">
-              {{ course.enrolled ? '退出课程' : '加入课程' }}
+            <button v-if="!course.enrolled" :class="canEnroll(course) ? 'btn-enroll' : 'btn-enroll btn-disabled'"
+              :disabled="!canEnroll(course)" @click="canEnroll(course) && enrollCourse(course)">
+              {{ canEnroll(course) ? '加入课程' : '暂不可选' }}
+            </button>
+            <button v-else class="btn-unenroll" @click="unenrollCourse(course)">
+              退出课程
             </button>
           </div>
         </div>
@@ -43,6 +51,7 @@ import { courseApi } from '@/api'
 import { ElMessage } from 'element-plus'
 import CourseCoverPattern from '@/components/CourseCoverPattern.vue'
 import EmptyIllustration from '@/components/EmptyIllustration.vue'
+import { computeStatus, statusTagType } from '@/utils/status'
 
 const router = useRouter()
 const courses = ref([])
@@ -66,6 +75,12 @@ const filteredCourses = computed(() => {
 })
 
 const getCoverGradient = (id) => gradientPalette[((id || 1) - 1) % gradientPalette.length]
+
+const canEnroll = (course) => {
+  const status = computeStatus(course.startDate, course.endDate)
+  return status === '进行中'
+}
+
 const enterLearn = (course) => {
   if (!course.enrolled) {
     ElMessage.warning('请先加入课程')
@@ -202,6 +217,10 @@ onMounted(fetchCourses)
   color: #c0c4cc;
 }
 
+.card-status {
+  padding: 0 14px;
+}
+
 .card-footer {
   padding: 8px 14px 14px;
   display: flex;
@@ -253,6 +272,16 @@ onMounted(fetchCourses)
   background: #f4f4f5;
   color: #a8abb2;
   cursor: not-allowed;
+}
+
+.btn-enroll.btn-disabled {
+  background: #f4f4f5;
+  color: #a8abb2;
+  cursor: not-allowed;
+}
+
+.btn-enroll.btn-disabled:hover {
+  background: #f4f4f5;
 }
 
 .empty-panel {

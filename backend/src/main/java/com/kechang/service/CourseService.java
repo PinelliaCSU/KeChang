@@ -15,6 +15,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -307,23 +309,47 @@ public class CourseService {
      */
     @Transactional
     public void enrollCourse(Long courseId, Long studentId) {
-        // 检查是否已选
+        // 1. 检查课程是否存在及时间状态
+        Course course = courseMapper.selectById(courseId);
+        if (course == null) {
+            throw BusinessException.notFound("课程不存在");
+        }
+        LocalDate today = LocalDate.now();
+        if (course.getStartDate() != null && today.isBefore(course.getStartDate())) {
+            throw BusinessException.badRequest("该课程尚未开始，暂不可选课");
+        }
+        if (course.getEndDate() != null && today.isAfter(course.getEndDate())) {
+            throw BusinessException.badRequest("该课程已结束，不可选课");
+        }
+
+        // 2. 检查是否已选（未删除的记录）
         if (courseStudentMapper.selectOne(new LambdaQueryWrapper<CourseStudent>()
                 .eq(CourseStudent::getCourseId, courseId)
                 .eq(CourseStudent::getStudentId, studentId)) != null) {
             throw BusinessException.badRequest("已选该课程，不可重复选课");
         }
-        CourseStudent cs = new CourseStudent();
-        cs.setCourseId(courseId);
-        cs.setStudentId(studentId);
-        cs.setProgress(0.0);
-        courseStudentMapper.insert(cs);
-        // 更新选课人数
-        Course course = courseMapper.selectById(courseId);
-        if (course != null) {
-            course.setStudentCount(course.getStudentCount() + 1);
-            courseMapper.updateById(course);
+
+        // 3. 检查是否有软删除的记录（退课后重新选课），有则恢复
+        List<CourseStudent> deletedList = courseStudentMapper.selectListWithDeleted(courseId, studentId);
+        if (!deletedList.isEmpty()) {
+            CourseStudent cs = deletedList.get(0);
+            cs.setIsDeleted(0);
+            cs.setProgress(0.0);
+            cs.setEnrolledTime(LocalDateTime.now());
+            courseStudentMapper.updateById(cs);
+        } else {
+            // 4. 全新选课
+            CourseStudent cs = new CourseStudent();
+            cs.setCourseId(courseId);
+            cs.setStudentId(studentId);
+            cs.setProgress(0.0);
+            cs.setEnrolledTime(LocalDateTime.now());
+            courseStudentMapper.insert(cs);
         }
+
+        // 5. 更新选课人数
+        course.setStudentCount((course.getStudentCount() == null ? 0 : course.getStudentCount()) + 1);
+        courseMapper.updateById(course);
     }
 
     /**
