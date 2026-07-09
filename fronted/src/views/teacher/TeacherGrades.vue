@@ -40,7 +40,7 @@
     </div>
 
     <div class="panel">
-      <el-table :data="grades" stripe border v-loading="loading">
+      <el-table v-if="grades.length > 0 || loading" :data="grades" stripe border v-loading="loading">
         <el-table-column prop="studentNo" label="学号" width="130" />
         <el-table-column prop="studentName" label="姓名" min-width="120" />
         <el-table-column v-if="hasExamScores" prop="examAvgScore" label="考试均分" width="110">

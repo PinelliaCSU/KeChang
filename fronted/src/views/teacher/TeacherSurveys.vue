@@ -12,7 +12,8 @@
         </el-select>
       </div>
 
-      <el-table :data="surveys" v-loading="loading" stripe border style="width:100%">
+      <el-table v-if="surveys.length > 0 || loading" :data="surveys" v-loading="loading" stripe border
+        style="width:100%">
         <el-table-column prop="title" label="问卷标题" min-width="180" />
         <el-table-column prop="courseName" label="关联课程" min-width="120" />
         <el-table-column label="题目数" width="80" align="center">

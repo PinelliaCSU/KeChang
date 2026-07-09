@@ -20,7 +20,7 @@
     </div>
 
     <div class="panel">
-      <el-table :data="grades" stripe border v-loading="loading">
+      <el-table v-if="grades.length > 0 || loading" :data="grades" stripe border v-loading="loading">
         <el-table-column prop="courseName" label="课程" min-width="180" />
         <el-table-column v-if="hasExamScores" prop="examAvgScore" label="考试均分" width="110">
           <template #default="{ row }">{{ formatScore(row.examAvgScore) }}</template>

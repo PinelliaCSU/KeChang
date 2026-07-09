@@ -35,14 +35,16 @@
               <template #title>
                 <div class="chapter-title">
                   <span>{{ chapter.sortOrder }}. {{ chapter.chapterName }}</span>
-                  <span class="chapter-stat">{{ resourcesByChapter(chapter.id).length }} 个资源 · {{ assignmentsByChapter(chapter.id).length }} 个作业</span>
+                  <span class="chapter-stat">{{ resourcesByChapter(chapter.id).length }} 个资源 · {{
+                    assignmentsByChapter(chapter.id).length }} 个作业</span>
                 </div>
               </template>
 
               <div class="chapter-actions">
                 <el-button size="small" @click="openChapterDialog(chapter)">编辑章节</el-button>
                 <el-button size="small" type="danger" @click="deleteChapter(chapter)">删除章节</el-button>
-                <el-upload action="#" :http-request="payload => uploadResource(payload, chapter.id)" :show-file-list="false">
+                <el-upload action="#" :http-request="payload => uploadResource(payload, chapter.id)"
+                  :show-file-list="false">
                   <el-button size="small" type="primary" :loading="uploading">上传资源</el-button>
                 </el-upload>
               </div>
@@ -55,7 +57,8 @@
                     <span class="item-title">{{ resource.resourceName }}</span>
                     <span class="item-meta">{{ formatFileSize(resource.fileSize) }}</span>
                     <div class="item-actions">
-                      <el-button v-if="resource.fileUrl" size="small" type="primary" link @click="previewFile(resource)">预览</el-button>
+                      <el-button v-if="resource.fileUrl" size="small" type="primary" link
+                        @click="previewFile(resource)">预览</el-button>
                       <el-button size="small" type="danger" @click="deleteResource(resource)">删除</el-button>
                     </div>
                   </div>
@@ -69,7 +72,9 @@
                   <div v-for="assignment in assignmentsByChapter(chapter.id)" :key="assignment.id" class="content-item">
                     <span class="item-kind assignment">作业</span>
                     <span class="item-title">{{ assignment.title }}</span>
-                    <span class="item-meta">截止 {{ formatDate(assignment.deadline) }} · {{ assignment.submitCount || 0 }}/{{ assignment.totalStudents || 0 }}</span>
+                    <span class="item-meta">截止 {{ formatDate(assignment.deadline) }} · {{ assignment.submitCount || 0
+                      }}/{{
+                        assignment.totalStudents || 0 }}</span>
                     <el-button size="small" @click="router.push('/teacher/assignments')">管理</el-button>
                   </div>
                 </div>
@@ -82,7 +87,7 @@
         </el-tab-pane>
 
         <el-tab-pane label="选课学生" name="students">
-          <el-table :data="students" border stripe>
+          <el-table v-if="students.length > 0" :data="students" border stripe>
             <el-table-column prop="studentNo" label="学号" width="130" />
             <el-table-column prop="realName" label="姓名" width="120" />
             <el-table-column prop="major" label="专业" min-width="160" />
@@ -115,7 +120,8 @@
     </el-dialog>
 
     <el-dialog v-model="previewVisible" title="资源预览" width="80%" top="5vh" destroy-on-close>
-      <FilePreview v-if="previewResource" :url="previewResource.fileUrl" :name="previewResource.resourceName" :type="previewResource.resourceType" />
+      <FilePreview v-if="previewResource" :url="previewResource.fileUrl" :name="previewResource.resourceName"
+        :type="previewResource.resourceType" />
     </el-dialog>
   </div>
 </template>
@@ -285,23 +291,130 @@ onMounted(loadAll)
 </script>
 
 <style scoped>
-.page-shell { display: flex; flex-direction: column; gap: 20px; }
-.page-title-bar { display: flex; align-items: center; justify-content: space-between; }
-.page-title { font-size: 20px; font-weight: 600; color: #303133; margin: 0; }
-.page-subtitle { color: #909399; font-size: 13px; margin: 6px 0 0; }
-.panel { background: #fff; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,.05); padding: 24px; }
-.tab-toolbar { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
-.chapter-collapse :deep(.el-collapse-item__header) { height: 58px; font-size: 16px; }
-.chapter-title { width: 100%; display: flex; justify-content: space-between; align-items: center; padding-right: 20px; }
-.chapter-stat { color: #909399; font-size: 13px; font-weight: 400; }
-.chapter-actions { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; }
-.content-group { border-top: 1px solid #ebeef5; padding-top: 14px; margin-top: 14px; }
-.group-title { margin: 0 0 10px; color: #303133; font-size: 14px; }
-.item-list { display: flex; flex-direction: column; gap: 10px; }
-.content-item { display: grid; grid-template-columns: 56px minmax(160px, 1fr) minmax(180px, auto) auto; gap: 12px; align-items: center; padding: 12px 14px; background: #fafafa; border: 1px solid #ebeef5; border-radius: 8px; }
-.item-kind { color: #409eff; background: #ecf5ff; border-radius: 4px; padding: 3px 8px; text-align: center; font-size: 12px; }
-.item-kind.assignment { color: #e6a23c; background: #fdf6ec; }
-.item-title { color: #303133; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.item-meta { color: #909399; font-size: 13px; }
-.item-actions { display: flex; align-items: center; gap: 8px; }
+.page-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.page-title-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.page-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #303133;
+  margin: 0;
+}
+
+.page-subtitle {
+  color: #909399;
+  font-size: 13px;
+  margin: 6px 0 0;
+}
+
+.panel {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, .05);
+  padding: 24px;
+}
+
+.tab-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.chapter-collapse :deep(.el-collapse-item__header) {
+  height: 58px;
+  font-size: 16px;
+}
+
+.chapter-title {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-right: 20px;
+}
+
+.chapter-stat {
+  color: #909399;
+  font-size: 13px;
+  font-weight: 400;
+}
+
+.chapter-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.content-group {
+  border-top: 1px solid #ebeef5;
+  padding-top: 14px;
+  margin-top: 14px;
+}
+
+.group-title {
+  margin: 0 0 10px;
+  color: #303133;
+  font-size: 14px;
+}
+
+.item-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.content-item {
+  display: grid;
+  grid-template-columns: 56px minmax(160px, 1fr) minmax(180px, auto) auto;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 14px;
+  background: #fafafa;
+  border: 1px solid #ebeef5;
+  border-radius: 8px;
+}
+
+.item-kind {
+  color: #409eff;
+  background: #ecf5ff;
+  border-radius: 4px;
+  padding: 3px 8px;
+  text-align: center;
+  font-size: 12px;
+}
+
+.item-kind.assignment {
+  color: #e6a23c;
+  background: #fdf6ec;
+}
+
+.item-title {
+  color: #303133;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.item-meta {
+  color: #909399;
+  font-size: 13px;
+}
+
+.item-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
 </style>

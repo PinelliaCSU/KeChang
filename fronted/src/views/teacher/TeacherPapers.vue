@@ -15,7 +15,7 @@
         </el-select>
       </div>
 
-      <el-table :data="papers" v-loading="loading" stripe border style="width:100%">
+      <el-table v-if="papers.length > 0 || loading" :data="papers" v-loading="loading" stripe border style="width:100%">
         <el-table-column prop="paperName" label="试卷名称" min-width="200" />
         <el-table-column prop="courseName" label="所属课程" min-width="140" />
         <el-table-column prop="totalScore" label="总分" width="90" />

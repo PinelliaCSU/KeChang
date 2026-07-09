@@ -12,7 +12,7 @@
     </div>
 
     <div class="panel">
-      <el-table :data="filteredExams" stripe border v-loading="loading">
+      <el-table v-if="filteredExams.length > 0 || loading" :data="filteredExams" stripe border v-loading="loading">
         <el-table-column prop="examName" label="考试名称" min-width="180" />
         <el-table-column prop="courseName" label="所属课程" min-width="140" />
         <el-table-column prop="startTime" label="开始时间" width="170">
@@ -41,7 +41,8 @@
         </el-table-column>
         <el-table-column label="操作" width="180" fixed="right">
           <template #default="{ row }">
-            <el-button v-if="canStart(row)" size="small" type="primary" @click="enterExam(row)">{{ row.submitted === 1 ? '重新考试' : '进入考试' }}</el-button>
+            <el-button v-if="canStart(row)" size="small" type="primary" @click="enterExam(row)">{{ row.submitted === 1 ?
+              '重新考试' : '进入考试' }}</el-button>
             <el-button v-else-if="row.submitted === 1" size="small" @click="openResult(row)">查看结果</el-button>
             <span v-else class="muted">--</span>
           </template>

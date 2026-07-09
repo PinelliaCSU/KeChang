@@ -7,15 +7,17 @@
 
     <div class="panel">
       <div class="search-bar">
-        <el-select v-model="courseFilter" placeholder="按课程筛选" clearable style="width:220px" @change="onFilterCourseChange">
+        <el-select v-model="courseFilter" placeholder="按课程筛选" clearable style="width:220px"
+          @change="onFilterCourseChange">
           <el-option v-for="course in courseList" :key="course.id" :label="course.courseName" :value="course.id" />
         </el-select>
         <el-select v-model="chapterFilter" placeholder="按章节筛选" clearable style="width:220px" @change="fetchAssignments">
-          <el-option v-for="chapter in filterChapters" :key="chapter.id" :label="chapter.chapterName" :value="chapter.id" />
+          <el-option v-for="chapter in filterChapters" :key="chapter.id" :label="chapter.chapterName"
+            :value="chapter.id" />
         </el-select>
       </div>
 
-      <el-table :data="assignments" v-loading="loading" stripe border>
+      <el-table v-if="assignments.length > 0 || loading" :data="assignments" v-loading="loading" stripe border>
         <el-table-column prop="title" label="作业标题" min-width="180" />
         <el-table-column prop="courseName" label="课程" min-width="130" />
         <el-table-column label="章节" min-width="120">
@@ -23,7 +25,8 @@
         </el-table-column>
         <el-table-column label="资源" width="90">
           <template #default="{ row }">
-            <el-button v-if="assignmentFiles(row).length" size="small" link type="primary" @click="previewFiles(assignmentFiles(row), row.title)">预览</el-button>
+            <el-button v-if="assignmentFiles(row).length" size="small" link type="primary"
+              @click="previewFiles(assignmentFiles(row), row.title)">预览</el-button>
             <span v-else class="muted">无</span>
           </template>
         </el-table-column>
@@ -53,18 +56,21 @@
         </el-form-item>
         <el-form-item label="所属章节">
           <el-select v-model="form.chapterId" placeholder="选择章节" clearable style="width:100%">
-            <el-option v-for="chapter in formChapters" :key="chapter.id" :label="chapter.chapterName" :value="chapter.id" />
+            <el-option v-for="chapter in formChapters" :key="chapter.id" :label="chapter.chapterName"
+              :value="chapter.id" />
           </el-select>
         </el-form-item>
         <el-form-item label="作业说明"><el-input v-model="form.content" type="textarea" :rows="4" /></el-form-item>
         <el-row :gutter="16">
           <el-col :span="12">
             <el-form-item label="截止时间" required>
-              <el-date-picker v-model="form.deadline" type="datetime" value-format="YYYY-MM-DDTHH:mm:ss" style="width:100%" />
+              <el-date-picker v-model="form.deadline" type="datetime" value-format="YYYY-MM-DDTHH:mm:ss"
+                style="width:100%" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="总分"><el-input-number v-model="form.totalScore" :min="1" :max="100" style="width:100%" /></el-form-item>
+            <el-form-item label="总分"><el-input-number v-model="form.totalScore" :min="1" :max="100"
+                style="width:100%" /></el-form-item>
           </el-col>
         </el-row>
         <el-form-item label="作业资源">
@@ -91,13 +97,14 @@
       <div class="submit-tools">
         <el-button type="primary" plain :disabled="!submits.length" @click="downloadSubmitArchive">下载全部提交附件</el-button>
       </div>
-      <el-table :data="submits" v-loading="subLoading" stripe border>
+      <el-table v-if="submits.length > 0 || subLoading" :data="submits" v-loading="subLoading" stripe border>
         <el-table-column prop="studentName" label="学生" width="120" />
         <el-table-column prop="studentNo" label="学号" width="130" />
         <el-table-column prop="content" label="提交内容" min-width="190" show-overflow-tooltip />
         <el-table-column label="附件" width="100">
           <template #default="{ row }">
-            <el-button v-if="submitFiles(row).length" size="small" link type="primary" @click="previewFiles(submitFiles(row), `${row.studentName || '学生'}提交`)">预览</el-button>
+            <el-button v-if="submitFiles(row).length" size="small" link type="primary"
+              @click="previewFiles(submitFiles(row), `${row.studentName || '学生'}提交`)">预览</el-button>
             <span v-else class="muted">无</span>
           </template>
         </el-table-column>
@@ -123,12 +130,14 @@
               <h3>{{ currentSubmit.studentName || '学生' }}的提交</h3>
               <p>{{ currentSubmit.studentNo || currentSubmit.studentId }} · {{ currentSubmit.submitTime || '--' }}</p>
             </div>
-            <el-tag :type="currentSubmit.status === '已批改' ? 'success' : 'warning'">{{ currentSubmit.status || '待批改' }}</el-tag>
+            <el-tag :type="currentSubmit.status === '已批改' ? 'success' : 'warning'">{{ currentSubmit.status || '待批改'
+            }}</el-tag>
           </div>
           <div class="submit-content">{{ currentSubmit.content || '无文字内容' }}</div>
           <div class="file-tabs" v-if="submitFiles(currentSubmit).length">
             <el-tabs v-model="activeReviewFile">
-              <el-tab-pane v-for="(file, index) in submitFiles(currentSubmit)" :key="file.url" :label="file.name || `文件${index + 1}`" :name="String(index)">
+              <el-tab-pane v-for="(file, index) in submitFiles(currentSubmit)" :key="file.url"
+                :label="file.name || `文件${index + 1}`" :name="String(index)">
                 <DocumentAnnotator v-model="feedbackMarks" :url="file.url" :name="file.name" :file-key="file.url" />
               </el-tab-pane>
             </el-tabs>
@@ -137,8 +146,10 @@
         </div>
         <div class="review-right">
           <el-form label-width="70px">
-            <el-form-item label="分数"><el-input-number v-model="gradeForm.score" :min="0" :max="100" style="width:160px" /></el-form-item>
-            <el-form-item label="评语"><el-input v-model="gradeForm.comment" type="textarea" :rows="4" placeholder="给学生的整体评语" /></el-form-item>
+            <el-form-item label="分数"><el-input-number v-model="gradeForm.score" :min="0" :max="100"
+                style="width:160px" /></el-form-item>
+            <el-form-item label="评语"><el-input v-model="gradeForm.comment" type="textarea" :rows="4"
+                placeholder="给学生的整体评语" /></el-form-item>
           </el-form>
           <div class="review-mark-summary">
             <strong>文件贴纸批注</strong>
@@ -154,11 +165,13 @@
 
     <el-dialog v-model="previewVisible" :title="previewTitle" width="82%" top="5vh" destroy-on-close>
       <el-tabs v-if="previewFilesList.length > 1" v-model="activePreviewFile">
-        <el-tab-pane v-for="(file, index) in previewFilesList" :key="file.url" :label="file.name || `文件${index + 1}`" :name="String(index)">
+        <el-tab-pane v-for="(file, index) in previewFilesList" :key="file.url" :label="file.name || `文件${index + 1}`"
+          :name="String(index)">
           <FilePreview :url="file.url" :name="file.name" />
         </el-tab-pane>
       </el-tabs>
-      <FilePreview v-else-if="previewFilesList.length" :url="previewFilesList[0].url" :name="previewFilesList[0].name" />
+      <FilePreview v-else-if="previewFilesList.length" :url="previewFilesList[0].url"
+        :name="previewFilesList[0].name" />
     </el-dialog>
   </div>
 </template>
@@ -375,29 +388,158 @@ const formatFileSize = (size) => {
   return `${(n / 1024 / 1024).toFixed(1)} MB`
 }
 
-onMounted(() => { fetchCourses(); fetchAssignments() })
+onMounted(async () => {
+  await fetchCourses()
+  if (courseList.value.length > 0) {
+    courseFilter.value = courseList.value[0].id
+    await onFilterCourseChange()
+  } else {
+    fetchAssignments()
+  }
+})
 </script>
 
 <style scoped>
-.page-shell { display: flex; flex-direction: column; gap: 20px; }
-.page-title-bar { display: flex; align-items: center; justify-content: space-between; }
-.page-title { font-size: 20px; font-weight: 600; color: #303133; margin: 0; }
-.panel { background: #fff; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,.05); padding: 24px; }
-.search-bar { display: flex; gap: 12px; margin-bottom: 16px; }
-.submit-tools { display: flex; justify-content: flex-end; margin-bottom: 12px; }
-.muted { color: #c0c4cc; }
-.file-stack { width: 100%; display: flex; flex-direction: column; gap: 8px; }
-.file-item { display: grid; grid-template-columns: minmax(120px, 1fr) auto auto auto; align-items: center; gap: 10px; padding: 8px 10px; background: #f5f7fa; border-radius: 8px; }
-.file-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #303133; }
-.file-size { color: #909399; font-size: 12px; }
-.review-layout { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 18px; }
-.review-left, .review-right { min-width: 0; display: flex; flex-direction: column; gap: 14px; }
-.review-header { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; }
-.review-header h3 { margin: 0; color: #303133; font-size: 18px; }
-.review-header p { margin: 6px 0 0; color: #909399; font-size: 13px; }
-.submit-content { min-height: 96px; padding: 14px; border-radius: 8px; background: #f5f7fa; color: #606266; line-height: 1.7; white-space: pre-wrap; }
-.file-tabs :deep(.el-tabs__content) { border: 1px solid #e4e7ed; border-top: 0; border-radius: 0 0 8px 8px; overflow: hidden; }
-.review-mark-summary { display: flex; flex-direction: column; gap: 8px; padding: 14px; border: 1px solid #e4e7ed; border-radius: 8px; background: #f8fbff; color: #606266; line-height: 1.6; }
-.review-mark-summary strong { color: #303133; }
-@media (max-width: 1100px) { .review-layout { grid-template-columns: 1fr; } }
+.page-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.page-title-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.page-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #303133;
+  margin: 0;
+}
+
+.panel {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, .05);
+  padding: 24px;
+}
+
+.search-bar {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.submit-tools {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 12px;
+}
+
+.muted {
+  color: #c0c4cc;
+}
+
+.file-stack {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.file-item {
+  display: grid;
+  grid-template-columns: minmax(120px, 1fr) auto auto auto;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  background: #f5f7fa;
+  border-radius: 8px;
+}
+
+.file-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #303133;
+}
+
+.file-size {
+  color: #909399;
+  font-size: 12px;
+}
+
+.review-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  gap: 18px;
+}
+
+.review-left,
+.review-right {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.review-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.review-header h3 {
+  margin: 0;
+  color: #303133;
+  font-size: 18px;
+}
+
+.review-header p {
+  margin: 6px 0 0;
+  color: #909399;
+  font-size: 13px;
+}
+
+.submit-content {
+  min-height: 96px;
+  padding: 14px;
+  border-radius: 8px;
+  background: #f5f7fa;
+  color: #606266;
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+
+.file-tabs :deep(.el-tabs__content) {
+  border: 1px solid #e4e7ed;
+  border-top: 0;
+  border-radius: 0 0 8px 8px;
+  overflow: hidden;
+}
+
+.review-mark-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px;
+  border: 1px solid #e4e7ed;
+  border-radius: 8px;
+  background: #f8fbff;
+  color: #606266;
+  line-height: 1.6;
+}
+
+.review-mark-summary strong {
+  color: #303133;
+}
+
+@media (max-width: 1100px) {
+  .review-layout {
+    grid-template-columns: 1fr;
+  }
+}
 </style>

@@ -33,7 +33,8 @@
         </div>
       </div>
 
-      <el-table :data="questions" v-loading="loading" stripe border style="width:100%">
+      <el-table v-if="questions.length > 0 || loading" :data="questions" v-loading="loading" stripe border
+        style="width:100%">
         <el-table-column type="index" label="#" width="50" />
         <el-table-column prop="content" label="题目内容" min-width="280" show-overflow-tooltip />
         <el-table-column label="题型" width="90">

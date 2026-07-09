@@ -16,7 +16,7 @@
         </el-select>
       </div>
 
-      <el-table :data="exams" v-loading="loading" stripe border style="width:100%">
+      <el-table v-if="exams.length > 0 || loading" :data="exams" v-loading="loading" stripe border style="width:100%">
         <el-table-column prop="examName" label="考试名称" min-width="180" />
         <el-table-column prop="courseName" label="所属课程" min-width="120" />
         <el-table-column prop="startTime" label="开始时间" width="170" />
@@ -71,8 +71,7 @@
         </el-row>
         <el-row :gutter="16">
           <el-col :span="10">
-            <el-form-item label="时长(分)"><el-input-number v-model="form.duration" :min="1"
-                style="width:100%" />
+            <el-form-item label="时长(分)"><el-input-number v-model="form.duration" :min="1" style="width:100%" />
               <span v-if="form.paperId && selectedPaper" style="font-size:12px;color:#909399">
                 试卷原始时长: {{ selectedPaper.duration }}分钟
               </span>
@@ -133,7 +132,7 @@
           </div>
           <div class="answer-row">
             <span>学生答案：<b :style="{ color: ans.isCorrect === 1 ? '#67c23a' : '#f56c6c' }">{{ ans.studentAnswer || '未作答'
-            }}</b></span>
+                }}</b></span>
             <span style="margin-left:20px">参考答案：<b style="color:#409eff">{{ ans.correctAnswer || '' }}</b></span>
           </div>
           <div class="score-row" v-if="ans.questionType === 'ESSAY' || ans.questionType === 'FILL'">

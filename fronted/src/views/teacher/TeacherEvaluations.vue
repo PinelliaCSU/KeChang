@@ -17,7 +17,8 @@
         </el-tabs>
       </div>
 
-      <el-table :data="evaluations" v-loading="loading" stripe border style="width:100%">
+      <el-table v-if="evaluations.length > 0 || loading" :data="evaluations" v-loading="loading" stripe border
+        style="width:100%">
         <el-table-column prop="evaluationName" label="评价名称" min-width="200" />
         <el-table-column label="评价类型" width="120">
           <template #default="{ row }">

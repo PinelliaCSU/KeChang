@@ -35,10 +35,12 @@
         <el-form-item label="项目描述"><el-input v-model="projForm.description" type="textarea" :rows="3" /></el-form-item>
         <el-row :gutter="16">
           <el-col :span="12">
-            <el-form-item label="开始日期"><el-date-picker v-model="projForm.startDate" type="date" value-format="YYYY-MM-DD" style="width: 100%" /></el-form-item>
+            <el-form-item label="开始日期"><el-date-picker v-model="projForm.startDate" type="date"
+                value-format="YYYY-MM-DD" style="width: 100%" /></el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="结束日期"><el-date-picker v-model="projForm.endDate" type="date" value-format="YYYY-MM-DD" style="width: 100%" /></el-form-item>
+            <el-form-item label="结束日期"><el-date-picker v-model="projForm.endDate" type="date" value-format="YYYY-MM-DD"
+                style="width: 100%" /></el-form-item>
           </el-col>
         </el-row>
         <el-form-item label="状态">
@@ -50,16 +52,18 @@
       </el-form>
       <template #footer>
         <el-button @click="projDialogVisible = false">取消</el-button>
-        <el-button type="primary" :loading="projSubmitting" @click="handleProjSubmit">{{ isEditProj ? '保存' : '创建' }}</el-button>
+        <el-button type="primary" :loading="projSubmitting" @click="handleProjSubmit">{{ isEditProj ? '保存' : '创建'
+          }}</el-button>
       </template>
     </el-dialog>
 
-    <el-dialog v-model="taskDialogVisible" :title="currentProject ? `任务管理 - ${currentProject.projectName}` : '任务管理'" width="900px">
+    <el-dialog v-model="taskDialogVisible" :title="currentProject ? `任务管理 - ${currentProject.projectName}` : '任务管理'"
+      width="900px">
       <div class="dialog-toolbar">
         <div class="dialog-subtitle">{{ currentProject?.description || '管理实训任务和学生报告' }}</div>
         <el-button type="primary" size="small" @click="openCreateTask">添加任务</el-button>
       </div>
-      <el-table :data="tasks" v-loading="taskLoading" stripe border>
+      <el-table v-if="tasks.length > 0 || taskLoading" :data="tasks" v-loading="taskLoading" stripe border>
         <el-table-column prop="sortOrder" label="序号" width="70" />
         <el-table-column prop="taskName" label="任务名称" min-width="150" />
         <el-table-column prop="description" label="任务说明" min-width="180" show-overflow-tooltip />
@@ -95,8 +99,10 @@
             <span style="font-size:12px;color:#909399">可上传多个文件</span>
           </div>
         </el-form-item>
-        <el-form-item label="截止时间"><el-date-picker v-model="taskForm.deadline" type="datetime" value-format="YYYY-MM-DDTHH:mm:ss" style="width: 100%" /></el-form-item>
-        <el-form-item label="排序"><el-input-number v-model="taskForm.sortOrder" :min="1" style="width: 100%" /></el-form-item>
+        <el-form-item label="截止时间"><el-date-picker v-model="taskForm.deadline" type="datetime"
+            value-format="YYYY-MM-DDTHH:mm:ss" style="width: 100%" /></el-form-item>
+        <el-form-item label="排序"><el-input-number v-model="taskForm.sortOrder" :min="1"
+            style="width: 100%" /></el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="taskFormVisible = false">取消</el-button>
@@ -104,18 +110,22 @@
       </template>
     </el-dialog>
 
-    <el-dialog v-model="reportDialogVisible" :title="currentTask ? `实训报告 - ${currentTask.taskName}` : '实训报告'" width="920px">
-      <el-table :data="reports" v-loading="reportLoading" stripe border>
+    <el-dialog v-model="reportDialogVisible" :title="currentTask ? `实训报告 - ${currentTask.taskName}` : '实训报告'"
+      width="920px">
+      <el-table v-if="reports.length > 0 || reportLoading" :data="reports" v-loading="reportLoading" stripe border>
         <el-table-column prop="studentNo" label="学号" width="120" />
         <el-table-column prop="studentName" label="姓名" width="110" />
         <el-table-column prop="reportContent" label="报告内容" min-width="220" show-overflow-tooltip />
         <el-table-column label="附件" width="150">
           <template #default="{ row }">
-            <div v-if="(row.attachments && row.attachments.length > 0) || row.attachmentUrl" style="display:flex;flex-wrap:wrap;gap:4px">
+            <div v-if="(row.attachments && row.attachments.length > 0) || row.attachmentUrl"
+              style="display:flex;flex-wrap:wrap;gap:4px">
               <template v-if="row.attachments && row.attachments.length > 0">
-                <el-link v-for="(att, i) in row.attachments" :key="att.id" :href="att.fileUrl" target="_blank" type="primary" style="font-size:12px">文件{{ i + 1 }}</el-link>
+                <el-link v-for="(att, i) in row.attachments" :key="att.id" :href="att.fileUrl" target="_blank"
+                  type="primary" style="font-size:12px">文件{{ i + 1 }}</el-link>
               </template>
-              <el-link v-else-if="row.attachmentUrl" :href="row.attachmentUrl" target="_blank" type="primary" style="font-size:12px">文件1</el-link>
+              <el-link v-else-if="row.attachmentUrl" :href="row.attachmentUrl" target="_blank" type="primary"
+                style="font-size:12px">文件1</el-link>
             </div>
             <span v-else style="color:#c0c4cc">--</span>
           </template>
@@ -140,17 +150,21 @@
     <el-dialog v-model="reportGradeVisible" title="报告评分" width="480px">
       <el-form label-width="80px">
         <el-form-item label="学生">
-          <span>{{ currentReport?.studentName || '--' }}（{{ currentReport?.studentNo || currentReport?.studentId }}）</span>
+          <span>{{ currentReport?.studentName || '--' }}（{{ currentReport?.studentNo || currentReport?.studentId
+            }}）</span>
         </el-form-item>
         <el-form-item label="报告内容">
           <div class="report-preview">{{ currentReport?.reportContent || '--' }}</div>
         </el-form-item>
-        <el-form-item label="附件" v-if="(currentReport?.attachments && currentReport.attachments.length > 0) || currentReport?.attachmentUrl">
+        <el-form-item label="附件"
+          v-if="(currentReport?.attachments && currentReport.attachments.length > 0) || currentReport?.attachmentUrl">
           <div style="display:flex;flex-direction:column;gap:4px">
             <template v-if="currentReport?.attachments && currentReport.attachments.length > 0">
-              <el-link v-for="att in currentReport.attachments" :key="att.id" :href="att.fileUrl" target="_blank" type="primary">{{ att.fileName }}</el-link>
+              <el-link v-for="att in currentReport.attachments" :key="att.id" :href="att.fileUrl" target="_blank"
+                type="primary">{{ att.fileName }}</el-link>
             </template>
-            <el-link v-else-if="currentReport?.attachmentUrl" :href="currentReport.attachmentUrl" target="_blank" type="primary">查看附件</el-link>
+            <el-link v-else-if="currentReport?.attachmentUrl" :href="currentReport.attachmentUrl" target="_blank"
+              type="primary">查看附件</el-link>
           </div>
         </el-form-item>
         <el-form-item label="分数"><el-input-number v-model="reportScore" :min="0" :max="100" /></el-form-item>
@@ -498,8 +512,34 @@ onMounted(() => {
   color: #606266;
   line-height: 1.6;
 }
-.file-list { display: flex; flex-direction: column; gap: 6px; }
-.file-item { display: flex; align-items: center; gap: 10px; padding: 6px 10px; background: #f0f9eb; border-radius: 6px; font-size: 13px; }
-.file-name { flex: 1; color: #303133; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.file-size { color: #909399; white-space: nowrap; font-size: 12px; }
+
+.file-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.file-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  background: #f0f9eb;
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+.file-name {
+  flex: 1;
+  color: #303133;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.file-size {
+  color: #909399;
+  white-space: nowrap;
+  font-size: 12px;
+}
 </style>

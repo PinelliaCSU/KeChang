@@ -31,7 +31,7 @@
     </div>
 
     <el-dialog v-model="taskDialogVisible" :title="currentProject ? currentProject.projectName : '实训任务'" width="850px">
-      <el-table :data="tasks" v-loading="taskLoading" stripe border>
+      <el-table v-if="tasks.length > 0 || taskLoading" :data="tasks" v-loading="taskLoading" stripe border>
         <el-table-column prop="sortOrder" label="序号" width="70" />
         <el-table-column prop="taskName" label="任务名称" min-width="150" />
         <el-table-column prop="description" label="任务说明" min-width="190" show-overflow-tooltip />
@@ -46,7 +46,8 @@
         </el-table-column>
         <el-table-column label="操作" width="110">
           <template #default="{ row }">
-            <el-button size="small" type="primary" @click="openSubmit(row)">{{ row.myReportId ? '查看/修改' : '提交' }}</el-button>
+            <el-button size="small" type="primary" @click="openSubmit(row)">{{ row.myReportId ? '查看/修改' : '提交'
+              }}</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -59,27 +60,33 @@
         <el-form-item label="任务说明">
           <div class="task-desc">{{ currentTask?.description || '--' }}</div>
         </el-form-item>
-        <el-form-item label="教师附件" v-if="(currentTask?.attachments && currentTask.attachments.length > 0) || currentTask?.attachmentUrl">
+        <el-form-item label="教师附件"
+          v-if="(currentTask?.attachments && currentTask.attachments.length > 0) || currentTask?.attachmentUrl">
           <div style="display:flex;flex-direction:column;gap:4px">
             <template v-if="currentTask?.attachments && currentTask.attachments.length > 0">
-              <el-link v-for="att in currentTask.attachments" :key="att.id" :href="att.fileUrl" target="_blank" type="primary">{{ att.fileName }}</el-link>
+              <el-link v-for="att in currentTask.attachments" :key="att.id" :href="att.fileUrl" target="_blank"
+                type="primary">{{ att.fileName }}</el-link>
             </template>
-            <el-link v-else-if="currentTask?.attachmentUrl" :href="currentTask.attachmentUrl" target="_blank" type="primary" style="word-break:break-all">{{ currentTask.attachmentUrl }}</el-link>
+            <el-link v-else-if="currentTask?.attachmentUrl" :href="currentTask.attachmentUrl" target="_blank"
+              type="primary" style="word-break:break-all">{{ currentTask.attachmentUrl }}</el-link>
           </div>
         </el-form-item>
         <el-form-item label="报告内容" required>
-          <el-input v-model="reportForm.content" type="textarea" :rows="6" :disabled="currentTask?.reportStatus === '已批改'" />
+          <el-input v-model="reportForm.content" type="textarea" :rows="6"
+            :disabled="currentTask?.reportStatus === '已批改'" />
         </el-form-item>
         <el-form-item label="附件">
           <div v-if="reportForm.files.length > 0" class="file-list" style="margin-bottom:8px">
             <div v-for="(f, i) in reportForm.files" :key="i" class="file-item">
               <span class="file-name">{{ f.name }}</span>
               <span class="file-size">{{ formatFileSize(f.size) }}</span>
-              <el-button size="small" type="danger" link @click="reportForm.files.splice(i, 1)" :disabled="currentTask?.reportStatus === '已批改'">移除</el-button>
+              <el-button size="small" type="danger" link @click="reportForm.files.splice(i, 1)"
+                :disabled="currentTask?.reportStatus === '已批改'">移除</el-button>
             </div>
           </div>
           <div style="display:flex;gap:8px;align-items:center;width:100%">
-            <el-upload :http-request="uploadAttachment" :show-file-list="false" :disabled="currentTask?.reportStatus === '已批改'">
+            <el-upload :http-request="uploadAttachment" :show-file-list="false"
+              :disabled="currentTask?.reportStatus === '已批改'">
               <el-button :loading="uploadLoading" :disabled="currentTask?.reportStatus === '已批改'">+ 上传文件</el-button>
             </el-upload>
             <span style="font-size:12px;color:#909399">可上传多个文件</span>
@@ -94,7 +101,8 @@
       </el-form>
       <template #footer>
         <el-button @click="submitDialogVisible = false">关闭</el-button>
-        <el-button v-if="currentTask?.reportStatus !== '已批改'" type="primary" :loading="submitting" @click="submitReport">
+        <el-button v-if="currentTask?.reportStatus !== '已批改'" type="primary" :loading="submitting"
+          @click="submitReport">
           {{ currentTask?.myReportId ? '保存修改' : '提交报告' }}
         </el-button>
       </template>
@@ -331,8 +339,34 @@ onMounted(fetchProjects)
   color: #409eff;
   word-break: break-all;
 }
-.file-list { display: flex; flex-direction: column; gap: 6px; }
-.file-item { display: flex; align-items: center; gap: 10px; padding: 6px 10px; background: #f0f9eb; border-radius: 6px; font-size: 13px; }
-.file-name { flex: 1; color: #303133; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.file-size { color: #909399; white-space: nowrap; font-size: 12px; }
+
+.file-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.file-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  background: #f0f9eb;
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+.file-name {
+  flex: 1;
+  color: #303133;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.file-size {
+  color: #909399;
+  white-space: nowrap;
+  font-size: 12px;
+}
 </style>
