@@ -32,8 +32,9 @@
             </div>
           </div>
           <div class="card-actions">
-            <el-button size="small" type="primary" @click="router.push(`/teacher/courses/${course.id}`)">管理</el-button>
-            <el-button size="small" @click="openEditDialog(course)">编辑</el-button>
+            <el-button size="small" type="primary"
+              @click="router.push(`/teacher/courses/${course.id}`)">课程详情</el-button>
+            <el-button size="small" @click="router.push(`/teacher/courses/${course.id}/edit`)">编辑</el-button>
             <el-button size="small" type="danger" @click="deleteCourse(course)">删除</el-button>
           </div>
         </div>
