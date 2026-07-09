@@ -2,6 +2,8 @@ package com.kechang.controller;
 
 import com.kechang.common.PageResult;
 import com.kechang.common.Result;
+import com.kechang.dto.AnnouncementDTO;
+import com.kechang.dto.SendMessageDTO;
 import com.kechang.dto.SurveyCreateDTO;
 import com.kechang.dto.SurveySubmitDTO;
 import com.kechang.entity.*;
@@ -498,8 +500,13 @@ class NotificationController {
     }
 
     @GetMapping
-    public Result<PageResult<Notification>> list(@RequestParam(defaultValue = "1") int page, @RequestParam(defaultValue = "10") int size) {
+    public Result<PageResult<Map<String, Object>>> list(@RequestParam(defaultValue = "1") int page, @RequestParam(defaultValue = "10") int size) {
         return Result.success(notifService.list(uid(), page, size));
+    }
+
+    @GetMapping("/{id}")
+    public Result<Map<String, Object>> detail(@PathVariable Long id) {
+        return Result.success(notifService.getDetail(id, uid()));
     }
 
     @GetMapping("/unread-count")
@@ -525,6 +532,74 @@ class NotificationController {
         n.setSenderId(uid());
         notifService.send(n);
         return Result.success();
+    }
+}
+
+// ==================== 公告 ====================
+@RestController
+@RequestMapping("/api/announcements")
+@RequiredArgsConstructor
+class AnnouncementController {
+
+    private final NotificationService notifService;
+
+    private Long uid() {
+        return (Long) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+    }
+
+    private String role() {
+        return SecurityContextHolder.getContext().getAuthentication().getAuthorities()
+                .stream().findFirst().map(Object::toString).orElse("");
+    }
+
+    @GetMapping
+    public Result<PageResult<Map<String, Object>>> list(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) Long courseId) {
+        return Result.success(notifService.listAnnouncements(page, size, courseId, uid(), role()));
+    }
+
+    @GetMapping("/{id}")
+    public Result<Map<String, Object>> detail(@PathVariable Long id) {
+        return Result.success(notifService.getAnnouncementDetail(id, uid(), role()));
+    }
+
+    @PostMapping
+    @PreAuthorize("hasAuthority('ROLE_TEACHER')")
+    public Result<Void> create(@Valid @RequestBody AnnouncementDTO dto) {
+        notifService.createAnnouncement(dto, uid());
+        return Result.success();
+    }
+
+    @PutMapping("/{id}")
+    @PreAuthorize("hasAuthority('ROLE_TEACHER')")
+    public Result<Void> update(@PathVariable Long id, @Valid @RequestBody AnnouncementDTO dto) {
+        notifService.updateAnnouncement(id, dto, uid());
+        return Result.success();
+    }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasAuthority('ROLE_TEACHER')")
+    public Result<Void> delete(@PathVariable Long id) {
+        notifService.deleteAnnouncement(id, uid());
+        return Result.success();
+    }
+
+    @PostMapping("/{id}/confirm")
+    @PreAuthorize("hasAuthority('ROLE_STUDENT')")
+    public Result<Void> confirm(@PathVariable Long id) {
+        notifService.confirmAnnouncement(id, uid());
+        return Result.success();
+    }
+
+    @GetMapping("/{id}/confirms")
+    @PreAuthorize("hasAuthority('ROLE_TEACHER')")
+    public Result<PageResult<Map<String, Object>>> confirmList(
+            @PathVariable Long id,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        return Result.success(notifService.getConfirmList(id, page, size, uid()));
     }
 }
 
@@ -571,5 +646,60 @@ class UploadController {
     public Result<Map<String, Object>> pdfPages(@RequestParam String url,
             @RequestParam(required = false) String name) {
         return Result.success(fileProcessingService.renderPdfPages(url, name));
+    }
+}
+
+// ==================== 私信 ====================
+@RestController
+@RequestMapping("/api/messages")
+@RequiredArgsConstructor
+class MessageController {
+
+    private final MessageService messageService;
+
+    private Long uid() {
+        return (Long) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+    }
+
+    private String role() {
+        return SecurityContextHolder.getContext().getAuthentication().getAuthorities()
+                .stream().findFirst().map(Object::toString).orElse("");
+    }
+
+    /** 会话列表 */
+    @GetMapping("/conversations")
+    public Result<PageResult<Map<String, Object>>> listConversations(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        return Result.success(messageService.listConversations(uid(), page, size));
+    }
+
+    /** 与某用户的聊天记录 */
+    @GetMapping("/with/{otherUserId}")
+    public Result<PageResult<Map<String, Object>>> getMessages(
+            @PathVariable Long otherUserId,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "30") int size) {
+        return Result.success(messageService.getMessages(uid(), otherUserId, page, size));
+    }
+
+    /** 发送消息 */
+    @PostMapping
+    @PreAuthorize("hasAnyAuthority('ROLE_TEACHER','ROLE_STUDENT')")
+    public Result<Map<String, Object>> send(@Valid @RequestBody SendMessageDTO dto) {
+        return Result.success(messageService.sendMessage(uid(), dto));
+    }
+
+    /** 未读消息总数 */
+    @GetMapping("/unread-total")
+    public Result<Long> unreadTotal() {
+        return Result.success(messageService.unreadTotal(uid()));
+    }
+
+    /** 联系人列表 */
+    @GetMapping("/contacts")
+    public Result<List<Map<String, Object>>> getContacts(
+            @RequestParam(required = false) String keyword) {
+        return Result.success(messageService.getContacts(uid(), role(), keyword));
     }
 }

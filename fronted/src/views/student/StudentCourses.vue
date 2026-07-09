@@ -9,9 +9,11 @@
 
     <div class="panel" v-if="filteredCourses.length > 0">
       <div class="course-grid">
-        <div class="course-card" v-for="course in filteredCourses" :key="course.id">
-          <div class="card-cover" :style="{ background: getCoverGradient(course.id) }">
-            <CourseCoverPattern />
+        <div class="course-card" v-for="course in filteredCourses" :key="course.id" @click="viewDetail(course)">
+          <div class="card-cover"
+            :style="{ background: course.coverImg ? `url(${resolveFileUrl(course.coverImg)}) center/cover no-repeat` : getCoverGradient(course.id) }"
+            :class="{ 'has-cover': course.coverImg }">
+            <CourseCoverPattern v-if="!course.coverImg" />
           </div>
           <div class="card-body">
             <h4 class="card-title" :title="course.courseName || course.name">{{ course.courseName || course.name }}</h4>
@@ -23,15 +25,19 @@
             </el-tag>
           </div>
           <div class="card-footer">
-            <button class="btn-enter" :disabled="!course.enrolled" @click="enterLearn(course)">
-              {{ course.enrolled ? '进入学习' : '先加入后学习' }}
+            <button class="btn-enter" :disabled="!course.enrolled"
+              @click.stop="course.enrolled ? enterLearn(course) : viewDetail(course)">
+              {{ course.enrolled ? '进入学习' : '查看详情' }}
             </button>
             <button v-if="!course.enrolled" :class="canEnroll(course) ? 'btn-enroll' : 'btn-enroll btn-disabled'"
-              :disabled="!canEnroll(course)" @click="canEnroll(course) && enrollCourse(course)">
+              :disabled="!canEnroll(course)" @click.stop="canEnroll(course) && enrollCourse(course)">
               {{ canEnroll(course) ? '加入课程' : '暂不可选' }}
             </button>
-            <button v-else class="btn-unenroll" @click="unenrollCourse(course)">
+            <button v-else class="btn-unenroll" @click.stop="unenrollCourse(course)">
               退出课程
+            </button>
+            <button class="btn-detail" @click.stop="viewDetail(course)">
+              查看详情
             </button>
           </div>
         </div>
@@ -52,6 +58,7 @@ import { ElMessage } from 'element-plus'
 import CourseCoverPattern from '@/components/CourseCoverPattern.vue'
 import EmptyIllustration from '@/components/EmptyIllustration.vue'
 import { computeStatus, statusTagType } from '@/utils/status'
+import { resolveFileUrl } from '@/utils/fileUrl'
 
 const router = useRouter()
 const courses = ref([])
@@ -79,6 +86,10 @@ const getCoverGradient = (id) => gradientPalette[((id || 1) - 1) % gradientPalet
 const canEnroll = (course) => {
   const status = computeStatus(course.startDate, course.endDate)
   return status === '进行中'
+}
+
+const viewDetail = (course) => {
+  router.push(`/student/courses/${course.id}`)
 }
 
 const enterLearn = (course) => {
@@ -178,6 +189,7 @@ onMounted(fetchCourses)
   transition: all 0.3s;
   display: flex;
   flex-direction: column;
+  cursor: pointer;
 }
 
 .course-card:hover {
@@ -189,6 +201,11 @@ onMounted(fetchCourses)
   height: 100px;
   position: relative;
   overflow: hidden;
+}
+
+.card-cover.has-cover {
+  background-size: cover !important;
+  background-position: center !important;
 }
 
 .card-body {
@@ -266,6 +283,24 @@ onMounted(fetchCourses)
 
 .btn-unenroll:hover {
   background: #fde2e2;
+}
+
+.btn-detail {
+  width: 100%;
+  height: 34px;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+  background: #f4f4f5;
+  color: #606266;
+}
+
+.btn-detail:hover {
+  background: #e9e9eb;
+  color: #409eff;
 }
 
 .btn-enter:disabled {

@@ -36,7 +36,7 @@
             </span>
 
             <!-- 通知 -->
-            <el-popover placement="bottom" :width="340" trigger="click" @show="fetchNotifications">
+            <el-popover ref="notifyPopover" placement="bottom" :width="340" trigger="click" @show="fetchNotifications">
                 <template #reference>
                     <span class="header-action header-icon" title="通知">
                         <el-icon :size="18">
@@ -108,6 +108,7 @@ const userStore = useUserStore()
 const topNavActive = ref('courses')
 const unreadCount = ref(0)
 const notifications = ref([])
+const notifyPopover = ref(null)
 let notifyTimer = null
 
 const displayName = computed(() => userStore.nickname || userStore.username || '同学')
@@ -129,7 +130,17 @@ const markAllRead = async () => {
 }
 
 const handleNotifyClick = (n) => {
-    if (!n.isRead) { notificationApi.markRead(n.id).catch(() => { }); n.isRead = true; unreadCount.value = Math.max(0, unreadCount.value - 1) }
+    // 关闭通知悬窗
+    if (notifyPopover.value) notifyPopover.value.hide()
+    // 若未读，标记为已读
+    if (!n.isRead) {
+        notificationApi.markRead(n.id).catch(() => { })
+        n.isRead = true
+        unreadCount.value = Math.max(0, unreadCount.value - 1)
+    }
+    // 跳转到通知详情页
+    const prefix = userStore.isTeacher ? '/teacher' : '/student'
+    router.push(`${prefix}/notifications/${n.id}`)
 }
 
 const formatTime = (t) => {
@@ -276,8 +287,8 @@ onUnmounted(() => { if (notifyTimer) { clearInterval(notifyTimer); notifyTimer =
     position: absolute;
     top: -2px;
     right: -4px;
-    width: 7px;
-    height: 7px;
+    width: 14px;
+    height: 14px;
     background: #e8a87c;
     border-radius: 50%;
     border: 1.5px solid #4a5c38;

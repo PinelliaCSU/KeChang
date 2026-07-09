@@ -5,12 +5,18 @@
         <h2 class="page-title">{{ course.courseName || '课程详情' }}</h2>
         <p class="page-subtitle">{{ course.teacherName || '当前教师' }} · {{ course.studentCount || 0 }} 人选课</p>
       </div>
-      <el-button @click="router.back()">返回</el-button>
+      <div class="title-actions">
+        <el-button type="primary" @click="router.push(`/teacher/courses/${courseId()}/edit`)">编辑课程</el-button>
+        <el-button @click="router.back()">返回</el-button>
+      </div>
     </div>
 
     <div class="panel">
       <el-tabs v-model="activeTab">
         <el-tab-pane label="课程信息" name="info">
+          <div v-if="course.coverImg" class="cover-display">
+            <img :src="resolveFileUrl(course.coverImg)" :alt="course.courseName + '封面'" />
+          </div>
           <el-descriptions :column="2" border>
             <el-descriptions-item label="课程名称">{{ course.courseName }}</el-descriptions-item>
             <el-descriptions-item label="授课教师">{{ course.teacherName }}</el-descriptions-item>
@@ -23,6 +29,57 @@
             </el-descriptions-item>
             <el-descriptions-item label="课程简介" :span="2">{{ course.description || '暂无课程简介' }}</el-descriptions-item>
           </el-descriptions>
+          <div class="info-actions">
+            <el-button type="primary" @click="router.push(`/teacher/courses/${courseId()}/edit`)">编辑课程信息</el-button>
+          </div>
+        </el-tab-pane>
+
+        <el-tab-pane label="课程统计" name="stats">
+          <div v-loading="statsLoading" class="stats-container">
+            <template v-if="courseStats">
+              <div class="stats-grid">
+                <div class="stat-card">
+                  <div class="stat-value">{{ courseStats.avg ?? '-' }}</div>
+                  <div class="stat-label">平均分</div>
+                </div>
+                <div class="stat-card highlight">
+                  <div class="stat-value">{{ courseStats.max ?? '-' }}</div>
+                  <div class="stat-label">最高分</div>
+                </div>
+                <div class="stat-card warn">
+                  <div class="stat-value">{{ courseStats.min ?? '-' }}</div>
+                  <div class="stat-label">最低分</div>
+                </div>
+                <div class="stat-card success">
+                  <div class="stat-value">{{ courseStats.passRate ?? 0 }}%</div>
+                  <div class="stat-label">及格率</div>
+                </div>
+              </div>
+
+              <el-divider />
+
+              <h4 class="section-title">成绩分布</h4>
+              <div class="dist-chart" v-if="courseStats.distribution">
+                <div v-for="(count, label) in courseStats.distribution" :key="label" class="dist-bar-row">
+                  <span class="dist-label">{{ label }}</span>
+                  <div class="dist-track">
+                    <div class="dist-fill" :style="{ width: distPercent(count) }" :class="distBarClass(label)"></div>
+                  </div>
+                  <span class="dist-count">{{ count }}人</span>
+                </div>
+              </div>
+              <el-empty v-else description="暂无成绩数据" :image-size="80" />
+
+              <el-divider />
+
+              <div class="stats-footer">
+                <span>课程总人数：{{ courseStats.total || 0 }} 人</span>
+                <span>已出成绩：{{ courseStats.scoredTotal || 0 }} 人</span>
+                <span>及格人数：{{ courseStats.passed || 0 }} 人</span>
+              </div>
+            </template>
+            <el-empty v-else-if="!statsLoading" description="暂无统计数据" :image-size="100" />
+          </div>
         </el-tab-pane>
 
         <el-tab-pane label="章节内容" name="chapters">
@@ -88,12 +145,20 @@
         </el-tab-pane>
 
         <el-tab-pane label="选课学生" name="students">
+          <div class="tab-toolbar">
+            <span style="color:#909399;font-size:14px;">共 {{ students.length }} 名学生</span>
+          </div>
           <el-table v-if="students.length > 0" :data="students" border stripe>
             <el-table-column prop="studentNo" label="学号" width="130" />
             <el-table-column prop="realName" label="姓名" width="120" />
             <el-table-column prop="major" label="专业" min-width="160" />
             <el-table-column prop="className" label="班级" width="140" />
             <el-table-column prop="grade" label="年级" width="100" />
+            <el-table-column label="操作" width="100" align="center">
+              <template #default="{ row }">
+                <el-button size="small" type="danger" @click="kickStudent(row)">踢出</el-button>
+              </template>
+            </el-table-column>
           </el-table>
           <el-empty v-if="students.length === 0" description="暂无学生选课" :image-size="90" />
         </el-tab-pane>
@@ -130,10 +195,11 @@
 <script setup>
 import { reactive, ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { assignmentApi, courseApi } from '@/api'
+import { assignmentApi, courseApi, gradeApi } from '@/api'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import FilePreview from '@/components/FilePreview.vue'
 import { computeStatus, statusTagType } from '@/utils/status'
+import { resolveFileUrl } from '@/utils/fileUrl'
 
 const route = useRoute()
 const router = useRouter()
@@ -150,6 +216,10 @@ const uploading = ref(false)
 const editingChapterId = ref(null)
 const previewVisible = ref(false)
 const previewResource = ref(null)
+
+// 统计相关
+const statsLoading = ref(false)
+const courseStats = ref(null)
 
 const chapterForm = reactive({ chapterName: '', sortOrder: 1, description: '' })
 const courseId = () => route.params.id
@@ -178,9 +248,49 @@ const fetchAssignments = async () => {
   if (res.data.code === 200) assignments.value = res.data.data?.records || []
 }
 
+const kickStudent = async (student) => {
+  try {
+    await ElMessageBox.confirm(
+      `确定将学生「${student.realName || student.studentNo}」踢出课程吗？`,
+      '踢出学生',
+      { type: 'warning', confirmButtonText: '确定踢出', cancelButtonText: '取消' }
+    )
+    await courseApi.removeStudent(courseId(), student.userId)
+    ElMessage.success('已将该学生踢出课程')
+    students.value = students.value.filter(s => s.userId !== student.userId)
+    course.value.studentCount = Math.max(0, Number(course.value.studentCount || 0) - 1)
+  } catch (e) {
+    if (e !== 'cancel') ElMessage.error(e.response?.data?.message || '操作失败')
+  }
+}
+
+const fetchStats = async () => {
+  statsLoading.value = true
+  try {
+    const res = await gradeApi.courseStats(courseId())
+    if (res.data.code === 200) {
+      courseStats.value = res.data.data
+    }
+  } catch (e) { /* ignore */ }
+  finally { statsLoading.value = false }
+}
+
+const distPercent = (count) => {
+  if (!courseStats.value?.scoredTotal) return '0%'
+  return ((count / courseStats.value.scoredTotal) * 100).toFixed(0) + '%'
+}
+
+const distBarClass = (label) => {
+  if (label.includes('优秀')) return 'bar-excellent'
+  if (label.includes('良好')) return 'bar-good'
+  if (label.includes('中等')) return 'bar-medium'
+  if (label.includes('及格')) return 'bar-pass'
+  return 'bar-fail'
+}
+
 const loadAll = async () => {
   try {
-    await Promise.all([fetchCourse(), fetchStudents(), fetchResources(), fetchAssignments()])
+    await Promise.all([fetchCourse(), fetchStudents(), fetchResources(), fetchAssignments(), fetchStats()])
   } catch (e) {
     ElMessage.error('课程详情加载失败')
   }
@@ -418,5 +528,159 @@ onMounted(loadAll)
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+/* ---------- 标题操作按钮 ---------- */
+.title-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.info-actions {
+  margin-top: 20px;
+  display: flex;
+  justify-content: center;
+}
+
+.cover-display {
+  margin-bottom: 20px;
+  border-radius: 10px;
+  overflow: hidden;
+  max-height: 260px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.cover-display img {
+  width: 100%;
+  height: auto;
+  max-height: 260px;
+  object-fit: cover;
+  display: block;
+}
+
+/* ---------- 课程统计 ---------- */
+.stats-container {
+  min-height: 200px;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.stat-card {
+  background: #fafafa;
+  border: 1px solid #ebeef5;
+  border-radius: 10px;
+  padding: 20px;
+  text-align: center;
+  transition: all 0.25s;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+.stat-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: #303133;
+  line-height: 1.2;
+  margin-bottom: 4px;
+}
+
+.stat-label {
+  font-size: 13px;
+  color: #909399;
+}
+
+.stat-card.highlight .stat-value {
+  color: #409eff;
+}
+
+.stat-card.warn .stat-value {
+  color: #e6a23c;
+}
+
+.stat-card.success .stat-value {
+  color: #67c23a;
+}
+
+.section-title {
+  margin: 0 0 16px;
+  font-size: 15px;
+  color: #303133;
+}
+
+.dist-chart {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.dist-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.dist-label {
+  width: 100px;
+  font-size: 13px;
+  color: #606266;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.dist-track {
+  flex: 1;
+  height: 22px;
+  background: #f0f0f0;
+  border-radius: 11px;
+  overflow: hidden;
+}
+
+.dist-fill {
+  height: 100%;
+  border-radius: 11px;
+  transition: width 0.6s ease;
+  min-width: 4px;
+}
+
+.dist-fill.bar-excellent {
+  background: linear-gradient(90deg, #67c23a, #85ce61);
+}
+
+.dist-fill.bar-good {
+  background: linear-gradient(90deg, #409eff, #66b1ff);
+}
+
+.dist-fill.bar-medium {
+  background: linear-gradient(90deg, #e6a23c, #f4d19b);
+}
+
+.dist-fill.bar-pass {
+  background: linear-gradient(90deg, #909399, #b0b3b8);
+}
+
+.dist-fill.bar-fail {
+  background: linear-gradient(90deg, #f56c6c, #f89898);
+}
+
+.dist-count {
+  width: 44px;
+  font-size: 13px;
+  color: #606266;
+  text-align: left;
+  flex-shrink: 0;
+}
+
+.stats-footer {
+  display: flex;
+  gap: 24px;
+  font-size: 13px;
+  color: #909399;
 }
 </style>

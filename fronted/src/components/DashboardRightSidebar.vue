@@ -32,41 +32,20 @@
         <div class="right-card shortcut-card">
             <div class="shortcut-header">
                 <span>常用入口</span>
-                <div class="shortcut-actions">
-                    <span class="manage-link">管理</span>
-                    <el-icon :size="14" color="#909399">
-                        <Grid />
-                    </el-icon>
-                </div>
+                <el-icon :size="14" color="#909399" style="cursor:pointer" @click="$emit('manage')">
+                    <Grid />
+                </el-icon>
             </div>
-            <div class="shortcut-grid">
-                <a href="javascript:;" class="shortcut-item" style="--bg:#e8eddf;--color:#606c38"
-                    @click="$emit('goTo', 'evaluations')">
-                    <span class="shortcut-icon"><el-icon :size="22">
-                            <List />
+            <div v-if="visibleShortcuts.length === 0" class="shortcut-empty">
+                暂无已显示的入口，<a href="javascript:;" @click="$emit('manage')" class="shortcut-set-link">去设置</a>
+            </div>
+            <div v-else class="shortcut-grid">
+                <a v-for="item in visibleShortcuts.slice(0, 8)" :key="item.id" href="javascript:;" class="shortcut-item"
+                    :style="{ '--bg': item.color + '22', '--color': item.color }" @click="goToRoute(item.route)">
+                    <span class="shortcut-icon"><el-icon :size="20">
+                            <component :is="item.icon" />
                         </el-icon></span>
-                    <span class="shortcut-label">量规</span>
-                </a>
-                <a href="javascript:;" class="shortcut-item" style="--bg:#eddfd0;--color:#9c6644"
-                    @click="$emit('goTo', 'learn')">
-                    <span class="shortcut-icon"><el-icon :size="22">
-                            <Notebook />
-                        </el-icon></span>
-                    <span class="shortcut-label">互动教材</span>
-                </a>
-                <a href="javascript:;" class="shortcut-item" style="--bg:#dce8f0;--color:#5c7a8a"
-                    @click="$emit('goTo', 'questions')">
-                    <span class="shortcut-icon"><el-icon :size="22">
-                            <Connection />
-                        </el-icon></span>
-                    <span class="shortcut-label">个人题库</span>
-                </a>
-                <a href="javascript:;" class="shortcut-item" style="--bg:#dde8d6;--color:#6b8e4e"
-                    @click="$emit('goTo', 'posts')">
-                    <span class="shortcut-icon"><el-icon :size="22">
-                            <Share />
-                        </el-icon></span>
-                    <span class="shortcut-label">我的分享</span>
+                    <span class="shortcut-label">{{ item.label }}</span>
                 </a>
             </div>
         </div>
@@ -74,8 +53,13 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { useUserStore } from '@/stores/user'
 import ProgressRing from '@/components/ProgressRing.vue'
+
+const router = useRouter()
+const userStore = useUserStore()
 
 const props = defineProps({
     displayName: { type: String, default: '用户' },
@@ -84,7 +68,41 @@ const props = defineProps({
     notifications: { type: Array, default: () => [] }
 })
 
-defineEmits(['goTo', 'refreshNotices'])
+defineEmits(['goTo', 'refreshNotices', 'manage'])
+
+const shortcuts = ref([])
+
+const STORAGE_KEY = 'kechang_shortcuts'
+
+const loadShortcuts = () => {
+    try {
+        const saved = localStorage.getItem(STORAGE_KEY)
+        if (saved) {
+            const parsed = JSON.parse(saved)
+            if (parsed.role === userStore.roleCode && Array.isArray(parsed.entries)) {
+                shortcuts.value = parsed.entries
+                return
+            }
+        }
+    } catch (e) { /* ignore */ }
+    shortcuts.value = []
+}
+
+const visibleShortcuts = computed(() => shortcuts.value.filter(s => s.visible))
+
+const goToRoute = (route) => {
+    if (route) router.push(route)
+}
+
+onMounted(() => {
+    loadShortcuts()
+    // 监听 localStorage 变化（跨标签页）
+    window.addEventListener('storage', (e) => {
+        if (e.key === STORAGE_KEY) loadShortcuts()
+    })
+    // 监听自定义事件（同一标签页内，管理对话框保存时触发）
+    window.addEventListener('shortcuts-changed', loadShortcuts)
+})
 
 const greetingText = computed(() => {
     const hour = new Date().getHours()
@@ -231,16 +249,21 @@ const semesterInfo = computed(() => {
     margin-bottom: 14px;
 }
 
-.shortcut-actions {
-    display: flex;
-    align-items: center;
-    gap: 4px;
+.shortcut-empty {
+    font-size: 13px;
+    color: var(--bio-ink-faint);
+    text-align: center;
+    padding: 12px 0;
 }
 
-.manage-link {
-    font-size: 12px;
-    color: var(--bio-ink-faint);
-    font-weight: 400;
+.shortcut-set-link {
+    color: var(--bio-moss);
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.shortcut-set-link:hover {
+    text-decoration: underline;
 }
 
 .shortcut-grid {

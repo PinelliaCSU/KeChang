@@ -1,6 +1,6 @@
 -- ============================================================
 -- 课畅（KeChang）— 智能化在线教学支持服务平台
--- 数据库初始化脚本
+-- 完整数据库初始化脚本（合并所有升级脚本）
 -- 字符集: utf8mb4 | 引擎: InnoDB
 -- ============================================================
 
@@ -259,13 +259,14 @@ CREATE TABLE `exam_record_answer` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='答题详情表';
 
 -- ============================================================
--- 模块四：作业
+-- 模块四：作业（合并 upgrade_assignment_chapter 升级脚本）
 -- ============================================================
 
 DROP TABLE IF EXISTS `assignment`;
 CREATE TABLE `assignment` (
   `id`             BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '主键ID',
   `course_id`      BIGINT        NOT NULL COMMENT '课程ID',
+  `chapter_id`     BIGINT        DEFAULT NULL COMMENT '所属章节ID',
   `title`          VARCHAR(200)  NOT NULL COMMENT '作业标题',
   `content`        TEXT          DEFAULT NULL COMMENT '作业内容/要求',
   `attachment_url` VARCHAR(500)  DEFAULT NULL COMMENT '附件URL',
@@ -277,6 +278,7 @@ CREATE TABLE `assignment` (
   `update_time`    DATETIME      DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   `is_deleted`     TINYINT(1)    DEFAULT 0 COMMENT '逻辑删除',
   INDEX `idx_course_id` (`course_id`),
+  INDEX `idx_chapter_id` (`chapter_id`),
   INDEX `idx_deadline` (`deadline`),
   INDEX `idx_status` (`status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='作业表';
@@ -299,6 +301,7 @@ CREATE TABLE `assignment_submit` (
   INDEX `idx_status` (`status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='作业提交表';
 
+-- 作业评分表（已包含 feedback_marks 列，合并 upgrade_assignment_feedback_marks 升级脚本）
 DROP TABLE IF EXISTS `assignment_grade`;
 CREATE TABLE `assignment_grade` (
   `id`          BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '主键ID',
@@ -315,7 +318,7 @@ CREATE TABLE `assignment_grade` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='作业评分表';
 
 -- ============================================================
--- 模块五：成绩
+-- 模块五：成绩（合并 upgrade_grade_nullable 升级脚本）
 -- ============================================================
 
 DROP TABLE IF EXISTS `grade_course`;
@@ -323,9 +326,9 @@ CREATE TABLE `grade_course` (
   `id`                  BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '主键ID',
   `course_id`           BIGINT        NOT NULL COMMENT '课程ID',
   `student_id`          BIGINT        NOT NULL COMMENT '学生用户ID',
-  `exam_avg_score`      DECIMAL(5,2)  DEFAULT 0.00 COMMENT '考试平均分',
-  `assignment_avg_score` DECIMAL(5,2)  DEFAULT 0.00 COMMENT '作业平均分',
-  `total_score`         DECIMAL(5,2)  DEFAULT 0.00 COMMENT '总评成绩',
+  `exam_avg_score`      DECIMAL(5,2)  DEFAULT NULL COMMENT '考试平均分',
+  `assignment_avg_score` DECIMAL(5,2)  DEFAULT NULL COMMENT '作业平均分',
+  `total_score`         DECIMAL(5,2)  DEFAULT NULL COMMENT '总评成绩',
   `grade_level`         VARCHAR(20)   DEFAULT NULL COMMENT '等级：优秀 / 良好 / 中等 / 及格 / 不及格',
   `create_time`         DATETIME      DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `update_time`         DATETIME      DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
@@ -602,6 +605,25 @@ CREATE TABLE `notification_user` (
   INDEX `idx_user_read` (`user_id`, `is_read`),
   INDEX `idx_notification_id` (`notification_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户通知状态表';
+
+-- ============================================================
+-- 模块十一：附件文件（合并 add_attachment_file_table 脚本）
+-- ============================================================
+
+DROP TABLE IF EXISTS `attachment_file`;
+CREATE TABLE `attachment_file` (
+  `id`          BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '主键ID',
+  `target_type` VARCHAR(20)  NOT NULL COMMENT '目标类型：ASSIGNMENT(作业附件) / SUBMIT(提交附件)',
+  `target_id`   BIGINT       NOT NULL COMMENT '目标ID（作业ID或提交ID）',
+  `file_name`   VARCHAR(200) NOT NULL COMMENT '原始文件名',
+  `file_url`    VARCHAR(500) NOT NULL COMMENT '文件访问URL',
+  `file_size`   BIGINT       DEFAULT 0 COMMENT '文件大小（字节）',
+  `sort_order`  INT          DEFAULT 0 COMMENT '排序号',
+  `create_time` DATETIME     DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` DATETIME     DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `is_deleted`  TINYINT(1)   DEFAULT 0 COMMENT '逻辑删除',
+  INDEX `idx_target` (`target_type`, `target_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='附件文件表';
 
 -- ============================================================
 -- 初始数据

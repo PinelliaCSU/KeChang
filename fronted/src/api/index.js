@@ -25,7 +25,8 @@ export const courseApi = {
   getStudents: (id, params) => request.get(`/courses/${id}/students`, { params }),
   getResources: (id, params) => request.get(`/courses/${id}/resources`, { params }),
   enroll: (id) => request.post(`/courses/${id}/enroll`),
-  unenroll: (id) => request.delete(`/courses/${id}/enroll`)
+  unenroll: (id) => request.delete(`/courses/${id}/enroll`),
+  removeStudent: (courseId, studentId) => request.delete(`/courses/${courseId}/students/${studentId}`)
 }
 
 /** 试题/考试 API */
@@ -162,10 +163,22 @@ export const knowledgeApi = {
 /** 通知 API */
 export const notificationApi = {
   list: (params) => request.get('/notifications', { params }),
+  detail: (id) => request.get(`/notifications/${id}`),
   unreadCount: () => request.get('/notifications/unread-count'),
   markRead: (id) => request.put(`/notifications/${id}/read`),
   markAllRead: () => request.put('/notifications/read-all'),
   send: (data) => request.post('/notifications', data)
+}
+
+/** 公告 API */
+export const announcementApi = {
+  list: (params) => request.get('/announcements', { params }),
+  detail: (id) => request.get(`/announcements/${id}`),
+  create: (data) => request.post('/announcements', data),
+  update: (id, data) => request.put(`/announcements/${id}`, data),
+  delete: (id) => request.delete(`/announcements/${id}`),
+  confirm: (id) => request.post(`/announcements/${id}/confirm`),
+  getConfirms: (id, params) => request.get(`/announcements/${id}/confirms`, { params })
 }
 
 /** 文件上传 API */
@@ -173,4 +186,13 @@ export const uploadApi = {
   uploadFile: (formData) => request.post('/upload/file', formData),
   preview: (params) => request.get('/upload/preview', { params }),
   pdfPages: (params) => request.get('/upload/pdf-pages', { params })
+}
+
+/** 私信 API */
+export const messageApi = {
+  conversations: (params) => request.get('/messages/conversations', { params }),
+  messages: (otherUserId, params) => request.get(`/messages/with/${otherUserId}`, { params }),
+  send: (data) => request.post('/messages', data),
+  unreadTotal: () => request.get('/messages/unread-total'),
+  contacts: (params) => request.get('/messages/contacts', { params })
 }

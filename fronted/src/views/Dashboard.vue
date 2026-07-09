@@ -38,8 +38,11 @@
             <!-- 右侧栏 -->
             <DashboardRightSidebar :display-name="displayName" :role-suffix="roleSuffix"
                 :progress-percent="progressPercent" :notifications="notifications" @go-to="handleShortcut"
-                @refresh-notices="fetchNotifications" />
+                @refresh-notices="fetchNotifications" @manage="showShortcutManager = true" />
         </div>
+
+        <!-- 常用入口管理对话框 -->
+        <DashboardShortcutManager v-model="showShortcutManager" />
     </div>
 </template>
 
@@ -51,6 +54,7 @@ import { useUserStore } from '@/stores/user'
 import { courseApi, assignmentApi, examApi, trainingApi, dashboardApi, notificationApi } from '@/api'
 import DashboardHeader from '@/components/DashboardHeader.vue'
 import DashboardTodoPanel from '@/components/DashboardTodoPanel.vue'
+import DashboardShortcutManager from '@/components/DashboardShortcutManager.vue'
 import DashboardCoursePanel from '@/components/DashboardCoursePanel.vue'
 import DashboardRightSidebar from '@/components/DashboardRightSidebar.vue'
 
@@ -59,6 +63,7 @@ const userStore = useUserStore()
 
 // ==================== 状态 ====================
 const sidebarActive = ref('home')
+const showShortcutManager = ref(false)
 const notifications = ref([])
 const courses = ref([])
 const coursesLoading = ref(false)
@@ -98,7 +103,7 @@ const handleCourseAction = (cmd, course) => {
     if (cmd === 'enter') enterCourse(course)
     else if (cmd === 'detail') {
         if (userStore.isTeacher) router.push(`/teacher/courses/${course.id}`)
-        else ElMessage.info('课程详情功能开发中')
+        else router.push(`/student/courses/${course.id}`)
     } else if (cmd === 'edit') {
         router.push(`/teacher/courses/${course.id}`)
     } else if (cmd === 'enroll') {
@@ -270,8 +275,7 @@ onMounted(() => { fetchCourses(); fetchTodos(); fetchDashboardStats(); fetchNoti
 }
 
 /* 待办面板和课程面板都占满宽度，上下排列 */
-.main-content> :first-child
-.main-content> :last-child {
+.main-content> :first-child .main-content> :last-child {
     width: 100%;
 }
 
