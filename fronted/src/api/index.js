@@ -168,6 +168,17 @@ export const notificationApi = {
   send: (data) => request.post('/notifications', data)
 }
 
+/** 公告 API */
+export const announcementApi = {
+  list: (params) => request.get('/announcements', { params }),
+  detail: (id) => request.get(`/announcements/${id}`),
+  create: (data) => request.post('/announcements', data),
+  update: (id, data) => request.put(`/announcements/${id}`, data),
+  delete: (id) => request.delete(`/announcements/${id}`),
+  confirm: (id) => request.post(`/announcements/${id}/confirm`),
+  getConfirms: (id, params) => request.get(`/announcements/${id}/confirms`, { params })
+}
+
 /** 文件上传 API */
 export const uploadApi = {
   uploadFile: (formData) => request.post('/upload/file', formData),
