@@ -329,23 +329,20 @@ public class CourseService {
             throw BusinessException.badRequest("已选该课程，不可重复选课");
         }
 
-        // 3. 检查是否有软删除的记录（退课后重新选课），有则恢复
+        // 3. 检查是否有软删除的记录（退课后重新选课），有则物理删除旧记录再重新插入
         List<CourseStudent> deletedList = courseStudentMapper.selectListWithDeleted(courseId, studentId);
         if (!deletedList.isEmpty()) {
-            CourseStudent cs = deletedList.get(0);
-            cs.setIsDeleted(0);
-            cs.setProgress(0.0);
-            cs.setEnrolledTime(LocalDateTime.now());
-            courseStudentMapper.updateById(cs);
-        } else {
-            // 4. 全新选课
-            CourseStudent cs = new CourseStudent();
-            cs.setCourseId(courseId);
-            cs.setStudentId(studentId);
-            cs.setProgress(0.0);
-            cs.setEnrolledTime(LocalDateTime.now());
-            courseStudentMapper.insert(cs);
+            // updateById 受 @TableLogic 影响会加 WHERE is_deleted=0，无法更新已被软删除的记录
+            // 因此先物理删除旧记录，再重新插入
+            courseStudentMapper.deletePhysically(courseId, studentId);
         }
+        // 4. 全新选课
+        CourseStudent cs = new CourseStudent();
+        cs.setCourseId(courseId);
+        cs.setStudentId(studentId);
+        cs.setProgress(0.0);
+        cs.setEnrolledTime(LocalDateTime.now());
+        courseStudentMapper.insert(cs);
 
         // 5. 更新选课人数
         course.setStudentCount((course.getStudentCount() == null ? 0 : course.getStudentCount()) + 1);
