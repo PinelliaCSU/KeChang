@@ -88,12 +88,20 @@
         </el-tab-pane>
 
         <el-tab-pane label="选课学生" name="students">
+          <div class="tab-toolbar">
+            <span style="color:#909399;font-size:14px;">共 {{ students.length }} 名学生</span>
+          </div>
           <el-table v-if="students.length > 0" :data="students" border stripe>
             <el-table-column prop="studentNo" label="学号" width="130" />
             <el-table-column prop="realName" label="姓名" width="120" />
             <el-table-column prop="major" label="专业" min-width="160" />
             <el-table-column prop="className" label="班级" width="140" />
             <el-table-column prop="grade" label="年级" width="100" />
+            <el-table-column label="操作" width="100" align="center">
+              <template #default="{ row }">
+                <el-button size="small" type="danger" @click="kickStudent(row)">踢出</el-button>
+              </template>
+            </el-table-column>
           </el-table>
           <el-empty v-if="students.length === 0" description="暂无学生选课" :image-size="90" />
         </el-tab-pane>
@@ -176,6 +184,22 @@ const fetchResources = async () => {
 const fetchAssignments = async () => {
   const res = await assignmentApi.list({ page: 1, size: 200, courseId: courseId() })
   if (res.data.code === 200) assignments.value = res.data.data?.records || []
+}
+
+const kickStudent = async (student) => {
+  try {
+    await ElMessageBox.confirm(
+      `确定将学生「${student.realName || student.studentNo}」踢出课程吗？`,
+      '踢出学生',
+      { type: 'warning', confirmButtonText: '确定踢出', cancelButtonText: '取消' }
+    )
+    await courseApi.removeStudent(courseId(), student.userId)
+    ElMessage.success('已将该学生踢出课程')
+    students.value = students.value.filter(s => s.userId !== student.userId)
+    course.value.studentCount = Math.max(0, Number(course.value.studentCount || 0) - 1)
+  } catch (e) {
+    if (e !== 'cancel') ElMessage.error(e.response?.data?.message || '操作失败')
+  }
 }
 
 const loadAll = async () => {

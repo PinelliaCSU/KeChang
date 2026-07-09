@@ -9,7 +9,7 @@
 
     <div class="panel" v-if="filteredCourses.length > 0">
       <div class="course-grid">
-        <div class="course-card" v-for="course in filteredCourses" :key="course.id">
+        <div class="course-card" v-for="course in filteredCourses" :key="course.id" @click="viewDetail(course)">
           <div class="card-cover" :style="{ background: getCoverGradient(course.id) }">
             <CourseCoverPattern />
           </div>
@@ -23,15 +23,19 @@
             </el-tag>
           </div>
           <div class="card-footer">
-            <button class="btn-enter" :disabled="!course.enrolled" @click="enterLearn(course)">
-              {{ course.enrolled ? '进入学习' : '先加入后学习' }}
+            <button class="btn-enter" :disabled="!course.enrolled"
+              @click.stop="course.enrolled ? enterLearn(course) : viewDetail(course)">
+              {{ course.enrolled ? '进入学习' : '查看详情' }}
             </button>
             <button v-if="!course.enrolled" :class="canEnroll(course) ? 'btn-enroll' : 'btn-enroll btn-disabled'"
-              :disabled="!canEnroll(course)" @click="canEnroll(course) && enrollCourse(course)">
+              :disabled="!canEnroll(course)" @click.stop="canEnroll(course) && enrollCourse(course)">
               {{ canEnroll(course) ? '加入课程' : '暂不可选' }}
             </button>
-            <button v-else class="btn-unenroll" @click="unenrollCourse(course)">
+            <button v-else class="btn-unenroll" @click.stop="unenrollCourse(course)">
               退出课程
+            </button>
+            <button class="btn-detail" @click.stop="viewDetail(course)">
+              查看详情
             </button>
           </div>
         </div>
@@ -79,6 +83,10 @@ const getCoverGradient = (id) => gradientPalette[((id || 1) - 1) % gradientPalet
 const canEnroll = (course) => {
   const status = computeStatus(course.startDate, course.endDate)
   return status === '进行中'
+}
+
+const viewDetail = (course) => {
+  router.push(`/student/courses/${course.id}`)
 }
 
 const enterLearn = (course) => {
@@ -178,6 +186,7 @@ onMounted(fetchCourses)
   transition: all 0.3s;
   display: flex;
   flex-direction: column;
+  cursor: pointer;
 }
 
 .course-card:hover {
@@ -266,6 +275,24 @@ onMounted(fetchCourses)
 
 .btn-unenroll:hover {
   background: #fde2e2;
+}
+
+.btn-detail {
+  width: 100%;
+  height: 34px;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+  background: #f4f4f5;
+  color: #606266;
+}
+
+.btn-detail:hover {
+  background: #e9e9eb;
+  color: #409eff;
 }
 
 .btn-enter:disabled {

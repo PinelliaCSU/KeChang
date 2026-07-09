@@ -127,7 +127,6 @@ public class CourseController {
     private String uploadBasePath;
 
     // ... (other fields via @RequiredArgsConstructor)
-
     /**
      * 上传课程资源
      */
@@ -156,15 +155,13 @@ public class CourseController {
     }
 
     /**
-     * 查看选课学生
+     * 查看选课学生（教师和学生均可查看）
      */
     @GetMapping("/{id}/students")
-    @PreAuthorize("hasAuthority('ROLE_TEACHER')")
     public Result<PageResult<StudentProfile>> students(@PathVariable Long id,
             @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "10") int size) {
-        Long userId = (Long) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        return Result.success(courseService.getStudents(id, page, size, userId));
+            @RequestParam(defaultValue = "100") int size) {
+        return Result.success(courseService.getStudents(id, page, size, currentUserId(), currentRole()));
     }
 
     /**
@@ -186,6 +183,17 @@ public class CourseController {
     public Result<Void> unenroll(@PathVariable Long id) {
         Long userId = (Long) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         courseService.unenrollCourse(id, userId);
+        return Result.success();
+    }
+
+    /**
+     * 教师踢出学生
+     */
+    @DeleteMapping("/{id}/students/{studentId}")
+    @PreAuthorize("hasAuthority('ROLE_TEACHER')")
+    public Result<Void> removeStudent(@PathVariable Long id, @PathVariable Long studentId) {
+        Long userId = (Long) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        courseService.removeStudent(id, studentId, userId);
         return Result.success();
     }
 
