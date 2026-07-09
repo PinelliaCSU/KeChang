@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * 通知服务（含公告功能）
@@ -32,18 +33,61 @@ public class NotificationService {
     private final StudentProfileMapper studentProfileMapper;
 
     // ==================== 通用通知 ====================
-
-    public PageResult<Notification> list(Long userId, int page, int size) {
+    public PageResult<Map<String, Object>> list(Long userId, int page, int size) {
         List<NotificationUser> nus = notifUserMapper.selectList(
                 new LambdaQueryWrapper<NotificationUser>().eq(NotificationUser::getUserId, userId));
         if (nus.isEmpty()) {
             return PageResult.of(List.of(), 0, page, size);
         }
+        Map<Long, Integer> readMap = nus.stream()
+                .collect(Collectors.toMap(NotificationUser::getNotificationId, NotificationUser::getIsRead));
         List<Long> ids = nus.stream().map(NotificationUser::getNotificationId).toList();
         Page<Notification> p = notifMapper.selectPage(new Page<>(page, size),
                 new LambdaQueryWrapper<Notification>().in(Notification::getId, ids)
                         .orderByDesc(Notification::getSendTime));
-        return PageResult.of(p.getRecords(), p.getTotal(), page, size);
+
+        List<Map<String, Object>> records = new ArrayList<>();
+        for (Notification n : p.getRecords()) {
+            Map<String, Object> item = new HashMap<>();
+            item.put("id", n.getId());
+            item.put("title", n.getTitle());
+            item.put("content", n.getContent());
+            item.put("senderId", n.getSenderId());
+            item.put("sendTime", n.getSendTime());
+            item.put("notificationType", n.getNotificationType());
+            item.put("courseId", n.getCourseId());
+            item.put("createTime", n.getCreateTime());
+            item.put("isRead", readMap.getOrDefault(n.getId(), 0));
+            records.add(item);
+        }
+        return PageResult.of(records, p.getTotal(), page, size);
+    }
+
+    /**
+     * 获取通知详情
+     */
+    public Map<String, Object> getDetail(Long id, Long userId) {
+        Notification n = notifMapper.selectById(id);
+        if (n == null) {
+            throw BusinessException.notFound("通知不存在");
+        }
+
+        Map<String, Object> item = new HashMap<>();
+        item.put("id", n.getId());
+        item.put("title", n.getTitle());
+        item.put("content", n.getContent());
+        item.put("senderId", n.getSenderId());
+        item.put("sendTime", n.getSendTime());
+        item.put("notificationType", n.getNotificationType());
+        item.put("courseId", n.getCourseId());
+        item.put("createTime", n.getCreateTime());
+
+        NotificationUser nu = notifUserMapper.selectOne(new LambdaQueryWrapper<NotificationUser>()
+                .eq(NotificationUser::getNotificationId, id)
+                .eq(NotificationUser::getUserId, userId));
+        item.put("isRead", nu != null ? nu.getIsRead() : 0);
+
+        return item;
     }
 
     public long unreadCount(Long userId) {
@@ -76,11 +120,8 @@ public class NotificationService {
     }
 
     // ==================== 公告功能 ====================
-
     /**
-     * 分页查询公告列表
-     * - 教师：查看自己发布的公告
-     * - 学生：查看已选课程的公告，附带确认状态
+     * 分页查询公告列表 - 教师：查看自己发布的公告 - 学生：查看已选课程的公告，附带确认状态
      */
     public PageResult<Map<String, Object>> listAnnouncements(int page, int size, Long courseId, Long userId,
             String role) {
@@ -363,8 +404,9 @@ public class NotificationService {
      * 获取公告的确认人数
      */
     public int getConfirmCount(Long announcementId) {
-        return (int) notifUserMapper.selectCount(new LambdaQueryWrapper<NotificationUser>()
+        Long count = notifUserMapper.selectCount(new LambdaQueryWrapper<NotificationUser>()
                 .eq(NotificationUser::getNotificationId, announcementId)
                 .eq(NotificationUser::getIsRead, 1));
+        return count != null ? count.intValue() : 0;
     }
 }

@@ -163,6 +163,7 @@ export const knowledgeApi = {
 /** 通知 API */
 export const notificationApi = {
   list: (params) => request.get('/notifications', { params }),
+  detail: (id) => request.get(`/notifications/${id}`),
   unreadCount: () => request.get('/notifications/unread-count'),
   markRead: (id) => request.put(`/notifications/${id}/read`),
   markAllRead: () => request.put('/notifications/read-all'),

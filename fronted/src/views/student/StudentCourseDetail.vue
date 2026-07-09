@@ -49,7 +49,7 @@
                             <el-tag :type="statusTagType(courseStatus)">{{ courseStatus }}</el-tag>
                         </el-descriptions-item>
                         <el-descriptions-item label="课程简介" :span="2">{{ course.description || '暂无课程简介'
-                            }}</el-descriptions-item>
+                        }}</el-descriptions-item>
                     </el-descriptions>
                 </el-tab-pane>
 
@@ -70,12 +70,56 @@
                             <div class="student-tags">
                                 <el-tag v-if="s.major" size="small" effect="plain">{{ s.major }}</el-tag>
                                 <el-tag v-if="s.className" size="small" type="info" effect="plain">{{ s.className
-                                    }}</el-tag>
+                                }}</el-tag>
                                 <el-tag v-if="s.grade" size="small" type="warning" effect="plain">{{ s.grade }}</el-tag>
                             </div>
                         </div>
                     </div>
                     <el-empty v-else description="暂无同学选课" :image-size="90" />
+                </el-tab-pane>
+
+                <!-- 课程公告 -->
+                <el-tab-pane label="课程公告" name="announcements">
+                    <div v-if="announcements.length > 0" class="announcement-list">
+                        <div v-for="a in announcements" :key="a.id" class="announcement-item"
+                            @click="viewAnnouncement(a)">
+                            <div class="announcement-item-header">
+                                <span class="announcement-item-dot" :class="{ unread: !a.confirmed }"></span>
+                                <span class="announcement-item-title">{{ a.title }}</span>
+                                <el-tag v-if="a.confirmed" size="small" type="success">已确认</el-tag>
+                                <el-tag v-else size="small" type="warning">待确认</el-tag>
+                            </div>
+                            <p class="announcement-item-desc">{{ truncateContent(a.content) }}</p>
+                            <div class="announcement-item-meta">
+                                <span><el-icon>
+                                        <Clock />
+                                    </el-icon> {{ formatDate(a.publishTime) }}</span>
+                                <span><el-icon>
+                                        <User />
+                                    </el-icon> {{ a.publisherName || '教师' }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <el-empty v-else description="暂无课程公告" :image-size="90" />
+
+                    <!-- 公告详情弹窗 -->
+                    <el-dialog v-model="detailDialogVisible" :title="currentAnnouncement.title" width="650px"
+                        destroy-on-close>
+                        <div class="detail-meta" style="margin-bottom:12px">
+                            <span><strong>发布时间：</strong>{{ formatDate(currentAnnouncement.publishTime) }}</span>
+                            <span><strong>发布人：</strong>{{ currentAnnouncement.publisherName || '-' }}</span>
+                            <span><strong>确认人数：</strong>{{ currentAnnouncement.confirmCount || 0 }}</span>
+                        </div>
+                        <el-divider />
+                        <div class="detail-content" v-html="formatAnnounceContent(currentAnnouncement.content)"></div>
+                        <template #footer>
+                            <el-button @click="detailDialogVisible = false">关闭</el-button>
+                            <el-button v-if="!currentAnnouncement.confirmed" type="primary"
+                                :loading="confirmingAnnouncement"
+                                @click="confirmAnnouncement(currentAnnouncement)">确认公告</el-button>
+                            <el-button v-else type="success" disabled>已确认</el-button>
+                        </template>
+                    </el-dialog>
                 </el-tab-pane>
 
                 <!-- 章节内容（只读） -->
@@ -145,8 +189,9 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { assignmentApi, courseApi } from '@/api'
+import { announcementApi, assignmentApi, courseApi } from '@/api'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { Clock, User } from '@element-plus/icons-vue'
 import FilePreview from '@/components/FilePreview.vue'
 import { computeStatus, statusTagType } from '@/utils/status'
 
@@ -170,6 +215,49 @@ const courseId = () => route.params.id
 const courseStatus = computed(() => computeStatus(course.value.startDate, course.value.endDate))
 
 const canEnroll = computed(() => courseStatus.value === '进行中')
+
+// 公告相关
+const announcements = ref([])
+const detailDialogVisible = ref(false)
+const currentAnnouncement = ref({})
+const confirmingAnnouncement = ref(false)
+
+const fetchAnnouncements = async () => {
+    try {
+        const res = await announcementApi.list({ page: 1, size: 50, courseId: courseId() })
+        if (res.data.code === 200) {
+            announcements.value = res.data.data?.records || []
+        }
+    } catch (e) { /* ignore */ }
+}
+
+const viewAnnouncement = (a) => {
+    currentAnnouncement.value = { ...a }
+    detailDialogVisible.value = true
+}
+
+const confirmAnnouncement = async (a) => {
+    confirmingAnnouncement.value = true
+    try {
+        await announcementApi.confirm(a.id)
+        a.confirmed = true
+        a.confirmCount = (a.confirmCount || 0) + 1
+        currentAnnouncement.value.confirmed = true
+        currentAnnouncement.value.confirmCount = (currentAnnouncement.value.confirmCount || 0) + 1
+    } catch (e) { /* ignore */ }
+    finally { confirmingAnnouncement.value = false }
+}
+
+const truncateContent = (content) => {
+    if (!content) return '暂无内容'
+    const text = content.replace(/<[^>]*>/g, '')
+    return text.length > 120 ? text.substring(0, 120) + '...' : text
+}
+
+const formatAnnounceContent = (content) => {
+    if (!content) return '<p style="color:#909399">暂无内容</p>'
+    return content.replace(/\n/g, '<br>')
+}
 
 const resourcesByChapter = (chapterId) =>
     resources.value.filter((r) => r.chapterId === chapterId)
@@ -232,7 +320,7 @@ const fetchStudents = async () => {
 
 const loadAll = async () => {
     try {
-        await Promise.all([fetchCourse(), fetchResources(), fetchAssignments(), fetchStudents()])
+        await Promise.all([fetchCourse(), fetchResources(), fetchAssignments(), fetchStudents(), fetchAnnouncements()])
         // 课程详情接口可能不返回 enrolled，通过课程列表补充检测
         await checkEnrolled()
     } catch (e) {
@@ -527,5 +615,96 @@ onMounted(loadAll)
     display: flex;
     align-items: center;
     gap: 8px;
+}
+
+/* ---------- 课程公告 ---------- */
+.announcement-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.announcement-item {
+    padding: 16px;
+    border: 1px solid #ebeef5;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: box-shadow 0.2s, border-color 0.2s;
+}
+
+.announcement-item:hover {
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+    border-color: #b3d8ff;
+}
+
+.announcement-item-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+}
+
+.announcement-item-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #d4d8c8;
+    flex-shrink: 0;
+}
+
+.announcement-item-dot.unread {
+    background: #67c23a;
+}
+
+.announcement-item-title {
+    flex: 1;
+    font-size: 14px;
+    font-weight: 600;
+    color: #303133;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.announcement-item-desc {
+    font-size: 13px;
+    color: #909399;
+    margin: 0 0 8px;
+    line-height: 1.5;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.announcement-item-meta {
+    display: flex;
+    gap: 16px;
+    font-size: 12px;
+    color: #909399;
+}
+
+.announcement-item-meta span {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.detail-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    font-size: 13px;
+    color: #606266;
+}
+
+.detail-content {
+    font-size: 14px;
+    line-height: 1.8;
+    color: #303133;
+    white-space: pre-wrap;
+    word-break: break-word;
+    max-height: 50vh;
+    overflow-y: auto;
+    padding: 8px 0;
 }
 </style>

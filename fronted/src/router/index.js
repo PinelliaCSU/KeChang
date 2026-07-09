@@ -53,7 +53,8 @@ const routes = [
       { path: 'surveys', name: 'TeacherSurveys', component: () => import('@/views/teacher/TeacherSurveys.vue'), meta: { title: '问卷管理' } },
       { path: 'evaluations', name: 'TeacherEvaluations', component: () => import('@/views/teacher/TeacherEvaluations.vue'), meta: { title: '教学评价' } },
       { path: 'posts', name: 'TeacherPosts', component: () => import('@/views/teacher/TeacherPosts.vue'), meta: { title: '互动问答' } },
-      { path: 'announcements', name: 'TeacherAnnouncements', component: () => import('@/views/teacher/TeacherAnnouncements.vue'), meta: { title: '公告管理' } }
+      { path: 'announcements', name: 'TeacherAnnouncements', component: () => import('@/views/teacher/TeacherAnnouncements.vue'), meta: { title: '公告管理' } },
+      { path: 'notifications/:id', name: 'TeacherNotificationDetail', component: () => import('@/views/student/StudentNotificationDetail.vue'), meta: { title: '通知详情' } }
     ]
   },
 
@@ -87,6 +88,7 @@ const routes = [
       { path: 'notes', name: 'StudentNotes', component: () => import('@/views/student/StudentNotes.vue'), meta: { title: '学习笔记' } },
       { path: 'trainings', name: 'StudentTrainings', component: () => import('@/views/student/StudentTrainings.vue'), meta: { title: '实训中心' } },
       { path: 'posts', name: 'StudentPosts', component: () => import('@/views/student/StudentPosts.vue'), meta: { title: '互动问答' } },
+      { path: 'notifications/:id', name: 'StudentNotificationDetail', component: () => import('@/views/student/StudentNotificationDetail.vue'), meta: { title: '通知详情' } },
       { path: 'knowledge', name: 'StudentKnowledge', component: () => import('@/views/student/StudentKnowledge.vue'), meta: { title: '知识库' } },
       { path: 'evaluations', name: 'StudentEvaluations', component: () => import('@/views/student/StudentEvaluations.vue'), meta: { title: '教学评价' } },
       { path: 'surveys', name: 'StudentSurveys', component: () => import('@/views/student/StudentSurveys.vue'), meta: { title: '问卷调查' } },

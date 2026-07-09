@@ -499,8 +499,13 @@ class NotificationController {
     }
 
     @GetMapping
-    public Result<PageResult<Notification>> list(@RequestParam(defaultValue = "1") int page, @RequestParam(defaultValue = "10") int size) {
+    public Result<PageResult<Map<String, Object>>> list(@RequestParam(defaultValue = "1") int page, @RequestParam(defaultValue = "10") int size) {
         return Result.success(notifService.list(uid(), page, size));
+    }
+
+    @GetMapping("/{id}")
+    public Result<Map<String, Object>> detail(@PathVariable Long id) {
+        return Result.success(notifService.getDetail(id, uid()));
     }
 
     @GetMapping("/unread-count")
