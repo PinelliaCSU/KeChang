@@ -14,6 +14,9 @@
     <div class="panel">
       <el-tabs v-model="activeTab">
         <el-tab-pane label="课程信息" name="info">
+          <div v-if="course.coverImg" class="cover-display">
+            <img :src="resolveFileUrl(course.coverImg)" :alt="course.courseName + '封面'" />
+          </div>
           <el-descriptions :column="2" border>
             <el-descriptions-item label="课程名称">{{ course.courseName }}</el-descriptions-item>
             <el-descriptions-item label="授课教师">{{ course.teacherName }}</el-descriptions-item>
@@ -196,6 +199,7 @@ import { assignmentApi, courseApi, gradeApi } from '@/api'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import FilePreview from '@/components/FilePreview.vue'
 import { computeStatus, statusTagType } from '@/utils/status'
+import { resolveFileUrl } from '@/utils/fileUrl'
 
 const route = useRoute()
 const router = useRouter()
@@ -536,6 +540,22 @@ onMounted(loadAll)
   margin-top: 20px;
   display: flex;
   justify-content: center;
+}
+
+.cover-display {
+  margin-bottom: 20px;
+  border-radius: 10px;
+  overflow: hidden;
+  max-height: 260px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.cover-display img {
+  width: 100%;
+  height: auto;
+  max-height: 260px;
+  object-fit: cover;
+  display: block;
 }
 
 /* ---------- 课程统计 ---------- */

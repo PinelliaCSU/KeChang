@@ -18,7 +18,8 @@
       <div class="course-grid" v-if="courses.length > 0">
         <div class="course-card" v-for="course in courses" :key="course.id">
           <div class="card-cover"
-            :style="{ background: course.coverImg ? `url(${course.coverImg}) center/cover` : getCoverGradient(course.id) }">
+            :style="{ background: course.coverImg ? `url(${resolveFileUrl(course.coverImg)}) center/cover no-repeat` : getCoverGradient(course.id) }"
+            :class="{ 'has-cover': course.coverImg }">
             <el-tag :type="statusTagType(computeStatus(course.startDate, course.endDate))" class="status-tag">
               {{ computeStatus(course.startDate, course.endDate) }}
             </el-tag>
@@ -86,6 +87,7 @@ import { useRouter } from 'vue-router'
 import { courseApi } from '@/api'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { computeStatus, statusTagType } from '@/utils/status'
+import { resolveFileUrl } from '@/utils/fileUrl'
 
 const router = useRouter()
 const courses = ref([])
@@ -264,6 +266,11 @@ onMounted(fetchCourses)
 .card-cover {
   height: 110px;
   position: relative;
+}
+
+.card-cover.has-cover {
+  background-size: cover !important;
+  background-position: center !important;
 }
 
 .status-tag {

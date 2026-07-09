@@ -22,7 +22,7 @@
                 <el-form-item label="封面图片">
                     <div class="cover-upload">
                         <div v-if="form.coverImg" class="cover-preview"
-                            :style="{ backgroundImage: `url(${form.coverImg})` }">
+                            :style="{ backgroundImage: `url(${resolveFileUrl(form.coverImg)})` }">
                             <el-button class="cover-remove" size="small" circle
                                 @click="form.coverImg = ''">×</el-button>
                         </div>
@@ -79,6 +79,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { courseApi, uploadApi } from '@/api'
 import { ElMessage } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
+import { resolveFileUrl } from '@/utils/fileUrl'
 
 const route = useRoute()
 const router = useRouter()
@@ -140,7 +141,7 @@ const handleFileChange = async (e) => {
     try {
         const res = await uploadApi.uploadFile(formData)
         if (res.data.code === 200) {
-            form.coverImg = res.data.data
+            form.coverImg = res.data.data.url
         }
     } catch (e) {
         ElMessage.error('封面上传失败')
