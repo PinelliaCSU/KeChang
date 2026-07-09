@@ -23,6 +23,8 @@ public class AssignmentSubmit {
     private Double score;
     private String status;        // 待批改 / 已批改
 
+    private Boolean isExcellent;
+
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createTime;
 

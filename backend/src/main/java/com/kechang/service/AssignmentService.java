@@ -229,7 +229,7 @@ public class AssignmentService {
     }
 
     @Transactional
-    public void grade(Long submitId, Double score, String comment, String feedbackMarks, Long teacherId) {
+    public void grade(Long submitId, Double score, String comment, String feedbackMarks, Boolean isExcellent, Long teacherId) {
         AssignmentSubmit s = submitMapper.selectById(submitId);
         if (s == null) {
             throw BusinessException.notFound("提交记录不存在");
@@ -238,6 +238,7 @@ public class AssignmentService {
             throw BusinessException.badRequest("评分必须在 0 到 100 之间");
         }
         s.setScore(score);
+        s.setIsExcellent(Boolean.TRUE.equals(isExcellent));
         s.setStatus("已批改");
         submitMapper.updateById(s);
 
@@ -263,7 +264,7 @@ public class AssignmentService {
                 .eq(AttachmentFile::getTargetId, submitId));
         List<AttachmentFile> feedbackFiles = fileProcessingService.buildAnnotatedFiles(
                 submitId,
-                getAttachments("SUBMIT", submitId),
+                submitFilesForFeedback(s),
                 feedbackMarks
         );
         for (AttachmentFile feedbackFile : feedbackFiles) {
@@ -340,6 +341,7 @@ public class AssignmentService {
         vo.setStatus(assignment.getStatus());
         vo.setCreateBy(assignment.getCreateBy());
         vo.setCreateTime(assignment.getCreateTime());
+        vo.setExcellentSubmits(getExcellentSubmits(assignment.getId()));
 
         Course course = courseMapper.selectById(assignment.getCourseId());
         if (course != null) {
@@ -399,6 +401,7 @@ public class AssignmentService {
         vo.setSubmitTime(submit.getSubmitTime());
         vo.setScore(submit.getScore());
         vo.setStatus(submit.getStatus());
+        vo.setIsExcellent(Boolean.TRUE.equals(submit.getIsExcellent()));
         vo.setCreateTime(submit.getCreateTime());
         vo.setAttachments(getAttachments("SUBMIT", submit.getId()));
         vo.setFeedbackAttachments(getAttachments("FEEDBACK_SUBMIT", submit.getId()));
@@ -429,6 +432,31 @@ public class AssignmentService {
             }
         }
         return vo;
+    }
+
+    private List<AssignmentSubmitVO> getExcellentSubmits(Long assignmentId) {
+        return submitMapper.selectList(new LambdaQueryWrapper<AssignmentSubmit>()
+                        .eq(AssignmentSubmit::getAssignmentId, assignmentId)
+                        .eq(AssignmentSubmit::getIsExcellent, true)
+                        .orderByDesc(AssignmentSubmit::getSubmitTime))
+                .stream()
+                .map(this::toSubmitVO)
+                .collect(Collectors.toList());
+    }
+
+    private List<AttachmentFile> submitFilesForFeedback(AssignmentSubmit submit) {
+        List<AttachmentFile> files = getAttachments("SUBMIT", submit.getId());
+        if (!files.isEmpty() || submit.getAttachmentUrl() == null || submit.getAttachmentUrl().isBlank()) {
+            return files;
+        }
+        AttachmentFile fallback = new AttachmentFile();
+        fallback.setTargetType("SUBMIT");
+        fallback.setTargetId(submit.getId());
+        fallback.setFileUrl(submit.getAttachmentUrl());
+        fallback.setFileName(submit.getAttachmentUrl().substring(submit.getAttachmentUrl().lastIndexOf('/') + 1));
+        fallback.setFileSize(0L);
+        fallback.setSortOrder(0);
+        return List.of(fallback);
     }
 
     private String studentArchiveName(StudentProfile profile, AssignmentSubmit submit) {

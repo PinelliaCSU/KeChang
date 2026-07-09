@@ -71,7 +71,15 @@ public class FileProcessingService {
             Files.createDirectories(previewDir);
             String previewName = stripExtension(source.getFileName().toString()) + "_preview.pdf";
             Path preview = previewDir.resolve(previewName);
+            Path marker = previewDir.resolve(previewName + ".ok");
+            if (Files.exists(preview) && Files.exists(marker)
+                    && Files.getLastModifiedTime(preview).toMillis() >= Files.getLastModifiedTime(source).toMillis()) {
+                return "/uploads/previews/" + previewName;
+            }
             boolean converted = convertWithLibreOffice(source, previewDir, preview);
+            if (converted) {
+                Files.writeString(marker, "libreoffice");
+            }
             if (!converted && !Files.exists(preview)) {
                 createWordPreviewPdf(source, preview, displayName);
             }
@@ -97,7 +105,9 @@ public class FileProcessingService {
                 for (int i = 0; i < document.getNumberOfPages(); i++) {
                     String imageName = "page-" + (i + 1) + ".png";
                     Path imagePath = pageDir.resolve(imageName);
-                    if (!Files.exists(imagePath)) {
+                    boolean staleImage = Files.exists(imagePath)
+                            && Files.getLastModifiedTime(imagePath).toMillis() < Files.getLastModifiedTime(pdfPath).toMillis();
+                    if (!Files.exists(imagePath) || staleImage) {
                         BufferedImage image = renderer.renderImageWithDPI(i, 140);
                         ImageIO.write(image, "png", imagePath.toFile());
                     }

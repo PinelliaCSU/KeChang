@@ -25,6 +25,7 @@ public class AssignmentSubmitVO {
     private String comment;
     private String feedbackMarks;
     private LocalDateTime gradedTime;
+    private Boolean isExcellent;
     private String status;
     private LocalDateTime createTime;
 }

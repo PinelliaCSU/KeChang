@@ -85,6 +85,33 @@
             </el-tabs>
           </section>
 
+          <section class="section" v-if="currentAssignment.excellentSubmits?.length">
+            <div class="section-title-row">
+              <h4>优秀作业参考</h4>
+              <el-tag type="success" size="small">{{ currentAssignment.excellentSubmits.length }} 份</el-tag>
+            </div>
+            <el-collapse class="excellent-list">
+              <el-collapse-item
+                v-for="submit in currentAssignment.excellentSubmits"
+                :key="submit.id"
+                :title="excellentTitle(submit)"
+              >
+                <div class="excellent-card">
+                  <div class="detail-meta">
+                    <span>提交时间：{{ formatDate(submit.submitTime) }}</span>
+                    <span v-if="submit.score != null">得分：{{ submit.score }}</span>
+                  </div>
+                  <div class="text-box">{{ submit.content || '无文字内容' }}</div>
+                  <el-tabs v-if="excellentFiles(submit).length">
+                    <el-tab-pane v-for="(file, index) in excellentFiles(submit)" :key="file.url" :label="file.name || `文件${index + 1}`">
+                      <FilePreview :url="file.url" :name="file.name" />
+                    </el-tab-pane>
+                  </el-tabs>
+                </div>
+              </el-collapse-item>
+            </el-collapse>
+          </section>
+
           <template v-if="!currentAssignment.submitted">
             <section class="section">
               <h4>提交内容</h4>
@@ -167,6 +194,15 @@ const submitFiles = (row) => {
   return row?.submitAttachmentUrl ? [{ url: row.submitAttachmentUrl, name: row.submitAttachmentUrl.split('/').pop(), size: 0 }] : []
 }
 const feedbackFiles = (row) => row?.feedbackAttachments || []
+const excellentFiles = (row) => {
+  if (row?.attachments?.length) return row.attachments.map(att => ({ url: att.fileUrl, name: att.fileName, size: att.fileSize }))
+  return row?.attachmentUrl ? [{ url: row.attachmentUrl, name: row.attachmentUrl.split('/').pop(), size: 0 }] : []
+}
+const excellentTitle = (row) => {
+  const owner = [row.studentNo, row.studentName || '同学'].filter(Boolean).join(' - ')
+  const score = row.score != null ? ` · ${row.score}分` : ''
+  return `${owner || '优秀作业'}${score}`
+}
 const parseMarks = (value) => {
   if (!value) return []
   try {
@@ -276,10 +312,13 @@ onMounted(fetchAssignments)
 .detail-head h3, .section h4, .feedback-side h4 { margin: 0; color: #303133; }
 .detail-meta { display: flex; flex-wrap: wrap; gap: 8px 16px; color: #606266; font-size: 13px; }
 .section { display: flex; flex-direction: column; gap: 10px; }
+.section-title-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .text-box { padding: 12px; border-radius: 8px; background: #f5f7fa; color: #606266; line-height: 1.7; white-space: pre-wrap; }
 .score-card { display: flex; align-items: center; justify-content: space-between; padding: 14px; border-radius: 8px; background: #f0f9eb; color: #67c23a; }
 .score-card strong { font-size: 26px; }
 .feedback-mark-tip { padding: 12px; border: 1px solid #e4e7ed; border-radius: 8px; background: #f8fbff; color: #606266; line-height: 1.6; }
+.excellent-list { border: 1px solid #ebeef5; border-radius: 8px; overflow: hidden; }
+.excellent-card { display: flex; flex-direction: column; gap: 12px; padding: 4px 0 10px; }
 .submit-tip { margin: 8px 0 0; color: #f56c6c; font-size: 13px; }
 .file-list { display: flex; flex-direction: column; gap: 8px; }
 .file-item { display: grid; grid-template-columns: minmax(120px, 1fr) auto auto auto; gap: 10px; align-items: center; padding: 8px 10px; border-radius: 8px; background: #f5f7fa; }

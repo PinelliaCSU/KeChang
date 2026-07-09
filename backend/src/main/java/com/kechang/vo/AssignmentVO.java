@@ -30,6 +30,7 @@ public class AssignmentVO {
     private String submitAttachmentUrl;
     private List<AttachmentFile> submitAttachments;
     private List<AttachmentFile> feedbackAttachments;
+    private List<AssignmentSubmitVO> excellentSubmits;
     private LocalDateTime submitTime;
     private String mySubmitStatus;
     private Double myScore;

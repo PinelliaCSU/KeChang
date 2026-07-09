@@ -113,6 +113,12 @@
           <template #default="{ row }">{{ row.score != null ? row.score : '未评' }}</template>
         </el-table-column>
         <el-table-column prop="comment" label="评语" min-width="140" show-overflow-tooltip />
+        <el-table-column label="优秀" width="70">
+          <template #default="{ row }">
+            <el-tag v-if="row.isExcellent" type="success" size="small">优秀</el-tag>
+            <span v-else class="muted">--</span>
+          </template>
+        </el-table-column>
         <el-table-column label="操作" width="110">
           <template #default="{ row }">
             <el-button size="small" type="primary" @click="openGradeDialog(row)">在线批阅</el-button>
@@ -150,6 +156,9 @@
                 style="width:160px" /></el-form-item>
             <el-form-item label="评语"><el-input v-model="gradeForm.comment" type="textarea" :rows="4"
                 placeholder="给学生的整体评语" /></el-form-item>
+            <el-form-item label="优秀作业">
+              <el-checkbox v-model="gradeForm.isExcellent">设为优秀作业，供选课学生参考</el-checkbox>
+            </el-form-item>
           </el-form>
           <div class="review-mark-summary">
             <strong>文件贴纸批注</strong>
@@ -160,6 +169,7 @@
       <template #footer>
         <el-button @click="gradeDialogVisible = false">取消</el-button>
         <el-button type="primary" :loading="grading" @click="doGrade">保存反馈并评分</el-button>
+        <el-button type="success" plain :disabled="!hasNextSubmit" @click="openNextSubmit">批改下一个</el-button>
       </template>
     </el-dialog>
 
@@ -177,7 +187,7 @@
 </template>
 
 <script setup>
-import { onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { assignmentApi, courseApi, uploadApi } from '@/api'
 import FilePreview from '@/components/FilePreview.vue'
@@ -211,7 +221,9 @@ const previewFilesList = ref([])
 const activePreviewFile = ref('0')
 
 const form = reactive({ title: '', courseId: null, chapterId: null, content: '', deadline: '', totalScore: 100, attachmentUrl: '', files: [] })
-const gradeForm = reactive({ score: 0, comment: '' })
+const gradeForm = reactive({ score: 0, comment: '', isExcellent: false })
+const currentSubmitIndex = computed(() => submits.value.findIndex(item => item.id === currentSubmit.value?.id))
+const hasNextSubmit = computed(() => currentSubmitIndex.value >= 0 && currentSubmitIndex.value < submits.value.length - 1)
 
 const normalizeFiles = (row, urlKey = 'attachmentUrl') => {
   if (row?.attachments?.length) {
@@ -354,26 +366,44 @@ const openGradeDialog = (row) => {
   currentSubmit.value = row
   gradeForm.score = row.score ?? 0
   gradeForm.comment = row.comment || ''
+  gradeForm.isExcellent = Boolean(row.isExcellent)
   feedbackMarks.value = parseMarks(row.feedbackMarks)
   activeReviewFile.value = '0'
   gradeDialogVisible.value = true
 }
 const doGrade = async () => {
   if (!currentSubmit.value) return
+  const submitId = currentSubmit.value.id
   grading.value = true
   try {
-    await assignmentApi.grade(currentSubmit.value.id, {
+    await assignmentApi.grade(submitId, {
       score: gradeForm.score,
       comment: gradeForm.comment,
-      feedbackMarks: JSON.stringify(feedbackMarks.value)
+      feedbackMarks: JSON.stringify(feedbackMarks.value),
+      isExcellent: gradeForm.isExcellent
     })
-    ElMessage.success('反馈已保存')
-    gradeDialogVisible.value = false
-    await viewSubmits({ id: currentAssignmentId.value || currentSubmit.value.assignmentId })
+    ElMessage.success('提交成功')
+    await refreshSubmits()
+    const latest = submits.value.find(item => item.id === submitId)
+    if (latest) openGradeDialog(latest)
     fetchAssignments()
   } finally {
     grading.value = false
   }
+}
+const refreshSubmits = async () => {
+  if (!currentAssignmentId.value) return
+  subLoading.value = true
+  try {
+    const res = await assignmentApi.getSubmitList(currentAssignmentId.value, { page: 1, size: 100 })
+    if (res.data.code === 200) submits.value = res.data.data?.records || []
+  } finally {
+    subLoading.value = false
+  }
+}
+const openNextSubmit = () => {
+  if (!hasNextSubmit.value) return
+  openGradeDialog(submits.value[currentSubmitIndex.value + 1])
 }
 const previewFiles = (files, title = '文件预览') => {
   previewFilesList.value = files

@@ -111,7 +111,8 @@ public class AssignmentController {
             @RequestBody(required = false) Map<String, Object> body,
             @RequestParam(required = false) Double score,
             @RequestParam(required = false) String comment,
-            @RequestParam(required = false) String feedbackMarks) {
+            @RequestParam(required = false) String feedbackMarks,
+            @RequestParam(required = false) Boolean isExcellent) {
         if (body != null) {
             if (body.get("score") instanceof Number number) {
                 score = number.doubleValue();
@@ -124,8 +125,13 @@ public class AssignmentController {
             if (body.get("feedbackMarks") != null) {
                 feedbackMarks = body.get("feedbackMarks").toString();
             }
+            if (body.get("isExcellent") instanceof Boolean value) {
+                isExcellent = value;
+            } else if (body.get("isExcellent") != null) {
+                isExcellent = Boolean.parseBoolean(body.get("isExcellent").toString());
+            }
         }
-        assignmentService.grade(submitId, score, comment, feedbackMarks, getUserId());
+        assignmentService.grade(submitId, score, comment, feedbackMarks, isExcellent, getUserId());
         return Result.success();
     }
 }
