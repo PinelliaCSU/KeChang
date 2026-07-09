@@ -44,6 +44,7 @@ const routes = [
       { path: 'dashboard', name: 'TeacherDashboard', component: () => import('@/views/teacher/TeacherDashboard.vue'), meta: { title: '教师仪表盘' } },
       { path: 'courses', name: 'TeacherCourses', component: () => import('@/views/teacher/TeacherCourses.vue'), meta: { title: '课程管理' } },
       { path: 'courses/:id', name: 'TeacherCourseDetail', component: () => import('@/views/teacher/TeacherCourseDetail.vue'), meta: { title: '课程详情' } },
+      { path: 'courses/:id/edit', name: 'TeacherCourseEdit', component: () => import('@/views/teacher/TeacherCourseEdit.vue'), meta: { title: '编辑课程' } },
       { path: 'questions', name: 'TeacherQuestions', component: () => import('@/views/teacher/TeacherQuestions.vue'), meta: { title: '试题管理' } },
       { path: 'papers', name: 'TeacherPapers', component: () => import('@/views/teacher/TeacherPapers.vue'), meta: { title: '试卷管理' } },
       { path: 'exams', name: 'TeacherExams', component: () => import('@/views/teacher/TeacherExams.vue'), meta: { title: '考试管理' } },

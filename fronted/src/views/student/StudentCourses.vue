@@ -10,8 +10,10 @@
     <div class="panel" v-if="filteredCourses.length > 0">
       <div class="course-grid">
         <div class="course-card" v-for="course in filteredCourses" :key="course.id" @click="viewDetail(course)">
-          <div class="card-cover" :style="{ background: getCoverGradient(course.id) }">
-            <CourseCoverPattern />
+          <div class="card-cover"
+            :style="{ background: course.coverImg ? `url(${resolveFileUrl(course.coverImg)}) center/cover no-repeat` : getCoverGradient(course.id) }"
+            :class="{ 'has-cover': course.coverImg }">
+            <CourseCoverPattern v-if="!course.coverImg" />
           </div>
           <div class="card-body">
             <h4 class="card-title" :title="course.courseName || course.name">{{ course.courseName || course.name }}</h4>
@@ -56,6 +58,7 @@ import { ElMessage } from 'element-plus'
 import CourseCoverPattern from '@/components/CourseCoverPattern.vue'
 import EmptyIllustration from '@/components/EmptyIllustration.vue'
 import { computeStatus, statusTagType } from '@/utils/status'
+import { resolveFileUrl } from '@/utils/fileUrl'
 
 const router = useRouter()
 const courses = ref([])
@@ -198,6 +201,11 @@ onMounted(fetchCourses)
   height: 100px;
   position: relative;
   overflow: hidden;
+}
+
+.card-cover.has-cover {
+  background-size: cover !important;
+  background-position: center !important;
 }
 
 .card-body {
