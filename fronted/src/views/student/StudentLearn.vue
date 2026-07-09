@@ -10,13 +10,15 @@
     </div>
 
     <div class="learn-tabs">
-      <span class="active">章节</span>
-      <span>课件</span>
-      <span>作业</span>
-      <span>笔记</span>
+      <span :class="{ active: activeTab === 'chapter' }" @click="activeTab = 'chapter'">章节</span>
+      <span :class="{ active: activeTab === 'announcement' }" @click="activeTab = 'announcement'">公告</span>
+      <span :class="{ active: activeTab === 'resource' }" @click="activeTab = 'resource'">课件</span>
+      <span :class="{ active: activeTab === 'assignment' }" @click="activeTab = 'assignment'">作业</span>
+      <span :class="{ active: activeTab === 'note' }" @click="activeTab = 'note'">笔记</span>
     </div>
 
-    <div class="chapter-panel">
+    <!-- 章节 -->
+    <div class="chapter-panel" v-if="activeTab === 'chapter'">
       <el-collapse v-model="openChapterNames">
         <el-collapse-item v-for="chapter in chapters" :key="chapter.id" :name="String(chapter.id)">
           <template #title>
@@ -53,7 +55,63 @@
       <el-empty v-if="chapters.length === 0" description="暂无章节内容" :image-size="110" />
     </div>
 
-    <div class="note-panel">
+    <!-- 公告 -->
+    <div class="announcement-panel" v-if="activeTab === 'announcement'">
+      <div v-if="announcements.length > 0" class="announcement-list">
+        <div class="announcement-card" v-for="a in announcements" :key="a.id">
+          <div class="announcement-card-header">
+            <h3>{{ a.title }}</h3>
+            <el-tag :type="a.confirmed ? 'success' : 'warning'" size="small">
+              {{ a.confirmed ? '已确认' : '待确认' }}
+            </el-tag>
+          </div>
+          <p class="announcement-desc">{{ truncateContent(a.content) }}</p>
+          <div class="announcement-meta">
+            <span>{{ formatTime(a.publishTime) }}</span>
+            <span>{{ a.publisherName || '' }}</span>
+            <span>{{ a.confirmCount || 0 }} 人已确认</span>
+          </div>
+          <div class="announcement-actions">
+            <el-button v-if="!a.confirmed" type="primary" size="small" @click="handleConfirm(a)">
+              确认公告
+            </el-button>
+            <el-button v-else type="success" size="small" disabled>已确认</el-button>
+          </div>
+        </div>
+      </div>
+      <el-empty v-else description="暂无课程公告" :image-size="100" />
+    </div>
+
+    <!-- 课件 -->
+    <div class="resource-panel" v-if="activeTab === 'resource'">
+      <div v-if="resources.length > 0">
+        <div v-for="resource in resources" :key="`res-${resource.id}`" class="learn-item">
+          <span class="item-icon">📎</span>
+          <span class="item-name">{{ resource.resourceName }}</span>
+          <span class="item-meta">{{ resource.resourceType }}</span>
+          <el-button size="small" type="primary" link @click="previewFile(resource)">预览</el-button>
+        </div>
+      </div>
+      <el-empty v-else description="暂无课件资源" :image-size="100" />
+    </div>
+
+    <!-- 作业 -->
+    <div class="assignment-panel" v-if="activeTab === 'assignment'">
+      <div v-if="assignments.length > 0">
+        <div v-for="assignment in assignments" :key="`as-${assignment.id}`" class="learn-item">
+          <span class="item-icon assignment">作</span>
+          <span class="item-name">{{ assignment.title }}</span>
+          <span class="item-meta">截止 {{ formatDate(assignment.deadline) }}</span>
+          <el-button size="small" @click="router.push('/student/assignments')">
+            {{ assignment.submitted ? '查看提交' : '去完成' }}
+          </el-button>
+        </div>
+      </div>
+      <el-empty v-else description="暂无作业" :image-size="100" />
+    </div>
+
+    <!-- 笔记 -->
+    <div class="note-panel" v-if="activeTab === 'note'">
       <h4>学习笔记</h4>
       <el-input v-model="noteContent" type="textarea" :rows="3" placeholder="在此输入本课程学习笔记..." />
       <div class="note-actions">
@@ -70,7 +128,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { assignmentApi, courseApi, knowledgeApi } from '@/api'
+import { assignmentApi, courseApi, knowledgeApi, announcementApi } from '@/api'
 import { ElMessage } from 'element-plus'
 import FilePreview from '@/components/FilePreview.vue'
 
@@ -80,19 +138,22 @@ const course = ref({})
 const chapters = ref([])
 const resources = ref([])
 const assignments = ref([])
+const announcements = ref([])
 const openChapterNames = ref([])
 const noteContent = ref('')
 const previewVisible = ref(false)
 const previewResource = ref(null)
+const activeTab = ref('chapter')
 
 const courseId = () => route.params.id
 
 const fetchCourseData = async () => {
   try {
-    const [courseRes, resourceRes, assignmentRes] = await Promise.all([
+    const [courseRes, resourceRes, assignmentRes, announcementRes] = await Promise.all([
       courseApi.detail(courseId()),
       courseApi.getResources(courseId()),
-      assignmentApi.list({ page: 1, size: 200, courseId: courseId() })
+      assignmentApi.list({ page: 1, size: 200, courseId: courseId() }),
+      announcementApi.list({ page: 1, size: 50, courseId: courseId() })
     ])
     if (courseRes.data.code === 200) {
       course.value = courseRes.data.data || {}
@@ -101,6 +162,7 @@ const fetchCourseData = async () => {
     }
     if (resourceRes.data.code === 200) resources.value = resourceRes.data.data || []
     if (assignmentRes.data.code === 200) assignments.value = assignmentRes.data.data?.records || []
+    if (announcementRes.data.code === 200) announcements.value = announcementRes.data.data?.records || []
   } catch (e) {
     ElMessage.error('课程内容加载失败')
   }
@@ -109,6 +171,19 @@ const fetchCourseData = async () => {
 const resourcesByChapter = (chapterId) => resources.value.filter(resource => resource.chapterId === chapterId)
 const assignmentsByChapter = (chapterId) => assignments.value.filter(assignment => assignment.chapterId === chapterId)
 const formatDate = (value) => value ? String(value).replace('T', ' ').slice(0, 16) : '--'
+
+const formatTime = (t) => {
+  if (!t) return '-'
+  const d = new Date(t)
+  const pad = n => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
+const truncateContent = (content) => {
+  if (!content) return '暂无内容'
+  const text = content.replace(/<[^>]*>/g, '')
+  return text.length > 200 ? text.substring(0, 200) + '...' : text
+}
 
 const previewFile = (resource) => {
   previewResource.value = resource
@@ -133,6 +208,15 @@ const saveNote = async () => {
   }
 }
 
+const handleConfirm = async (announcement) => {
+  try {
+    await announcementApi.confirm(announcement.id)
+    ElMessage.success('公告确认成功')
+    announcement.confirmed = true
+    announcement.confirmCount = (announcement.confirmCount || 0) + 1
+  } catch (e) { /* ignore */ }
+}
+
 onMounted(fetchCourseData)
 </script>
 
@@ -142,9 +226,10 @@ onMounted(fetchCourseData)
 .course-title { display: inline-block; margin: 0 0 8px 8px; font-size: 24px; color: #303133; }
 .course-meta { margin: 0; color: #909399; font-size: 14px; }
 .learn-tabs { display: flex; gap: 44px; border-bottom: 1px solid #e4e7ed; color: #606266; font-size: 18px; }
-.learn-tabs span { padding: 0 0 12px; }
+.learn-tabs span { padding: 0 0 12px; cursor: pointer; transition: color 0.2s; }
+.learn-tabs span:hover { color: #20bfc8; }
 .learn-tabs .active { color: #20bfc8; border-bottom: 3px solid #20bfc8; }
-.chapter-panel, .note-panel { background: #fff; border: 1px solid #e4e7ed; border-radius: 8px; padding: 24px; }
+.chapter-panel, .note-panel, .announcement-panel, .resource-panel, .assignment-panel { background: #fff; border: 1px solid #e4e7ed; border-radius: 8px; padding: 24px; }
 .chapter-title { width: 100%; display: flex; justify-content: space-between; padding-right: 20px; font-size: 18px; }
 .chapter-stat { color: #909399; font-size: 13px; font-weight: 400; }
 .chapter-body { padding: 12px 24px 20px; }
@@ -155,4 +240,14 @@ onMounted(fetchCourseData)
 .item-meta { color: #909399; font-size: 13px; }
 .note-panel h4 { margin: 0 0 12px; color: #303133; }
 .note-actions { display: flex; justify-content: flex-end; margin-top: 12px; }
+
+/* 公告样式 */
+.announcement-list { display: flex; flex-direction: column; gap: 16px; }
+.announcement-card { padding: 20px; border: 1px solid #ebeef5; border-radius: 10px; transition: box-shadow 0.2s; }
+.announcement-card:hover { box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
+.announcement-card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.announcement-card-header h3 { margin: 0; font-size: 16px; color: #303133; }
+.announcement-desc { font-size: 13px; color: #909399; margin-bottom: 12px; line-height: 1.6; }
+.announcement-meta { display: flex; flex-wrap: wrap; gap: 16px; font-size: 12px; color: #909399; margin-bottom: 12px; }
+.announcement-actions { display: flex; align-items: center; justify-content: flex-end; }
 </style>

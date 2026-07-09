@@ -19,7 +19,8 @@ public class Notification {
     private String content;
     private Long senderId;
     private LocalDateTime sendTime;
-    private String notificationType;  // 系统 / 课程 / 考试 / 作业
+    private String notificationType;  // 系统 / 课程 / 考试 / 作业 / 公告
+    private Long courseId;            // 关联课程ID (仅公告类型使用)
 
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createTime;
