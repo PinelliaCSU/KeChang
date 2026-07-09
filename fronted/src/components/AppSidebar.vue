@@ -72,7 +72,8 @@ const teacherMenus = [
       { path: '/teacher/announcements', title: '公告管理' },
       { path: '/teacher/posts', title: '互动问答' },
       { path: '/teacher/surveys', title: '问卷管理' },
-      { path: '/teacher/evaluations', title: '教学评价' }
+      { path: '/teacher/evaluations', title: '教学评价' },
+      { path: '/teacher/messages', title: '私信' }
     ]
   }
 ]
@@ -87,6 +88,7 @@ const studentMenus = [
   { path: '/student/notes', title: '学习笔记', icon: 'Edit' },
   { path: '/student/trainings', title: '实训中心', icon: 'Monitor' },
   { path: '/student/posts', title: '互动问答', icon: 'ChatDotRound' },
+  { path: '/student/messages', title: '私信', icon: 'Message' },
   { path: '/student/knowledge', title: '知识库', icon: 'Collection' },
   { path: '/student/evaluations', title: '教学评价', icon: 'Star' },
   { path: '/student/surveys', title: '问卷调查', icon: 'DocumentChecked' }

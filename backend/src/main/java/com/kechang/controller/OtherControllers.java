@@ -3,6 +3,7 @@ package com.kechang.controller;
 import com.kechang.common.PageResult;
 import com.kechang.common.Result;
 import com.kechang.dto.AnnouncementDTO;
+import com.kechang.dto.SendMessageDTO;
 import com.kechang.dto.SurveyCreateDTO;
 import com.kechang.dto.SurveySubmitDTO;
 import com.kechang.entity.*;
@@ -645,5 +646,60 @@ class UploadController {
     public Result<Map<String, Object>> pdfPages(@RequestParam String url,
             @RequestParam(required = false) String name) {
         return Result.success(fileProcessingService.renderPdfPages(url, name));
+    }
+}
+
+// ==================== 私信 ====================
+@RestController
+@RequestMapping("/api/messages")
+@RequiredArgsConstructor
+class MessageController {
+
+    private final MessageService messageService;
+
+    private Long uid() {
+        return (Long) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+    }
+
+    private String role() {
+        return SecurityContextHolder.getContext().getAuthentication().getAuthorities()
+                .stream().findFirst().map(Object::toString).orElse("");
+    }
+
+    /** 会话列表 */
+    @GetMapping("/conversations")
+    public Result<PageResult<Map<String, Object>>> listConversations(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        return Result.success(messageService.listConversations(uid(), page, size));
+    }
+
+    /** 与某用户的聊天记录 */
+    @GetMapping("/with/{otherUserId}")
+    public Result<PageResult<Map<String, Object>>> getMessages(
+            @PathVariable Long otherUserId,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "30") int size) {
+        return Result.success(messageService.getMessages(uid(), otherUserId, page, size));
+    }
+
+    /** 发送消息 */
+    @PostMapping
+    @PreAuthorize("hasAnyAuthority('ROLE_TEACHER','ROLE_STUDENT')")
+    public Result<Map<String, Object>> send(@Valid @RequestBody SendMessageDTO dto) {
+        return Result.success(messageService.sendMessage(uid(), dto));
+    }
+
+    /** 未读消息总数 */
+    @GetMapping("/unread-total")
+    public Result<Long> unreadTotal() {
+        return Result.success(messageService.unreadTotal(uid()));
+    }
+
+    /** 联系人列表 */
+    @GetMapping("/contacts")
+    public Result<List<Map<String, Object>>> getContacts(
+            @RequestParam(required = false) String keyword) {
+        return Result.success(messageService.getContacts(uid(), role(), keyword));
     }
 }

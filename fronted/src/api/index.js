@@ -187,3 +187,12 @@ export const uploadApi = {
   preview: (params) => request.get('/upload/preview', { params }),
   pdfPages: (params) => request.get('/upload/pdf-pages', { params })
 }
+
+/** 私信 API */
+export const messageApi = {
+  conversations: (params) => request.get('/messages/conversations', { params }),
+  messages: (otherUserId, params) => request.get(`/messages/with/${otherUserId}`, { params }),
+  send: (data) => request.post('/messages', data),
+  unreadTotal: () => request.get('/messages/unread-total'),
+  contacts: (params) => request.get('/messages/contacts', { params })
+}
