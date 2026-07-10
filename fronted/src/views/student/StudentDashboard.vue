@@ -87,15 +87,7 @@
           <el-empty v-else description="暂无待办" :image-size="80" />
         </div>
 
-        <div class="panel shortcut-panel">
-          <h4 class="section-title">常用入口</h4>
-          <div class="shortcut-grid">
-            <button v-for="item in quickActions" :key="item.route" class="shortcut-item" @click="router.push(item.route)">
-              <el-icon :size="20"><component :is="item.icon" /></el-icon>
-              <span>{{ item.label }}</span>
-            </button>
-          </div>
-        </div>
+        <ShortcutPanel />
       </div>
     </div>
 
@@ -134,6 +126,7 @@
 import { computed, ref, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { dashboardApi, courseApi, participationApi, assignmentApi, examApi, trainingApi, messageApi, evaluationApi, surveyApi, announcementApi } from '@/api'
+import ShortcutPanel from '@/components/DashBoard/ShortcutPanel.vue'
 import * as echarts from 'echarts'
 
 const router = useRouter()
@@ -147,14 +140,6 @@ const pointCourses = computed(() => Array.isArray(pointsOverview.value.courses) 
 const todoTotal = computed(() => todos.value.length)
 const activeTrend = computed(() => Array.isArray(stats.value.activeTrend) ? stats.value.activeTrend : [])
 const weeklyActivityTotal = computed(() => activeTrend.value.reduce((sum, item) => sum + Number(item.count || 0), 0))
-const quickActions = [
-  { label: '课程中心', route: '/student/courses', icon: 'Reading' },
-  { label: '我的作业', route: '/student/assignments', icon: 'Edit' },
-  { label: '在线考试', route: '/student/exams', icon: 'Timer' },
-  { label: '随堂测验', route: '/student/class-quizzes', icon: 'Connection' },
-  { label: '课堂签到', route: '/student/checkin', icon: 'Checked' },
-  { label: '实训中心', route: '/student/trainings', icon: 'Tools' }
-]
 
 const fmt = (d) => {
   if (!d) return '未设定'

@@ -68,15 +68,7 @@
           <el-empty v-else description="暂无待办" :image-size="80" />
         </div>
 
-        <div class="panel shortcut-panel">
-          <h4 class="section-title">常用入口</h4>
-          <div class="shortcut-grid">
-            <button v-for="item in quickActions" :key="item.route" class="shortcut-item" @click="router.push(item.route)">
-              <el-icon :size="20"><component :is="item.icon" /></el-icon>
-              <span>{{ item.label }}</span>
-            </button>
-          </div>
-        </div>
+        <ShortcutPanel />
       </div>
     </div>
   </div>
@@ -86,6 +78,7 @@
 import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { dashboardApi, assignmentApi, examApi, messageApi, qaApi } from '@/api'
+import ShortcutPanel from '@/components/DashBoard/ShortcutPanel.vue'
 import * as echarts from 'echarts'
 
 const router = useRouter()
@@ -94,16 +87,6 @@ const todos = ref([])
 const chartRef = ref(null)
 
 const todoTotal = computed(() => todos.value.length)
-const quickActions = [
-  { label: '课程管理', route: '/teacher/courses', icon: 'Reading' },
-  { label: '作业管理', route: '/teacher/assignments', icon: 'Edit' },
-  { label: '考试管理', route: '/teacher/exams', icon: 'Timer' },
-  { label: '随堂测验', route: '/teacher/class-quizzes', icon: 'Connection' },
-  { label: '课堂签到', route: '/teacher/checkin', icon: 'Checked' },
-  { label: '随机点名', route: '/teacher/roll-call', icon: 'User' },
-  { label: '实训管理', route: '/teacher/trainings', icon: 'Tools' },
-  { label: '成绩管理', route: '/teacher/grades', icon: 'TrendCharts' }
-]
 
 const formatTime = (t) => {
   if (!t) return '--'
