@@ -48,7 +48,7 @@ import { ref, computed, onMounted } from 'vue'
 import { RefreshRight } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 import { assignmentApi, examApi, trainingApi } from '@/api'
-import DashboardHeader from '@/components/DashboardHeader.vue'
+import DashboardHeader from '@/components/DashBoard/DashboardHeader.vue'
 
 const userStore = useUserStore()
 const date = ref(new Date())
