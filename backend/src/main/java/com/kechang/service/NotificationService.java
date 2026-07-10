@@ -30,6 +30,7 @@ public class NotificationService {
     private final CourseMapper courseMapper;
     private final CourseStudentMapper courseStudentMapper;
     private final SysUserMapper sysUserMapper;
+    private final SysRoleMapper sysRoleMapper;
     private final StudentProfileMapper studentProfileMapper;
 
     // ==================== 通用通知 ====================
@@ -117,6 +118,78 @@ public class NotificationService {
 
     public void send(Notification n) {
         notifMapper.insert(n);
+    }
+
+    @Transactional
+    public void sendToCourseStudents(Long courseId, Long senderId, String type, String title, String content) {
+        if (courseId == null) {
+            return;
+        }
+        Notification n = new Notification();
+        n.setTitle(title);
+        n.setContent(content);
+        n.setSenderId(senderId);
+        n.setSendTime(LocalDateTime.now());
+        n.setNotificationType(type);
+        n.setCourseId(courseId);
+        notifMapper.insert(n);
+
+        List<CourseStudent> students = courseStudentMapper.selectList(
+                new LambdaQueryWrapper<CourseStudent>().eq(CourseStudent::getCourseId, courseId));
+        for (CourseStudent cs : students) {
+            NotificationUser nu = new NotificationUser();
+            nu.setNotificationId(n.getId());
+            nu.setUserId(cs.getStudentId());
+            nu.setIsRead(0);
+            notifUserMapper.insert(nu);
+        }
+    }
+
+    @Transactional
+    public void sendToUser(Long userId, Long senderId, Long courseId, String type, String title, String content) {
+        if (userId == null) {
+            return;
+        }
+        Notification n = new Notification();
+        n.setTitle(title);
+        n.setContent(content);
+        n.setSenderId(senderId);
+        n.setSendTime(LocalDateTime.now());
+        n.setNotificationType(type);
+        n.setCourseId(courseId);
+        notifMapper.insert(n);
+
+        NotificationUser nu = new NotificationUser();
+        nu.setNotificationId(n.getId());
+        nu.setUserId(userId);
+        nu.setIsRead(0);
+        notifUserMapper.insert(nu);
+    }
+
+    @Transactional
+    public void sendToRole(String roleCode, Long senderId, String type, String title, String content) {
+        SysRole role = sysRoleMapper.selectOne(new LambdaQueryWrapper<SysRole>().eq(SysRole::getRoleCode, roleCode));
+        if (role == null) {
+            return;
+        }
+        Notification n = new Notification();
+        n.setTitle(title);
+        n.setContent(content);
+        n.setSenderId(senderId);
+        n.setSendTime(LocalDateTime.now());
+        n.setNotificationType(type);
+        notifMapper.insert(n);
+
+        List<SysUser> users = sysUserMapper.selectList(new LambdaQueryWrapper<SysUser>()
+                .eq(SysUser::getRoleId, role.getId())
+                .eq(SysUser::getStatus, 0));
+        for (SysUser user : users) {
+            NotificationUser nu = new NotificationUser();
+            nu.setNotificationId(n.getId());
+            nu.setUserId(user.getId());
+            nu.setIsRead(0);
+            notifUserMapper.insert(nu);
+        }
     }
 
     // ==================== 公告功能 ====================

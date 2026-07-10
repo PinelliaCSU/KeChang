@@ -145,7 +145,7 @@ const handleLogin = async () => {
     if (res.data.code === 200) {
       userStore.setLoginData(res.data.data)
       ElMessage.success('登录成功')
-      router.push('/dashboard')
+      router.push(roleHome())
     }
   } catch (e) {
     ElMessage.error(e.response?.data?.message || '登录失败')
@@ -175,13 +175,20 @@ const handleRegister = async () => {
     if (res.data.code === 200) {
       userStore.setLoginData(res.data.data)
       ElMessage.success('注册成功')
-      router.push('/dashboard')
+      router.push(roleHome())
     }
   } catch (e) {
     ElMessage.error(e.response?.data?.message || '注册失败')
   } finally {
     loading.value = false
   }
+}
+
+const roleHome = () => {
+  if (userStore.roleCode === 'ROLE_ADMIN') return '/admin/courses'
+  if (userStore.roleCode === 'ROLE_TEACHER') return '/teacher/dashboard'
+  if (userStore.roleCode === 'ROLE_STUDENT') return '/student/dashboard'
+  return '/dashboard'
 }
 </script>
 

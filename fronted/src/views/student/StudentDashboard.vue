@@ -1,7 +1,10 @@
 <template>
   <div class="page-shell">
     <div class="page-title-bar">
-      <h2 class="page-title">我的仪表盘</h2>
+      <div>
+        <h2 class="page-title">我的主页</h2>
+        <p class="page-subtitle">查看今日待办、课程进度和课堂积分</p>
+      </div>
     </div>
 
     <div class="stat-row">
@@ -44,30 +47,55 @@
     </div>
 
     <div class="content-row">
-      <div class="panel chart-panel">
-        <h4 class="section-title">学习日历 · 本周学习: 12.5h</h4>
-        <div ref="chartRef" style="height:280px"></div>
-      </div>
-      <div class="panel deadline-panel">
-        <h4 class="section-title">待办事项 ({{ todoTotal }})</h4>
-        <div class="todo-list-scroll" v-if="todos.length > 0">
-          <div v-for="(t, idx) in todos" :key="idx" class="todo-item" @click="handleTodoClick(t)">
-            <span class="todo-dot" :class="'dot-' + t.type"></span>
-            <div class="todo-body">
-              <span class="todo-text">{{ t.title }}</span>
-              <span class="todo-meta">{{ t.courseName }} · {{ t.deadline }}</span>
+      <div class="main-stack">
+        <div class="panel chart-panel">
+          <h4 class="section-title">学习动态 · 本周完成: {{ weeklyActivityTotal }} 项</h4>
+          <div ref="chartRef" style="height:280px"></div>
+        </div>
+
+        <div class="panel progress-panel">
+          <div class="section-head">
+            <h4 class="section-title">我的课程进度</h4>
+            <span class="section-hint">{{ courses.length }} 门课程</span>
+          </div>
+          <div v-if="courses.length" class="course-progress-grid">
+            <div v-for="c in courses" :key="c.name" class="progress-card">
+              <div class="progress-card-head">
+                <span class="progress-label">{{ c.name }}</span>
+                <strong>{{ c.progress }}%</strong>
+              </div>
+              <el-progress :percentage="c.progress" :color="c.color" :stroke-width="10" :show-text="false" />
             </div>
           </div>
+          <el-empty v-else description="暂无课程进度" :image-size="80" />
         </div>
-        <el-empty v-else description="暂无待办" :image-size="80" />
-      </div>
-    </div>
 
-    <div class="panel">
-      <h4 class="section-title">我的课程进度</h4>
-      <div v-for="c in courses" :key="c.name" class="progress-item">
-        <span class="progress-label">{{ c.name }}</span>
-        <el-progress :percentage="c.progress" :color="c.color" :stroke-width="14" />
+      </div>
+
+      <div class="side-stack">
+        <div class="panel deadline-panel">
+          <h4 class="section-title">待办事项 ({{ todoTotal }})</h4>
+          <div class="todo-list-scroll" v-if="todos.length > 0">
+            <div v-for="(t, idx) in todos" :key="idx" class="todo-item" @click="handleTodoClick(t)">
+              <span class="todo-dot" :class="'dot-' + t.type"></span>
+              <div class="todo-body">
+                <span class="todo-text">{{ t.title }}</span>
+                <span class="todo-meta">{{ t.courseName }} · {{ t.deadline }}</span>
+              </div>
+            </div>
+          </div>
+          <el-empty v-else description="暂无待办" :image-size="80" />
+        </div>
+
+        <div class="panel shortcut-panel">
+          <h4 class="section-title">常用入口</h4>
+          <div class="shortcut-grid">
+            <button v-for="item in quickActions" :key="item.route" class="shortcut-item" @click="router.push(item.route)">
+              <el-icon :size="20"><component :is="item.icon" /></el-icon>
+              <span>{{ item.label }}</span>
+            </button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -117,6 +145,16 @@ const pointsOverview = ref({ courseCount: 0, courses: [], records: [] })
 const pointsVisible = ref(false)
 const pointCourses = computed(() => Array.isArray(pointsOverview.value.courses) ? pointsOverview.value.courses : [])
 const todoTotal = computed(() => todos.value.length)
+const activeTrend = computed(() => Array.isArray(stats.value.activeTrend) ? stats.value.activeTrend : [])
+const weeklyActivityTotal = computed(() => activeTrend.value.reduce((sum, item) => sum + Number(item.count || 0), 0))
+const quickActions = [
+  { label: '课程中心', route: '/student/courses', icon: 'Reading' },
+  { label: '我的作业', route: '/student/assignments', icon: 'Edit' },
+  { label: '在线考试', route: '/student/exams', icon: 'Timer' },
+  { label: '随堂测验', route: '/student/class-quizzes', icon: 'Connection' },
+  { label: '课堂签到', route: '/student/checkin', icon: 'Checked' },
+  { label: '实训中心', route: '/student/trainings', icon: 'Tools' }
+]
 
 const fmt = (d) => {
   if (!d) return '未设定'
@@ -290,7 +328,7 @@ const fetchData = async () => {
       courses.value = list.map((c, i) => ({
         id: c.id,
         name: c.courseName,
-        progress: Math.floor(Math.random() * 60 + 30),
+        progress: Math.max(0, Math.min(100, Math.round(Number(c.progress || 0)))),
         color: ['#7f8c52', '#6b8e4e', '#b08968', '#5c7a8a', '#9c6644'][i % 5]
       }))
     }
@@ -311,10 +349,10 @@ onMounted(async () => {
     const chart = echarts.init(chartRef.value)
     chart.setOption({
       tooltip: { trigger: 'axis' },
-      xAxis: { type: 'category', data: ['周一', '周二', '周三', '周四', '周五', '周六', '周日'] },
-      yAxis: { type: 'value', name: '小时' },
+      xAxis: { type: 'category', data: activeTrend.value.map(item => String(item.date || '').slice(5)) },
+      yAxis: { type: 'value', name: '完成项' },
       series: [{
-        data: [2.5, 3.0, 1.5, 2.0, 2.5, 1.0, 0.5],
+        data: activeTrend.value.map(item => item.count || 0),
         type: 'bar', barWidth: '50%',
         itemStyle: { color: '#7f8c52', borderRadius: [4, 4, 0, 0] }
       }]
@@ -348,6 +386,12 @@ onUnmounted(() => {
   margin: 0;
 }
 
+.page-subtitle {
+  margin: 6px 0 0;
+  color: var(--bio-ink-muted);
+  font-size: 13px;
+}
+
 .stat-row {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -355,8 +399,8 @@ onUnmounted(() => {
 }
 
 .stat-card {
-  background: var(--bio-paper);
-  border-radius: var(--bio-radius-md);
+  background: linear-gradient(145deg, #ffffff 0%, #fbfaf5 100%);
+  border-radius: 14px;
   box-shadow: var(--bio-shadow-sm);
   padding: 20px 24px;
   display: flex;
@@ -368,6 +412,7 @@ onUnmounted(() => {
 
 .stat-card:hover {
   box-shadow: var(--bio-shadow-md);
+  transform: translateY(-1px);
 }
 
 .point-card {
@@ -401,22 +446,25 @@ onUnmounted(() => {
 }
 
 .content-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
   gap: 20px;
 }
 
-.chart-panel {
-  flex: 1;
+.main-stack,
+.side-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
-.deadline-panel {
-  width: 360px;
-  flex-shrink: 0;
+.chart-panel {
+  min-height: 330px;
 }
 
 .panel {
-  background: var(--bio-paper);
-  border-radius: var(--bio-radius-md);
+  background: rgba(255, 255, 255, 0.94);
+  border-radius: 14px;
   box-shadow: var(--bio-shadow-sm);
   padding: 24px;
   border: 1px solid rgba(163, 177, 138, 0.08);
@@ -429,18 +477,55 @@ onUnmounted(() => {
   margin: 0 0 16px 0;
 }
 
-.progress-item {
+.section-head {
   display: flex;
   align-items: center;
-  gap: 16px;
-  margin-bottom: 14px;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.section-head .section-title {
+  margin: 0;
+}
+
+.section-hint {
+  color: var(--bio-ink-muted);
+  font-size: 13px;
+}
+
+.course-progress-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.progress-card {
+  padding: 16px;
+  border-radius: 12px;
+  background: linear-gradient(145deg, #fbfaf5 0%, #f4f7ed 100%);
+  border: 1px solid rgba(163, 177, 138, 0.14);
+}
+
+.progress-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.progress-card-head strong {
+  color: var(--bio-moss);
+  font-size: 18px;
 }
 
 .progress-label {
-  width: 140px;
   font-size: 13px;
-  color: var(--bio-ink-soft);
-  flex-shrink: 0;
+  color: var(--bio-ink);
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .point-table {
@@ -478,11 +563,7 @@ onUnmounted(() => {
   }
 
   .content-row {
-    flex-direction: column;
-  }
-
-  .deadline-panel {
-    width: 100%;
+    grid-template-columns: 1fr;
   }
 }
 
@@ -565,5 +646,41 @@ onUnmounted(() => {
 .todo-meta {
   font-size: 11px;
   color: var(--bio-ink-faint);
+}
+
+.shortcut-panel {
+  padding-bottom: 18px;
+}
+
+.shortcut-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.shortcut-item {
+  border: none;
+  border-radius: 12px;
+  background: #f5f6ef;
+  color: var(--bio-ink-soft);
+  padding: 14px 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all var(--bio-dur-fast) var(--bio-ease-out);
+}
+
+.shortcut-item:hover {
+  color: var(--bio-moss);
+  background: #edf2e4;
+  transform: translateY(-1px);
+}
+
+@media (max-width: 1280px) {
+  .course-progress-grid {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

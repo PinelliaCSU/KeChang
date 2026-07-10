@@ -1,7 +1,10 @@
 <template>
   <div class="page-shell">
     <div class="page-title-bar">
-      <h2 class="page-title">教师仪表盘</h2>
+      <div>
+        <h2 class="page-title">教师主页</h2>
+        <p class="page-subtitle">聚合作业批改、课堂互动、考试阅卷和最近通知</p>
+      </div>
     </div>
 
     <div class="stat-row">
@@ -32,25 +35,48 @@
         <div class="stat-num">{{ stats.pendingQuestionCount || 0 }}</div>
         <div class="stat-label">待回复</div>
       </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background:#dde8d6">
+          <el-icon :size="28" color="#6b8e4e">
+            <TrendCharts />
+          </el-icon>
+        </div>
+        <div class="stat-num">{{ todos.length || 0 }}</div>
+        <div class="stat-label">今日关注</div>
+      </div>
     </div>
 
     <div class="content-row">
       <div class="panel chart-panel">
         <h4 class="section-title">近7日学生活跃度</h4>
-        <div ref="chartRef" style="height:300px"></div>
+        <div class="chart-center">
+          <div ref="chartRef" class="active-chart"></div>
+        </div>
       </div>
-      <div class="panel todo-panel">
-        <h4 class="section-title">待办事项 ({{ todoTotal }})</h4>
-        <div class="todo-list-scroll" v-if="todos.length > 0">
-          <div v-for="(t, idx) in todos" :key="idx" class="todo-item" @click="handleTodoClick(t)">
-            <span class="todo-dot" :class="'dot-' + t.type"></span>
-            <div class="todo-body">
-              <span class="todo-text">{{ t.content }}</span>
-              <span class="todo-meta">{{ t.courseName }} · {{ t.time }}</span>
+      <div class="side-stack">
+        <div class="panel todo-panel">
+          <h4 class="section-title">待办事项 ({{ todoTotal }})</h4>
+          <div class="todo-list-scroll" v-if="todos.length > 0">
+            <div v-for="(t, idx) in todos" :key="idx" class="todo-item" @click="handleTodoClick(t)">
+              <span class="todo-dot" :class="'dot-' + t.type"></span>
+              <div class="todo-body">
+                <span class="todo-text">{{ t.content }}</span>
+                <span class="todo-meta">{{ t.courseName }} · {{ t.time }}</span>
+              </div>
             </div>
           </div>
+          <el-empty v-else description="暂无待办" :image-size="80" />
         </div>
-        <el-empty v-else description="暂无待办" :image-size="80" />
+
+        <div class="panel shortcut-panel">
+          <h4 class="section-title">常用入口</h4>
+          <div class="shortcut-grid">
+            <button v-for="item in quickActions" :key="item.route" class="shortcut-item" @click="router.push(item.route)">
+              <el-icon :size="20"><component :is="item.icon" /></el-icon>
+              <span>{{ item.label }}</span>
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -68,6 +94,16 @@ const todos = ref([])
 const chartRef = ref(null)
 
 const todoTotal = computed(() => todos.value.length)
+const quickActions = [
+  { label: '课程管理', route: '/teacher/courses', icon: 'Reading' },
+  { label: '作业管理', route: '/teacher/assignments', icon: 'Edit' },
+  { label: '考试管理', route: '/teacher/exams', icon: 'Timer' },
+  { label: '随堂测验', route: '/teacher/class-quizzes', icon: 'Connection' },
+  { label: '课堂签到', route: '/teacher/checkin', icon: 'Checked' },
+  { label: '随机点名', route: '/teacher/roll-call', icon: 'User' },
+  { label: '实训管理', route: '/teacher/trainings', icon: 'Tools' },
+  { label: '成绩管理', route: '/teacher/grades', icon: 'TrendCharts' }
+]
 
 const formatTime = (t) => {
   if (!t) return '--'
@@ -203,10 +239,10 @@ onMounted(async () => {
     const chart = echarts.init(chartRef.value)
     chart.setOption({
       tooltip: { trigger: 'axis' },
-      xAxis: { type: 'category', data: ['7天前', '6天前', '5天前', '4天前', '3天前', '前天', '昨天'] },
+      xAxis: { type: 'category', data: (stats.value.activeTrend || []).map(item => String(item.date || '').slice(5)) },
       yAxis: { type: 'value' },
       series: [{
-        data: [25, 32, 28, 45, 38, 50, 42],
+        data: (stats.value.activeTrend || []).map(item => item.count || 0),
         type: 'line', smooth: true,
         areaStyle: { color: 'rgba(127,140,82,0.2)' },
         itemStyle: { color: '#7f8c52' }
@@ -246,15 +282,21 @@ onUnmounted(() => {
   margin: 0;
 }
 
+.page-subtitle {
+  margin: 6px 0 0;
+  color: var(--bio-ink-muted);
+  font-size: 13px;
+}
+
 .stat-row {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 16px;
 }
 
 .stat-card {
-  background: var(--bio-paper);
-  border-radius: var(--bio-radius-md);
+  background: linear-gradient(145deg, #ffffff 0%, #fbfaf5 100%);
+  border-radius: 14px;
   box-shadow: var(--bio-shadow-sm);
   padding: 20px 24px;
   display: flex;
@@ -266,6 +308,7 @@ onUnmounted(() => {
 
 .stat-card:hover {
   box-shadow: var(--bio-shadow-md);
+  transform: translateY(-1px);
 }
 
 .stat-icon {
@@ -291,22 +334,39 @@ onUnmounted(() => {
 }
 
 .content-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 370px;
   gap: 20px;
 }
 
 .chart-panel {
-  flex: 1;
+  min-height: 430px;
+  display: flex;
+  flex-direction: column;
 }
 
-.todo-panel {
-  width: 360px;
-  flex-shrink: 0;
+.chart-center {
+  flex: 1;
+  min-height: 330px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.active-chart {
+  width: min(100%, 860px);
+  height: 300px;
+}
+
+.side-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
 .panel {
-  background: var(--bio-paper);
-  border-radius: var(--bio-radius-md);
+  background: rgba(255, 255, 255, 0.94);
+  border-radius: 14px;
   box-shadow: var(--bio-shadow-sm);
   padding: 24px;
   border: 1px solid rgba(163, 177, 138, 0.08);
@@ -319,17 +379,24 @@ onUnmounted(() => {
   margin: 0 0 16px 0;
 }
 
+.section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.section-head .section-title {
+  margin: 0;
+}
+
 @media (max-width: 1024px) {
   .stat-row {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(2, 1fr);
   }
 
   .content-row {
-    flex-direction: column;
-  }
-
-  .todo-panel {
-    width: 100%;
+    grid-template-columns: 1fr;
   }
 }
 
@@ -400,5 +467,31 @@ onUnmounted(() => {
 .todo-meta {
   font-size: 11px;
   color: var(--bio-ink-faint);
+}
+
+.shortcut-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.shortcut-item {
+  border: none;
+  border-radius: 12px;
+  background: #f5f6ef;
+  color: var(--bio-ink-soft);
+  padding: 14px 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all var(--bio-dur-fast) var(--bio-ease-out);
+}
+
+.shortcut-item:hover {
+  color: var(--bio-moss);
+  background: #edf2e4;
+  transform: translateY(-1px);
 }
 </style>

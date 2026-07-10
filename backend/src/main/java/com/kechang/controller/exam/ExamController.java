@@ -124,14 +124,14 @@ public class ExamController {
     @PostMapping("/api/exams")
     @PreAuthorize("hasAuthority('ROLE_TEACHER')")
     public Result<Void> createExam(@RequestBody Exam exam) {
-        examService.createExam(exam);
+        examService.createExam(exam, getUserId());
         return Result.success();
     }
 
     @PutMapping("/api/exams/{id}")
     @PreAuthorize("hasAuthority('ROLE_TEACHER')")
     public Result<Void> updateExam(@PathVariable Long id, @RequestBody Exam exam) {
-        examService.updateExam(id, exam);
+        examService.updateExam(id, exam, getUserId());
         return Result.success();
     }
 
@@ -144,8 +144,7 @@ public class ExamController {
 
     @GetMapping("/api/exams/{id}")
     public Result<ExamVO> getExam(@PathVariable Long id) {
-        // 简化：根据请求上下文判断是否为教师
-        return Result.success(examService.getExamDetail(id, true));
+        return Result.success(examService.getExamDetail(id, "ROLE_TEACHER".equals(currentRole())));
     }
 
     // ==================== 考试作答 ====================
@@ -165,12 +164,12 @@ public class ExamController {
     @GetMapping("/api/exams/{id}/records")
     @PreAuthorize("hasAuthority('ROLE_TEACHER')")
     public Result<List<ExamRecord>> getExamRecords(@PathVariable Long id) {
-        return Result.success(examService.getExamRecords(id));
+        return Result.success(examService.getExamRecords(id, getUserId()));
     }
 
     @GetMapping("/api/exams/records/{recordId}")
     public Result<List<ExamRecordAnswerVO>> getRecordDetail(@PathVariable Long recordId) {
-        return Result.success(examService.getRecordDetail(recordId));
+        return Result.success(examService.getRecordDetail(recordId, getUserId(), currentRole()));
     }
 
     @PutMapping("/api/exams/records/{recordId}/mark")

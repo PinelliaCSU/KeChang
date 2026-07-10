@@ -38,6 +38,8 @@ public class ExamService {
     private final CourseMapper courseMapper;
     private final CourseStudentMapper courseStudentMapper;
     private final GradeService gradeService;
+    private final NotificationService notificationService;
+    private final OperationLogService operationLogService;
 
     // ==================== 试题库 ====================
     public PageResult<Question> getQuestionList(int page, int size, String questionType,
@@ -115,6 +117,8 @@ public class ExamService {
         paper.setStatus("已发布");
         paper.setCreateBy(teacherId);
         paperMapper.insert(paper);
+        operationLogService.record(teacherId, "考试管理", "创建试卷", "PAPER", paper.getId(), paper.getPaperName(),
+                "创建考试试卷");
 
         // 关联题目
         if (dto.getQuestions() != null) {
@@ -235,6 +239,11 @@ public class ExamService {
                     vo.setSubmitted(record.getIsSubmitted());
                     vo.setTotalScore(record.getTotalScore());
                     vo.setPassStatus(record.getPassStatus());
+                    if (record.getIsSubmitted() != null && record.getIsSubmitted() == 1
+                            && record.getTotalScore() != null
+                            && "已结束".equals(vo.getStatus())) {
+                        vo.setStatus("已出分");
+                    }
                 } else {
                     vo.setSubmitted(0);
                 }
@@ -249,7 +258,7 @@ public class ExamService {
         return PageResult.of(vos, p.getTotal(), page, size);
     }
 
-    public void createExam(Exam exam) {
+    public void createExam(Exam exam, Long teacherId) {
         // 校验试卷存在
         ExamPaper paper = paperMapper.selectById(exam.getPaperId());
         if (paper == null) {
@@ -259,6 +268,7 @@ public class ExamService {
         if (!paper.getCourseId().equals(exam.getCourseId())) {
             throw BusinessException.badRequest("试卷所属课程与考试所属课程不一致");
         }
+        checkCourseOwner(exam.getCourseId(), teacherId);
         // 校验时间顺序
         if (exam.getStartTime() != null && exam.getEndTime() != null
                 && !exam.getStartTime().isBefore(exam.getEndTime())) {
@@ -269,9 +279,20 @@ public class ExamService {
             exam.setDuration(paper.getDuration());
         }
         examMapper.insert(exam);
+        Course course = courseMapper.selectById(exam.getCourseId());
+        notificationService.sendToCourseStudents(exam.getCourseId(), teacherId, "考试",
+                "新考试：" + exam.getExamName(),
+                "课程《" + (course != null ? course.getCourseName() : "课程") + "》发布了考试，请在规定时间内参加。");
+        operationLogService.record(teacherId, "考试管理", "发布考试", "EXAM", exam.getId(), exam.getExamName(),
+                "发布课程考试");
     }
 
-    public void updateExam(Long id, Exam exam) {
+    public void updateExam(Long id, Exam exam, Long teacherId) {
+        Exam old = examMapper.selectById(id);
+        if (old == null) {
+            throw BusinessException.notFound("考试不存在");
+        }
+        checkCourseOwner(old.getCourseId(), teacherId);
         // 校验试卷存在
         ExamPaper paper = paperMapper.selectById(exam.getPaperId());
         if (paper == null) {
@@ -292,6 +313,8 @@ public class ExamService {
         }
         exam.setId(id);
         examMapper.updateById(exam);
+        operationLogService.record(teacherId, "考试管理", "编辑考试", "EXAM", id, exam.getExamName(),
+                "更新考试安排");
     }
 
     public ExamVO getExamDetail(Long examId, boolean isTeacher) {
@@ -306,7 +329,7 @@ public class ExamService {
         vo.setStartTime(exam.getStartTime());
         vo.setEndTime(exam.getEndTime());
         vo.setDuration(exam.getDuration());
-        vo.setStatus(exam.getStatus());
+        vo.setStatus(computeStatus(exam.getStartTime(), exam.getEndTime()));
         vo.setAllowRetry(exam.getAllowRetry());
         if (!isTeacher) {
             // 学生端不返回答案
@@ -423,21 +446,36 @@ public class ExamService {
         record.setPassStatus(totalScore >= passScore ? 1 : 0);
         recordMapper.updateById(record);
         gradeService.recalculateGrade(exam.getCourseId(), studentId);
+        increaseCourseProgress(exam.getCourseId(), studentId, 15.0);
     }
 
     /**
      * 教师查看考试所有记录
      */
-    public List<ExamRecord> getExamRecords(Long examId) {
+    public List<ExamRecord> getExamRecords(Long examId, Long teacherId) {
+        Exam exam = examMapper.selectById(examId);
+        if (exam == null) {
+            throw BusinessException.notFound("考试不存在");
+        }
+        checkCourseOwner(exam.getCourseId(), teacherId);
         return recordMapper.selectList(new LambdaQueryWrapper<ExamRecord>().eq(ExamRecord::getExamId, examId));
     }
 
     /**
      * 答卷详情
      */
-    public List<ExamRecordAnswerVO> getRecordDetail(Long recordId) {
+    public List<ExamRecordAnswerVO> getRecordDetail(Long recordId, Long userId, String role) {
         ExamRecord record = recordMapper.selectById(recordId);
+        if (record == null) {
+            throw BusinessException.notFound("考试记录不存在");
+        }
         Exam exam = record != null ? examMapper.selectById(record.getExamId()) : null;
+        if ("ROLE_STUDENT".equals(role) && !userId.equals(record.getStudentId())) {
+            throw BusinessException.forbidden("只能查看自己的考试记录");
+        }
+        if ("ROLE_TEACHER".equals(role) && exam != null) {
+            checkCourseOwner(exam.getCourseId(), userId);
+        }
         Long paperId = exam != null ? exam.getPaperId() : null;
         return answerMapper.selectList(new LambdaQueryWrapper<ExamRecordAnswer>().eq(ExamRecordAnswer::getRecordId, recordId))
                 .stream().map(answer -> {
@@ -476,6 +514,14 @@ public class ExamService {
         if (answer == null) {
             throw BusinessException.notFound("未找到答题记录");
         }
+        ExamRecord record = recordMapper.selectById(recordId);
+        if (record == null) {
+            throw BusinessException.notFound("考试记录不存在");
+        }
+        Exam exam = examMapper.selectById(record.getExamId());
+        if (exam != null) {
+            checkCourseOwner(exam.getCourseId(), teacherId);
+        }
         answer.setScore(score);
         answer.setMarkedBy(teacherId);
         answerMapper.updateById(answer);
@@ -483,16 +529,19 @@ public class ExamService {
         Double total = answerMapper.selectList(new LambdaQueryWrapper<ExamRecordAnswer>()
                 .eq(ExamRecordAnswer::getRecordId, recordId))
                 .stream().mapToDouble(a -> a.getScore() != null ? a.getScore() : 0).sum();
-        ExamRecord record = recordMapper.selectById(recordId);
         if (record != null) {
             record.setTotalScore(total);
-            Exam exam = examMapper.selectById(record.getExamId());
             ExamPaper paper = exam != null ? paperMapper.selectById(exam.getPaperId()) : null;
             double passScore = paper != null ? paper.getPassScore() : 60.0;
             record.setPassStatus(total >= passScore ? 1 : 0);
             recordMapper.updateById(record);
             if (exam != null) {
                 gradeService.recalculateGrade(exam.getCourseId(), record.getStudentId());
+                notificationService.sendToUser(record.getStudentId(), teacherId, exam.getCourseId(), "考试",
+                        "考试成绩更新：" + exam.getExamName(),
+                        "你的考试《" + exam.getExamName() + "》主观题已批改，当前总分：" + total + "。");
+                operationLogService.record(teacherId, "考试管理", "批改主观题", "EXAM_RECORD", record.getId(), exam.getExamName(),
+                        "批改考试主观题并更新总分");
             }
         }
     }
@@ -507,6 +556,8 @@ public class ExamService {
             throw BusinessException.forbidden("只能删除自己课程的考试");
         }
         examMapper.deleteById(id);
+        operationLogService.record(teacherId, "考试管理", "删除考试", "EXAM", exam.getId(), exam.getExamName(),
+                "删除考试安排");
     }
 
     private void checkStudentEnrolled(Long courseId, Long studentId) {
@@ -515,6 +566,29 @@ public class ExamService {
                 .eq(CourseStudent::getStudentId, studentId)) == 0) {
             throw BusinessException.forbidden("请先加入课程后再参加考试");
         }
+    }
+
+    private void checkCourseOwner(Long courseId, Long teacherId) {
+        Course course = courseMapper.selectById(courseId);
+        if (course == null) {
+            throw BusinessException.notFound("课程不存在");
+        }
+        if (!teacherId.equals(course.getTeacherId())) {
+            throw BusinessException.forbidden("只能管理自己课程的考试");
+        }
+    }
+
+    private void increaseCourseProgress(Long courseId, Long studentId, double delta) {
+        CourseStudent cs = courseStudentMapper.selectOne(new LambdaQueryWrapper<CourseStudent>()
+                .eq(CourseStudent::getCourseId, courseId)
+                .eq(CourseStudent::getStudentId, studentId)
+                .last("limit 1"));
+        if (cs == null) {
+            return;
+        }
+        double current = cs.getProgress() == null ? 0.0 : cs.getProgress();
+        cs.setProgress(Math.min(100.0, current + delta));
+        courseStudentMapper.updateById(cs);
     }
 
     private boolean isAnswerCorrect(Question question, String studentAnswer) {

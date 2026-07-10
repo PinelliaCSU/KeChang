@@ -3,7 +3,6 @@ package com.kechang.controller.assignment;
 import com.kechang.common.PageResult;
 import com.kechang.common.Result;
 import com.kechang.dto.AssignmentDTO;
-import com.kechang.entity.Assignment;
 import com.kechang.service.AssignmentService;
 import com.kechang.vo.AssignmentSubmitVO;
 import com.kechang.vo.AssignmentVO;
@@ -32,6 +31,11 @@ public class AssignmentController {
         return (Long) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
     }
 
+    private String getRole() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        return authentication.getAuthorities().stream().findFirst().map(Object::toString).orElse("");
+    }
+
     @GetMapping
     public Result<PageResult<AssignmentVO>> list(@RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size,
@@ -54,21 +58,21 @@ public class AssignmentController {
     }
 
     @GetMapping("/{id}")
-    public Result<Assignment> detail(@PathVariable Long id) {
-        return Result.success(assignmentService.getDetail(id));
+    public Result<AssignmentVO> detail(@PathVariable Long id) {
+        return Result.success(assignmentService.getDetail(id, getUserId(), getRole()));
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasAuthority('ROLE_TEACHER')")
     public Result<Void> update(@PathVariable Long id, @Valid @RequestBody AssignmentDTO dto) {
-        assignmentService.update(id, dto);
+        assignmentService.update(id, dto, getUserId());
         return Result.success();
     }
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAuthority('ROLE_TEACHER')")
     public Result<Void> delete(@PathVariable Long id) {
-        assignmentService.delete(id);
+        assignmentService.delete(id, getUserId());
         return Result.success();
     }
 
@@ -92,7 +96,7 @@ public class AssignmentController {
     public Result<PageResult<AssignmentSubmitVO>> submits(@PathVariable Long id,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size) {
-        return Result.success(assignmentService.getSubmitList(id, page, size));
+        return Result.success(assignmentService.getSubmitList(id, page, size, getUserId()));
     }
 
     @GetMapping("/{id}/submits/archive")

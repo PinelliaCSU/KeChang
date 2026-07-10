@@ -24,6 +24,7 @@ export const courseApi = {
   deleteResource: (courseId, resourceId) => request.delete(`/courses/${courseId}/resources/${resourceId}`),
   getStudents: (id, params) => request.get(`/courses/${id}/students`, { params }),
   getResources: (id, params) => request.get(`/courses/${id}/resources`, { params }),
+  markResourceViewed: (courseId, resourceId) => request.post(`/courses/${courseId}/resources/${resourceId}/view`),
   enroll: (id) => request.post(`/courses/${id}/enroll`),
   unenroll: (id) => request.delete(`/courses/${id}/enroll`),
   removeStudent: (courseId, studentId) => request.delete(`/courses/${courseId}/students/${studentId}`)
@@ -230,6 +231,12 @@ export const announcementApi = {
   delete: (id) => request.delete(`/announcements/${id}`),
   confirm: (id) => request.post(`/announcements/${id}/confirm`),
   getConfirms: (id, params) => request.get(`/announcements/${id}/confirms`, { params })
+}
+
+/** 管理端操作日志 API */
+export const operationLogApi = {
+  list: (params) => request.get('/admin/operation-logs', { params }),
+  overview: () => request.get('/admin/operation-logs/overview')
 }
 
 /** 文件上传 API */

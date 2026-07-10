@@ -206,6 +206,13 @@ public class CourseController {
         return Result.success(courseService.getResources(id, chapterId, currentUserId(), currentRole()));
     }
 
+    @PostMapping("/{courseId}/resources/{resourceId}/view")
+    @PreAuthorize("hasAuthority('ROLE_STUDENT')")
+    public Result<Void> markResourceViewed(@PathVariable Long courseId, @PathVariable Long resourceId) {
+        courseService.markResourceViewed(courseId, resourceId, currentUserId());
+        return Result.success();
+    }
+
     /**
      * 删除课程资源
      */
