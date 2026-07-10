@@ -7,12 +7,14 @@ import com.kechang.common.PageResult;
 import com.kechang.entity.AttachmentFile;
 import com.kechang.entity.StudentProfile;
 import com.kechang.entity.SysUser;
+import com.kechang.entity.TrainingMaterial;
 import com.kechang.entity.TrainingProject;
 import com.kechang.entity.TrainingReport;
 import com.kechang.entity.TrainingTask;
 import com.kechang.mapper.AttachmentFileMapper;
 import com.kechang.mapper.StudentProfileMapper;
 import com.kechang.mapper.SysUserMapper;
+import com.kechang.mapper.TrainingMaterialMapper;
 import com.kechang.mapper.TrainingProjectMapper;
 import com.kechang.mapper.TrainingReportMapper;
 import com.kechang.mapper.TrainingTaskMapper;
@@ -32,6 +34,7 @@ public class TrainingService {
     private final TrainingProjectMapper projectMapper;
     private final TrainingTaskMapper taskMapper;
     private final TrainingReportMapper reportMapper;
+    private final TrainingMaterialMapper materialMapper;
     private final AttachmentFileMapper attachmentFileMapper;
     private final StudentProfileMapper studentProfileMapper;
     private final SysUserMapper sysUserMapper;
@@ -58,6 +61,8 @@ public class TrainingService {
             project.setStatus("进行中");
         }
         projectMapper.insert(project);
+        // 自动创建默认文档提交任务
+        createDefaultDocuments(project.getId());
     }
 
     @Transactional
@@ -78,16 +83,26 @@ public class TrainingService {
             reportMapper.delete(new LambdaQueryWrapper<TrainingReport>().eq(TrainingReport::getTaskId, task.getId()));
             taskMapper.deleteById(task.getId());
         }
+        // 删除资料
+        materialMapper.delete(new LambdaQueryWrapper<TrainingMaterial>()
+                .eq(TrainingMaterial::getProjectId, id));
+        // 删除计划附件
+        attachmentFileMapper.delete(new LambdaQueryWrapper<AttachmentFile>()
+                .eq(AttachmentFile::getTargetType, "PLAN")
+                .eq(AttachmentFile::getTargetId, id));
         projectMapper.deleteById(id);
     }
 
-    public PageResult<TrainingTask> listTasks(Long projectId, int page, int size, Long userId, boolean student) {
+    public PageResult<TrainingTask> listTasks(Long projectId, int page, int size, Long userId, boolean student, String taskType) {
         requireProject(projectId);
-        Page<TrainingTask> result = taskMapper.selectPage(new Page<>(page, size),
-                new LambdaQueryWrapper<TrainingTask>()
-                        .eq(TrainingTask::getProjectId, projectId)
-                        .orderByAsc(TrainingTask::getSortOrder)
-                        .orderByAsc(TrainingTask::getCreateTime));
+        LambdaQueryWrapper<TrainingTask> queryWrapper = new LambdaQueryWrapper<TrainingTask>()
+                .eq(TrainingTask::getProjectId, projectId)
+                .orderByAsc(TrainingTask::getSortOrder)
+                .orderByAsc(TrainingTask::getCreateTime);
+        if (StringUtils.hasText(taskType)) {
+            queryWrapper.eq(TrainingTask::getTaskType, taskType);
+        }
+        Page<TrainingTask> result = taskMapper.selectPage(new Page<>(page, size), queryWrapper);
         result.getRecords().forEach(task -> fillTaskExtra(task, userId, student));
         return PageResult.of(result.getRecords(), result.getTotal(), page, size);
     }
@@ -101,6 +116,9 @@ public class TrainingService {
         task.setProjectId(projectId);
         if (task.getSortOrder() == null) {
             task.setSortOrder(0);
+        }
+        if (!StringUtils.hasText(task.getTaskType())) {
+            task.setTaskType("TASK");
         }
         // 如果传了多文件但没传单个 URL，用第一个文件的 URL
         String effectiveUrl = task.getAttachmentUrl();
@@ -120,6 +138,28 @@ public class TrainingService {
         checkProjectOwner(task.getProjectId(), teacherId);
         reportMapper.delete(new LambdaQueryWrapper<TrainingReport>().eq(TrainingReport::getTaskId, taskId));
         taskMapper.deleteById(taskId);
+    }
+
+    @Transactional
+    public void updateTask(Long taskId, TrainingTask update, Long teacherId) {
+        TrainingTask task = requireTask(taskId);
+        checkProjectOwner(task.getProjectId(), teacherId);
+        update.setId(taskId);
+        if (update.getTaskName() == null) update.setTaskName(task.getTaskName());
+        // 处理附件 URL
+        String effectiveUrl = update.getAttachmentUrl();
+        if ((effectiveUrl == null || effectiveUrl.isEmpty()) && update.getAttachmentUrls() != null && !update.getAttachmentUrls().isEmpty()) {
+            effectiveUrl = update.getAttachmentUrls().get(0);
+        }
+        update.setAttachmentUrl(effectiveUrl);
+        taskMapper.updateById(update);
+        // 替换附件
+        if (update.getAttachmentUrls() != null) {
+            attachmentFileMapper.delete(new LambdaQueryWrapper<AttachmentFile>()
+                    .eq(AttachmentFile::getTargetType, "TASK")
+                    .eq(AttachmentFile::getTargetId, taskId));
+            saveAttachments("TASK", taskId, update.getAttachmentUrls(), update.getAttachmentNames(), update.getAttachmentSizes());
+        }
     }
 
     @Transactional
@@ -199,17 +239,103 @@ public class TrainingService {
         reportMapper.updateById(report);
     }
 
+    // ==================== 项目详情 & 实习计划 ====================
+
+    public TrainingProject getProjectDetail(Long projectId) {
+        TrainingProject project = requireProject(projectId);
+        fillProjectExtra(project);
+        project.setCourseName(null);
+        return project;
+    }
+
+    @Transactional
+    public void updatePlan(Long projectId, TrainingProject project, List<String> urls, List<String> names, List<Long> sizes, Long teacherId) {
+        checkProjectOwner(projectId, teacherId);
+        // 更新 description
+        TrainingProject update = new TrainingProject();
+        update.setId(projectId);
+        update.setDescription(project.getDescription());
+        projectMapper.updateById(update);
+        // 替换 plan 附件
+        attachmentFileMapper.delete(new LambdaQueryWrapper<AttachmentFile>()
+                .eq(AttachmentFile::getTargetType, "PLAN")
+                .eq(AttachmentFile::getTargetId, projectId));
+        saveAttachments("PLAN", projectId, urls, names, sizes);
+    }
+
+    public List<AttachmentFile> getPlanAttachments(Long projectId) {
+        requireProject(projectId);
+        return getAttachments("PLAN", projectId);
+    }
+
+    // ==================== 资料管理 ====================
+
+    public PageResult<TrainingMaterial> listMaterials(Long projectId, int page, int size) {
+        requireProject(projectId);
+        Page<TrainingMaterial> result = materialMapper.selectPage(new Page<>(page, size),
+                new LambdaQueryWrapper<TrainingMaterial>()
+                        .eq(TrainingMaterial::getProjectId, projectId)
+                        .orderByDesc(TrainingMaterial::getCreateTime));
+        return PageResult.of(result.getRecords(), result.getTotal(), page, size);
+    }
+
+    @Transactional
+    public void uploadMaterial(Long projectId, TrainingMaterial material, Long teacherId) {
+        checkProjectOwner(projectId, teacherId);
+        if (!StringUtils.hasText(material.getTitle())) {
+            throw BusinessException.badRequest("请填写资料标题");
+        }
+        if (!StringUtils.hasText(material.getFileUrl())) {
+            throw BusinessException.badRequest("请上传资料文件");
+        }
+        material.setProjectId(projectId);
+        material.setCreateBy(teacherId);
+        materialMapper.insert(material);
+    }
+
+    @Transactional
+    public void deleteMaterial(Long materialId, Long teacherId) {
+        TrainingMaterial material = materialMapper.selectById(materialId);
+        if (material == null) {
+            throw BusinessException.notFound("资料不存在");
+        }
+        checkProjectOwner(material.getProjectId(), teacherId);
+        materialMapper.deleteById(materialId);
+    }
+
+    // ==================== 默认文档 ====================
+
+    private void createDefaultDocuments(Long projectId) {
+        TrainingTask log = new TrainingTask();
+        log.setProjectId(projectId);
+        log.setTaskName("实训日志");
+        log.setDescription("记录每日实训内容、收获与心得");
+        log.setSortOrder(1);
+        log.setTaskType("DOCUMENT");
+        taskMapper.insert(log);
+
+        TrainingTask report = new TrainingTask();
+        report.setProjectId(projectId);
+        report.setTaskName("实训报告");
+        report.setDescription("实训结束后的总结报告");
+        report.setSortOrder(2);
+        report.setTaskType("DOCUMENT");
+        taskMapper.insert(report);
+    }
+
+    // ==================== 私有辅助方法 ====================
+
     private void fillProjectExtra(TrainingProject project) {
         project.setCourseName(null);
+        // 仅统计 TASK 类型的任务数
         Long taskCount = taskMapper.selectCount(new LambdaQueryWrapper<TrainingTask>()
-                .eq(TrainingTask::getProjectId, project.getId()));
+                .eq(TrainingTask::getProjectId, project.getId())
+                .eq(TrainingTask::getTaskType, "TASK"));
         project.setTaskCount(taskCount);
-        if (taskCount == 0) {
-            project.setReportCount(0L);
-            return;
-        }
+        // 报告数统计所有任务（含 TASK 和 DOCUMENT）的提交
         List<Long> taskIds = taskMapper.selectList(new LambdaQueryWrapper<TrainingTask>()
-                        .eq(TrainingTask::getProjectId, project.getId()))
+                        .eq(TrainingTask::getProjectId, project.getId())
+                        .select(TrainingTask::getId))
                 .stream()
                 .map(TrainingTask::getId)
                 .collect(Collectors.toList());

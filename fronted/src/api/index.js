@@ -99,13 +99,29 @@ export const gradeApi = {
 
 /** 实训 API */
 export const trainingApi = {
+  // --- 项目管理 ---
   listProjects: (params) => request.get('/trainings', { params }),
+  getProject: (id) => request.get(`/trainings/${id}`),
   createProject: (data) => request.post('/trainings', data),
   updateProject: (id, data) => request.put(`/trainings/${id}`, data),
   deleteProject: (id) => request.delete(`/trainings/${id}`),
+
+  // --- 实习计划 ---
+  updatePlan: (id, data) => request.put(`/trainings/${id}/plan`, data),
+  getPlanAttachments: (id) => request.get(`/trainings/${id}/plan-attachments`),
+
+  // --- 资料 ---
+  listMaterials: (projectId, params) => request.get(`/trainings/${projectId}/materials`, { params }),
+  uploadMaterial: (projectId, data) => request.post(`/trainings/${projectId}/materials`, data),
+  deleteMaterial: (materialId) => request.delete(`/trainings/materials/${materialId}`),
+
+  // --- 任务 ---
   createTask: (projectId, data) => request.post(`/trainings/${projectId}/tasks`, data),
   listTasks: (projectId, params) => request.get(`/trainings/${projectId}/tasks`, { params }),
+  updateTask: (taskId, data) => request.put(`/trainings/tasks/${taskId}`, data),
   deleteTask: (taskId) => request.delete(`/trainings/tasks/${taskId}`),
+
+  // --- 报告 ---
   submitReport: (taskId, data) => request.post(`/trainings/tasks/${taskId}/report`, data),
   listReports: (taskId, params) => request.get(`/trainings/tasks/${taskId}/reports`, { params }),
   gradeReport: (reportId, params) => request.put(`/trainings/reports/${reportId}/grade`, null, { params })

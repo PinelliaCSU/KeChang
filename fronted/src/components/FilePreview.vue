@@ -26,8 +26,8 @@
         <h4>{{ unsupportedTitle }}</h4>
         <p>{{ unsupportedTip }}</p>
         <div class="fallback-actions">
-          <el-button @click="openNewWindow">新窗口打开</el-button>
-          <el-button type="primary" @click="downloadFile">下载文件</el-button>
+          <el-button size="small" @click="openNewWindow">新窗口打开</el-button>
+          <el-button size="small" type="primary" @click="downloadFile">下载文件</el-button>
         </div>
       </div>
     </div>

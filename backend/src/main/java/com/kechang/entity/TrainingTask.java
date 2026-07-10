@@ -22,6 +22,7 @@ public class TrainingTask {
     private String attachmentUrl;
     private LocalDateTime deadline;
     private Integer sortOrder;
+    private String taskType;
 
     @TableField(exist = false)
     private Long reportCount;
