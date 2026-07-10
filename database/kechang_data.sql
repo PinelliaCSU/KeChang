@@ -583,13 +583,15 @@ CREATE TABLE `notification` (
   `content`           TEXT         DEFAULT NULL COMMENT '通知内容',
   `sender_id`         BIGINT       DEFAULT NULL COMMENT '发送者用户ID',
   `send_time`         DATETIME     DEFAULT CURRENT_TIMESTAMP COMMENT '发送时间',
-  `notification_type` VARCHAR(20)  DEFAULT '系统' COMMENT '通知类型：系统 / 课程 / 考试 / 作业',
+  `notification_type` VARCHAR(20)  DEFAULT '系统' COMMENT '通知类型：系统 / 课程 / 考试 / 作业 / 公告 / 实训',
+  `course_id`         BIGINT       DEFAULT NULL COMMENT '关联课程ID',
   `create_time`       DATETIME     DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `update_time`       DATETIME     DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   `is_deleted`        TINYINT(1)   DEFAULT 0 COMMENT '逻辑删除',
   INDEX `idx_sender_id` (`sender_id`),
   INDEX `idx_send_time` (`send_time`),
-  INDEX `idx_notification_type` (`notification_type`)
+  INDEX `idx_notification_type` (`notification_type`),
+  INDEX `idx_course_id` (`course_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='通知表';
 
 DROP TABLE IF EXISTS `notification_user`;
@@ -701,6 +703,30 @@ CREATE TABLE `participation_point` (
   INDEX `idx_course_id` (`course_id`),
   INDEX `idx_event_time` (`event_time`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='课堂参与积分流水表';
+
+-- ============================================================
+-- 模块十四：平台操作日志
+-- ============================================================
+
+DROP TABLE IF EXISTS `operation_log`;
+CREATE TABLE `operation_log` (
+  `id`            BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '主键ID',
+  `operator_id`   BIGINT       DEFAULT NULL COMMENT '操作人ID',
+  `operator_name` VARCHAR(100) DEFAULT NULL COMMENT '操作人姓名',
+  `role_code`     VARCHAR(50)  DEFAULT NULL COMMENT '角色编码',
+  `module`        VARCHAR(50)  NOT NULL COMMENT '业务模块',
+  `action`        VARCHAR(50)  NOT NULL COMMENT '操作动作',
+  `target_type`   VARCHAR(50)  DEFAULT NULL COMMENT '目标类型',
+  `target_id`     BIGINT       DEFAULT NULL COMMENT '目标ID',
+  `target_name`   VARCHAR(255) DEFAULT NULL COMMENT '目标名称',
+  `description`   VARCHAR(500) DEFAULT NULL COMMENT '操作描述',
+  `create_time`   DATETIME     DEFAULT CURRENT_TIMESTAMP COMMENT '操作时间',
+  `is_deleted`    TINYINT(1)   DEFAULT 0 COMMENT '逻辑删除',
+  INDEX `idx_operator_id` (`operator_id`),
+  INDEX `idx_module` (`module`),
+  INDEX `idx_action` (`action`),
+  INDEX `idx_create_time` (`create_time`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='平台操作日志表';
 
 -- ============================================================
 -- 初始数据

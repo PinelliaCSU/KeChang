@@ -102,8 +102,8 @@
                 <el-button size="small" @click="openChapterDialog(chapter)">编辑章节</el-button>
                 <el-button size="small" type="danger" @click="deleteChapter(chapter)">删除章节</el-button>
                 <el-upload action="#" :http-request="payload => uploadResource(payload, chapter.id)"
-                  :show-file-list="false">
-                  <el-button size="small" type="primary" :loading="uploading">上传资源</el-button>
+                  :show-file-list="false" :disabled="uploading">
+                  <el-button size="small" type="primary" :loading="uploading" :disabled="uploading">上传资源</el-button>
                 </el-upload>
               </div>
 

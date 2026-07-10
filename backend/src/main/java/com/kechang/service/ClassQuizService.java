@@ -157,6 +157,7 @@ public class ClassQuizService {
             record.setSubmitTime(LocalDateTime.now());
             answerMapper.insert(record);
         }
+        increaseCourseProgress(quiz.getCourseId(), studentId, 5.0);
         return sanitizeForStudent(withMyAnswer(toDetail(quiz), quiz.getId(), studentId));
     }
 
@@ -392,6 +393,19 @@ public class ClassQuizService {
                 .eq(CourseStudent::getStudentId, studentId)) == 0) {
             throw BusinessException.forbidden("请先加入课程后再参加随堂测验");
         }
+    }
+
+    private void increaseCourseProgress(Long courseId, Long studentId, double delta) {
+        CourseStudent cs = courseStudentMapper.selectOne(new LambdaQueryWrapper<CourseStudent>()
+                .eq(CourseStudent::getCourseId, courseId)
+                .eq(CourseStudent::getStudentId, studentId)
+                .last("limit 1"));
+        if (cs == null) {
+            return;
+        }
+        double current = cs.getProgress() == null ? 0.0 : cs.getProgress();
+        cs.setProgress(Math.min(100.0, current + delta));
+        courseStudentMapper.updateById(cs);
     }
 
     private boolean isAnswerCorrect(Question question, String studentAnswer) {

@@ -44,6 +44,8 @@ public class AssignmentService {
     private final SysUserMapper sysUserMapper;
     private final GradeService gradeService;
     private final FileProcessingService fileProcessingService;
+    private final NotificationService notificationService;
+    private final OperationLogService operationLogService;
 
     @Value("${kechang.upload.path:./uploads}")
     private String uploadBasePath;
@@ -115,16 +117,30 @@ public class AssignmentService {
 
         // 保存多文件附件
         saveAttachments("ASSIGNMENT", a.getId(), dto.getAttachmentUrls(), dto.getAttachmentNames(), dto.getAttachmentSizes());
+        Course course = courseMapper.selectById(a.getCourseId());
+        notificationService.sendToCourseStudents(a.getCourseId(), teacherId, "作业",
+                "新作业：" + a.getTitle(),
+                "课程《" + (course != null ? course.getCourseName() : "课程") + "》发布了新作业，请按时完成。");
+        operationLogService.record(teacherId, "作业管理", "发布作业", "ASSIGNMENT", a.getId(), a.getTitle(),
+                "发布课程作业");
     }
 
-    public Assignment getDetail(Long id) {
-        return assignmentMapper.selectById(id);
+    public AssignmentVO getDetail(Long id, Long userId, String role) {
+        Assignment assignment = assignmentMapper.selectById(id);
+        if (assignment == null) {
+            throw BusinessException.notFound("作业不存在");
+        }
+        checkAssignmentReadable(assignment, userId, role);
+        return toAssignmentVO(assignment, "ROLE_STUDENT".equals(role) ? userId : null);
     }
 
-    public void update(Long id, AssignmentDTO dto) {
+    public void update(Long id, AssignmentDTO dto, Long teacherId) {
         Assignment a = assignmentMapper.selectById(id);
         if (a == null) {
             throw BusinessException.notFound("作业不存在");
+        }
+        if (!teacherId.equals(a.getCreateBy())) {
+            throw BusinessException.forbidden("只能编辑自己发布的作业");
         }
         String effectiveUrl = dto.getAttachmentUrl();
         if ((effectiveUrl == null || effectiveUrl.isEmpty()) && dto.getAttachmentUrls() != null && !dto.getAttachmentUrls().isEmpty()) {
@@ -143,10 +159,21 @@ public class AssignmentService {
                 .eq(AttachmentFile::getTargetType, "ASSIGNMENT")
                 .eq(AttachmentFile::getTargetId, id));
         saveAttachments("ASSIGNMENT", id, dto.getAttachmentUrls(), dto.getAttachmentNames(), dto.getAttachmentSizes());
+        operationLogService.record(a.getCreateBy(), "作业管理", "编辑作业", "ASSIGNMENT", a.getId(), a.getTitle(),
+                "更新作业信息");
     }
 
-    public void delete(Long id) {
+    public void delete(Long id, Long teacherId) {
+        Assignment a = assignmentMapper.selectById(id);
+        if (a == null) {
+            throw BusinessException.notFound("作业不存在");
+        }
+        if (!teacherId.equals(a.getCreateBy())) {
+            throw BusinessException.forbidden("只能删除自己发布的作业");
+        }
         assignmentMapper.deleteById(id);
+        operationLogService.record(a.getCreateBy(), "作业管理", "删除作业", "ASSIGNMENT", a.getId(), a.getTitle(),
+                "删除作业");
     }
 
     private void saveAttachments(String targetType, Long targetId, List<String> urls, List<String> names, List<Long> sizes) {
@@ -215,9 +242,17 @@ public class AssignmentService {
 
         // 保存多文件附件
         saveAttachments("SUBMIT", s.getId(), attachmentUrls, attachmentNames, attachmentSizes);
+        increaseCourseProgress(a.getCourseId(), studentId, 10.0);
     }
 
-    public PageResult<AssignmentSubmitVO> getSubmitList(Long assignmentId, int page, int size) {
+    public PageResult<AssignmentSubmitVO> getSubmitList(Long assignmentId, int page, int size, Long teacherId) {
+        Assignment assignment = assignmentMapper.selectById(assignmentId);
+        if (assignment == null) {
+            throw BusinessException.notFound("作业不存在");
+        }
+        if (!teacherId.equals(assignment.getCreateBy())) {
+            throw BusinessException.forbidden("只能查看自己发布作业的提交记录");
+        }
         Page<AssignmentSubmit> p = submitMapper.selectPage(new Page<>(page, size),
                 new LambdaQueryWrapper<AssignmentSubmit>()
                         .eq(AssignmentSubmit::getAssignmentId, assignmentId)
@@ -233,6 +268,13 @@ public class AssignmentService {
         AssignmentSubmit s = submitMapper.selectById(submitId);
         if (s == null) {
             throw BusinessException.notFound("提交记录不存在");
+        }
+        Assignment assignment = assignmentMapper.selectById(s.getAssignmentId());
+        if (assignment == null) {
+            throw BusinessException.notFound("作业不存在");
+        }
+        if (!teacherId.equals(assignment.getCreateBy())) {
+            throw BusinessException.forbidden("只能批改自己发布作业的提交");
         }
         if (score == null || score < 0 || score > 100) {
             throw BusinessException.badRequest("评分必须在 0 到 100 之间");
@@ -271,10 +313,12 @@ public class AssignmentService {
             attachmentFileMapper.insert(feedbackFile);
         }
 
-        Assignment assignment = assignmentMapper.selectById(s.getAssignmentId());
-        if (assignment != null) {
-            gradeService.recalculateGrade(assignment.getCourseId(), s.getStudentId());
-        }
+        gradeService.recalculateGrade(assignment.getCourseId(), s.getStudentId());
+        notificationService.sendToUser(s.getStudentId(), teacherId, assignment.getCourseId(), "作业",
+                "作业已批改：" + assignment.getTitle(),
+                "你的作业《" + assignment.getTitle() + "》已完成批改，得分：" + score + "。");
+        operationLogService.record(teacherId, "作业管理", "批改作业", "SUBMIT", s.getId(), assignment.getTitle(),
+                "批改学生作业并给出成绩");
     }
 
     public void writeSubmitArchive(Long assignmentId, Long teacherId, OutputStream outputStream) throws IOException {
@@ -338,7 +382,7 @@ public class AssignmentService {
         vo.setAttachments(getAttachments("ASSIGNMENT", assignment.getId()));
         vo.setDeadline(assignment.getDeadline());
         vo.setTotalScore(assignment.getTotalScore());
-        vo.setStatus(assignment.getStatus());
+        vo.setStatus(computeAssignmentStatus(assignment, studentId));
         vo.setCreateBy(assignment.getCreateBy());
         vo.setCreateTime(assignment.getCreateTime());
         vo.setExcellentSubmits(getExcellentSubmits(assignment.getId()));
@@ -432,6 +476,56 @@ public class AssignmentService {
             }
         }
         return vo;
+    }
+
+    private String computeAssignmentStatus(Assignment assignment, Long studentId) {
+        if (studentId != null) {
+            AssignmentSubmit submit = submitMapper.selectOne(new LambdaQueryWrapper<AssignmentSubmit>()
+                    .eq(AssignmentSubmit::getAssignmentId, assignment.getId())
+                    .eq(AssignmentSubmit::getStudentId, studentId)
+                    .orderByDesc(AssignmentSubmit::getSubmitTime)
+                    .last("limit 1"));
+            if (submit != null && "已批改".equals(submit.getStatus())) {
+                return "已批改";
+            }
+        }
+        if (assignment.getCreateTime() != null && LocalDateTime.now().isBefore(assignment.getCreateTime())) {
+            return "未开始";
+        }
+        if (assignment.getDeadline() != null && LocalDateTime.now().isAfter(assignment.getDeadline())) {
+            return "已截止";
+        }
+        return "进行中";
+    }
+
+    private void checkAssignmentReadable(Assignment assignment, Long userId, String role) {
+        if ("ROLE_TEACHER".equals(role)) {
+            if (!userId.equals(assignment.getCreateBy())) {
+                throw BusinessException.forbidden("只能查看自己发布的作业");
+            }
+            return;
+        }
+        if ("ROLE_STUDENT".equals(role)) {
+            CourseStudent enrollment = courseStudentMapper.selectOne(new LambdaQueryWrapper<CourseStudent>()
+                    .eq(CourseStudent::getCourseId, assignment.getCourseId())
+                    .eq(CourseStudent::getStudentId, userId));
+            if (enrollment == null) {
+                throw BusinessException.forbidden("请先加入课程后再查看作业");
+            }
+        }
+    }
+
+    private void increaseCourseProgress(Long courseId, Long studentId, double delta) {
+        CourseStudent cs = courseStudentMapper.selectOne(new LambdaQueryWrapper<CourseStudent>()
+                .eq(CourseStudent::getCourseId, courseId)
+                .eq(CourseStudent::getStudentId, studentId)
+                .last("limit 1"));
+        if (cs == null) {
+            return;
+        }
+        double current = cs.getProgress() == null ? 0.0 : cs.getProgress();
+        cs.setProgress(Math.min(100.0, current + delta));
+        courseStudentMapper.updateById(cs);
     }
 
     private List<AssignmentSubmitVO> getExcellentSubmits(Long assignmentId) {

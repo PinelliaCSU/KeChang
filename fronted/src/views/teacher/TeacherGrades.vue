@@ -2,9 +2,12 @@
   <div class="page-shell">
     <div class="page-title-bar">
       <h2 class="page-title">成绩管理</h2>
-      <el-select v-model="selectedCourse" placeholder="选择课程" clearable style="width: 240px" @change="loadCourseGrades">
-        <el-option v-for="course in courseList" :key="course.id" :label="course.courseName" :value="course.id" />
-      </el-select>
+      <div class="title-actions">
+        <el-select v-model="selectedCourse" placeholder="选择课程" clearable style="width: 240px" @change="loadCourseGrades">
+          <el-option v-for="course in courseList" :key="course.id" :label="course.courseName" :value="course.id" />
+        </el-select>
+        <el-button :disabled="!selectedCourse || grades.length === 0" @click="exportCourseGrades">导出成绩</el-button>
+      </div>
     </div>
 
     <div class="stat-row" v-if="stats">
@@ -95,6 +98,21 @@ const scoreClass = (score) => {
   return 'score-fail'
 }
 
+const csvCell = (value) => {
+  const text = value == null ? '' : String(value)
+  return `"${text.replace(/"/g, '""')}"`
+}
+
+const downloadCsv = (filename, rows) => {
+  const content = '\ufeff' + rows.map(row => row.map(csvCell).join(',')).join('\n')
+  const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' })
+  const link = document.createElement('a')
+  link.href = URL.createObjectURL(blob)
+  link.download = filename
+  link.click()
+  URL.revokeObjectURL(link.href)
+}
+
 const distColors = ['#67c23a', '#409eff', '#e6a23c', '#909399', '#f56c6c']
 
 const buildDistribution = (raw = {}) => {
@@ -142,6 +160,23 @@ const loadCourseGrades = async (courseId) => {
   }
 }
 
+const exportCourseGrades = () => {
+  if (!selectedCourse.value || grades.value.length === 0) return
+  const course = courseList.value.find(item => item.id === selectedCourse.value)
+  const rows = [
+    ['学号', '姓名', '考试均分', '作业均分', '总评成绩', '等级'],
+    ...grades.value.map(item => [
+      item.studentNo || '',
+      item.studentName || '',
+      formatScore(item.examAvgScore),
+      formatScore(item.assignmentAvgScore),
+      formatScore(item.totalScore),
+      item.gradeLevel || ''
+    ])
+  ]
+  downloadCsv(`${course?.courseName || '课程'}-成绩表.csv`, rows)
+}
+
 onMounted(fetchCourses)
 </script>
 
@@ -156,6 +191,12 @@ onMounted(fetchCourses)
   display: flex;
   align-items: center;
   justify-content: space-between;
+}
+
+.title-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .page-title {

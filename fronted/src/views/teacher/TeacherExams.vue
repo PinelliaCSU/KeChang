@@ -94,7 +94,11 @@
 
     <!-- 考试记录弹窗 -->
     <el-dialog v-model="recordDialogVisible" title="考试记录" width="900px">
-      <el-table :data="records" v-loading="recLoading" stripe class="kechang-table" style="width:100%">
+      <div class="dialog-toolbar">
+        <span class="toolbar-muted">共 {{ records.length }} 条记录</span>
+        <el-button size="small" :disabled="records.length === 0" @click="exportExamRecords">导出考试成绩</el-button>
+      </div>
+      <el-table v-if="records.length > 0 || recLoading" :data="records" v-loading="recLoading" stripe class="kechang-table" style="width:100%">
         <el-table-column prop="studentId" label="学生ID" width="80" />
         <el-table-column prop="startTime" label="开始时间" width="170" />
         <el-table-column prop="submitTime" label="提交时间" width="170" />
@@ -118,6 +122,7 @@
           </template>
         </el-table-column>
       </el-table>
+      <el-empty v-if="!recLoading && records.length === 0" description="暂无考试记录" :image-size="90" />
       <template #footer><el-button @click="recordDialogVisible = false">关闭</el-button></template>
     </el-dialog>
 
@@ -150,7 +155,10 @@
         </div>
       </div>
       <el-empty v-else description="暂无答题记录" />
-      <template #footer><el-button @click="markDialogVisible = false">关闭</el-button></template>
+      <template #footer>
+        <el-button @click="markDialogVisible = false">关闭</el-button>
+        <el-button type="success" plain :disabled="!hasNextRecord" @click="openNextRecord">批阅下一个</el-button>
+      </template>
     </el-dialog>
   </div>
 </template>
@@ -180,6 +188,10 @@ const currentExamId = ref(null)
 const markDialogVisible = ref(false)
 const recordAnswers = ref([])
 const scoreMap = reactive({})
+const currentRecord = ref(null)
+const currentExamName = ref('')
+const currentRecordIndex = computed(() => records.value.findIndex(item => item.id === currentRecord.value?.id))
+const hasNextRecord = computed(() => currentRecordIndex.value >= 0 && currentRecordIndex.value < records.value.length - 1)
 
 const statusType = (s) => ({ '未开始': 'info', '进行中': 'success', '已结束': 'warning' }[s] || 'info')
 const typeLabel = (t) => ({ SINGLE: '单选', MULTI: '多选', JUDGE: '判断', FILL: '填空', ESSAY: '简答' }[t] || t)
@@ -274,6 +286,7 @@ const handleDelete = async (id) => {
 
 const viewRecords = async (row) => {
   currentExamId.value = row.id
+  currentExamName.value = row.examName || '考试'
   recordDialogVisible.value = true
   recLoading.value = true
   try {
@@ -284,6 +297,7 @@ const viewRecords = async (row) => {
 }
 
 const viewRecordDetail = async (row) => {
+  currentRecord.value = row
   markDialogVisible.value = true
   recLoading.value = true
   try {
@@ -300,7 +314,45 @@ const doMark = async (questionId, recordId) => {
   try {
     await examApi.mark(recordId, { questionId, score: scoreMap[questionId] || 0 })
     ElMessage.success('评分成功')
+    const current = records.value.find(item => item.id === recordId)
+    if (current) current.totalScore = null
   } catch (e) { /* ignore */ }
+}
+
+const openNextRecord = () => {
+  if (!hasNextRecord.value) return
+  viewRecordDetail(records.value[currentRecordIndex.value + 1])
+}
+
+const csvCell = (value) => {
+  const text = value == null ? '' : String(value)
+  return `"${text.replace(/"/g, '""')}"`
+}
+
+const downloadCsv = (filename, rows) => {
+  const content = '\ufeff' + rows.map(row => row.map(csvCell).join(',')).join('\n')
+  const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' })
+  const link = document.createElement('a')
+  link.href = URL.createObjectURL(blob)
+  link.download = filename
+  link.click()
+  URL.revokeObjectURL(link.href)
+}
+
+const exportExamRecords = () => {
+  if (!records.value.length) return
+  const rows = [
+    ['学生ID', '开始时间', '提交时间', '得分', '是否通过', '切屏次数'],
+    ...records.value.map(item => [
+      item.studentId || '',
+      item.startTime || '',
+      item.submitTime || '',
+      item.totalScore != null ? item.totalScore : '未批',
+      item.passStatus === 1 ? '通过' : '未通过',
+      item.cheatCount || 0
+    ])
+  ]
+  downloadCsv(`${currentExamName.value || '考试'}-成绩记录.csv`, rows)
 }
 
 onMounted(() => { fetchCourses(); fetchExams() })
@@ -338,6 +390,18 @@ onMounted(() => { fetchCourses(); fetchExams() })
   display: flex;
   gap: 12px;
   margin-bottom: 16px;
+}
+
+.dialog-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.toolbar-muted {
+  color: #909399;
+  font-size: 13px;
 }
 
 .answer-item {

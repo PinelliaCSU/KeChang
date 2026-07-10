@@ -34,6 +34,7 @@ public class CourseService {
     private final CourseStudentMapper courseStudentMapper;
     private final SysUserMapper sysUserMapper;
     private final StudentProfileMapper studentProfileMapper;
+    private final OperationLogService operationLogService;
 
     /**
      * 分页查询课程
@@ -80,6 +81,13 @@ public class CourseService {
                 vo.setTeacherName(teacher.getNickname());
             }
             vo.setEnrolled(isEnrolled(c.getId(), currentStudentId));
+            if (currentStudentId != null) {
+                CourseStudent cs = courseStudentMapper.selectOne(new LambdaQueryWrapper<CourseStudent>()
+                        .eq(CourseStudent::getCourseId, c.getId())
+                        .eq(CourseStudent::getStudentId, currentStudentId)
+                        .last("limit 1"));
+                vo.setProgress(cs != null ? cs.getProgress() : 0.0);
+            }
             return vo;
         }).collect(Collectors.toList());
 
@@ -139,6 +147,8 @@ public class CourseService {
         course.setStatus("进行中");
         course.setStudentCount(0);
         courseMapper.insert(course);
+        operationLogService.record(teacherId, "课程管理", "创建课程", "COURSE", course.getId(), course.getCourseName(),
+                "创建课程");
     }
 
     /**
@@ -161,6 +171,8 @@ public class CourseService {
             course.setStatus(dto.getStatus());
         }
         courseMapper.updateById(course);
+        operationLogService.record(teacherId, "课程管理", "编辑课程", "COURSE", course.getId(), course.getCourseName(),
+                "更新课程信息");
     }
 
     /**
@@ -175,6 +187,8 @@ public class CourseService {
             throw BusinessException.forbidden("只能删除自己创建的课程");
         }
         courseMapper.deleteById(courseId);
+        operationLogService.record(teacherId, "课程管理", "删除课程", "COURSE", course.getId(), course.getCourseName(),
+                "删除课程");
     }
 
     /**
@@ -238,6 +252,8 @@ public class CourseService {
         resource.setFileSize(fileSize != null ? fileSize : 0L);
         resource.setSortOrder(0);
         resourceMapper.insert(resource);
+        operationLogService.record(teacherId, "课程管理", "上传资源", "COURSE_RESOURCE", resource.getId(), resourceName,
+                "上传课程资源");
     }
 
     /**
@@ -253,6 +269,29 @@ public class CourseService {
             throw BusinessException.badRequest("资源不属于该课程");
         }
         resourceMapper.deleteById(resourceId);
+        operationLogService.record(teacherId, "课程管理", "删除资源", "COURSE_RESOURCE", resource.getId(), resource.getResourceName(),
+                "删除课程资源");
+    }
+
+    public void markResourceViewed(Long courseId, Long resourceId, Long studentId) {
+        Course course = courseMapper.selectById(courseId);
+        if (course == null) {
+            throw BusinessException.notFound("课程不存在");
+        }
+        checkCourseReadable(course, studentId, "ROLE_STUDENT");
+        CourseResource resource = resourceMapper.selectById(resourceId);
+        if (resource == null || !courseId.equals(resource.getCourseId())) {
+            throw BusinessException.notFound("资源不存在");
+        }
+        CourseStudent cs = courseStudentMapper.selectOne(new LambdaQueryWrapper<CourseStudent>()
+                .eq(CourseStudent::getCourseId, courseId)
+                .eq(CourseStudent::getStudentId, studentId)
+                .last("limit 1"));
+        if (cs != null) {
+            double current = cs.getProgress() == null ? 0.0 : cs.getProgress();
+            cs.setProgress(Math.min(100.0, current + 3.0));
+            courseStudentMapper.updateById(cs);
+        }
     }
 
     /**
@@ -391,7 +430,7 @@ public class CourseService {
         vo.setTeacherId(c.getTeacherId());
         vo.setStartDate(c.getStartDate());
         vo.setEndDate(c.getEndDate());
-        vo.setStatus(c.getStatus());
+        vo.setStatus(computeCourseStatus(c));
         vo.setStudentCount(c.getStudentCount());
     }
 
@@ -402,6 +441,17 @@ public class CourseService {
         return courseStudentMapper.selectCount(new LambdaQueryWrapper<CourseStudent>()
                 .eq(CourseStudent::getCourseId, courseId)
                 .eq(CourseStudent::getStudentId, studentId)) > 0;
+    }
+
+    private String computeCourseStatus(Course course) {
+        LocalDate today = LocalDate.now();
+        if (course.getStartDate() != null && today.isBefore(course.getStartDate())) {
+            return "未开始";
+        }
+        if (course.getEndDate() != null && today.isAfter(course.getEndDate())) {
+            return "已结束";
+        }
+        return "进行中";
     }
 
     private void checkCourseOwner(Long courseId, Long teacherId) {

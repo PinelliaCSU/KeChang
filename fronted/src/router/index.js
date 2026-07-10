@@ -6,7 +6,13 @@ const routes = [
   {
     path: '/dashboard',
     name: 'Dashboard',
-    component: () => import('@/views/Dashboard.vue'),
+    redirect: () => {
+      const userStore = useUserStore()
+      if (userStore.roleCode === 'ROLE_ADMIN') return '/admin/courses'
+      if (userStore.roleCode === 'ROLE_TEACHER') return '/teacher/dashboard'
+      if (userStore.roleCode === 'ROLE_STUDENT') return '/student/dashboard'
+      return '/login'
+    },
     meta: { title: '课畅 - 仪表盘', requiresAuth: true }
   },
 
@@ -73,7 +79,8 @@ const routes = [
     children: [
       { path: 'courses', name: 'AdminCourses', component: () => import('@/views/admin/AdminCourses.vue'), meta: { title: '课程总览' } },
       { path: 'grades', name: 'AdminGrades', component: () => import('@/views/admin/AdminGrades.vue'), meta: { title: '成绩概览' } },
-      { path: 'surveys', name: 'AdminSurveys', component: () => import('@/views/admin/AdminSurveys.vue'), meta: { title: '问卷统计' } }
+      { path: 'surveys', name: 'AdminSurveys', component: () => import('@/views/admin/AdminSurveys.vue'), meta: { title: '问卷统计' } },
+      { path: 'operation-logs', name: 'AdminOperationLogs', component: () => import('@/views/admin/AdminOperationLogs.vue'), meta: { title: '操作日志' } }
     ]
   },
 
@@ -133,8 +140,8 @@ router.beforeEach((to, from, next) => {
     return
   }
 
-  if (to.path === '/dashboard' && userStore.token && userStore.roleCode === 'ROLE_ADMIN') {
-    next('/admin/courses')
+  if (to.path === '/dashboard' && userStore.token) {
+    next(roleHome())
     return
   }
 
