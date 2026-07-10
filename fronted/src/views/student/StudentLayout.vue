@@ -15,8 +15,8 @@
 </template>
 
 <script setup>
-import DashboardHeader from '@/components/DashboardHeader.vue'
-import AppSidebar from '@/components/AppSidebar.vue'
+import DashboardHeader from '@/components/DashBoard/DashboardHeader.vue'
+import AppSidebar from '@/components/Layout/AppSidebar.vue'
 </script>
 
 <style scoped>

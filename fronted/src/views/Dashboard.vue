@@ -52,11 +52,11 @@ import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/stores/user'
 import { courseApi, assignmentApi, examApi, trainingApi, dashboardApi, notificationApi, messageApi, qaApi, evaluationApi, surveyApi, announcementApi } from '@/api'
-import DashboardHeader from '@/components/DashboardHeader.vue'
-import DashboardTodoPanel from '@/components/DashboardTodoPanel.vue'
-import DashboardShortcutManager from '@/components/DashboardShortcutManager.vue'
-import DashboardCoursePanel from '@/components/DashboardCoursePanel.vue'
-import DashboardRightSidebar from '@/components/DashboardRightSidebar.vue'
+import DashboardHeader from '@/components/DashBoard/DashboardHeader.vue'
+import DashboardTodoPanel from '@/components/DashBoard/DashboardTodoPanel.vue'
+import DashboardShortcutManager from '@/components/DashBoard/DashboardShortcutManager.vue'
+import DashboardCoursePanel from '@/components/DashBoard/DashboardCoursePanel.vue'
+import DashboardRightSidebar from '@/components/DashBoard/DashboardRightSidebar.vue'
 
 const router = useRouter()
 const userStore = useUserStore()

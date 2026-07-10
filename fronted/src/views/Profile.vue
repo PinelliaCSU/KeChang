@@ -152,7 +152,7 @@ import { reactive, ref, computed, onMounted } from 'vue'
 import { Edit } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 import { authApi, courseApi, assignmentApi, examApi } from '@/api'
-import DashboardHeader from '@/components/DashboardHeader.vue'
+import DashboardHeader from '@/components/DashBoard/DashboardHeader.vue'
 import ProfileEditDialog from '@/components/ProfileEditDialog.vue'
 
 const userStore = useUserStore()
