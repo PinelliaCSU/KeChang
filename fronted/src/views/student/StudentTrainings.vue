@@ -31,7 +31,8 @@
     </div>
 
     <el-dialog v-model="taskDialogVisible" :title="currentProject ? currentProject.projectName : '实训任务'" width="850px">
-      <el-table v-if="tasks.length > 0 || taskLoading" :data="tasks" v-loading="taskLoading" stripe border>
+      <el-table v-if="tasks.length > 0 || taskLoading" :data="tasks" v-loading="taskLoading" stripe
+        class="kechang-table" style="width:100%">
         <el-table-column prop="sortOrder" label="序号" width="70" />
         <el-table-column prop="taskName" label="任务名称" min-width="150" />
         <el-table-column prop="description" label="任务说明" min-width="190" show-overflow-tooltip />
@@ -47,7 +48,7 @@
         <el-table-column label="操作" width="110">
           <template #default="{ row }">
             <el-button size="small" type="primary" @click="openSubmit(row)">{{ row.myReportId ? '查看/修改' : '提交'
-              }}</el-button>
+            }}</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -368,5 +369,41 @@ onMounted(fetchProjects)
   color: #909399;
   white-space: nowrap;
   font-size: 12px;
+}
+
+:deep(.kechang-table) {
+  width: 100%;
+  border: none;
+}
+
+:deep(.kechang-table .el-table__header-wrapper th.el-table__cell) {
+  background-color: #F5F7FA !important;
+  color: #606266;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+:deep(.kechang-table .el-table__body-wrapper td.el-table__cell) {
+  border-bottom: none;
+}
+
+:deep(.kechang-table .el-table__cell) {
+  border-right: none;
+}
+
+:deep(.kechang-table::before),
+:deep(.kechang-table::after),
+:deep(.kechang-table .el-table__inner-wrapper::before),
+:deep(.kechang-table .el-table__border-left-patch),
+:deep(.kechang-table .el-table__border-right-patch) {
+  display: none;
+}
+
+:deep(.kechang-table.el-table--striped .el-table__body tr.el-table__row--striped td.el-table__cell) {
+  background-color: rgba(163, 177, 138, 0.06);
+}
+
+:deep(.kechang-table .el-table__body tr.el-table__row:hover td) {
+  background-color: rgba(163, 177, 138, 0.08) !important;
 }
 </style>

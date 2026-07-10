@@ -64,7 +64,8 @@
         <div class="dialog-subtitle">{{ currentProject?.description || '管理实训任务和学生报告' }}</div>
         <el-button type="primary" size="small" @click="openCreateTask">添加任务</el-button>
       </div>
-      <el-table v-if="tasks.length > 0 || taskLoading" :data="tasks" v-loading="taskLoading" stripe border>
+      <el-table v-if="tasks.length > 0 || taskLoading" :data="tasks" v-loading="taskLoading" stripe
+        class="kechang-table" style="width:100%">
         <el-table-column prop="sortOrder" label="序号" width="70" />
         <el-table-column prop="taskName" label="任务名称" min-width="150" />
         <el-table-column prop="description" label="任务说明" min-width="180" show-overflow-tooltip />
@@ -113,7 +114,8 @@
 
     <el-dialog v-model="reportDialogVisible" :title="currentTask ? `实训报告 - ${currentTask.taskName}` : '实训报告'"
       width="920px">
-      <el-table v-if="reports.length > 0 || reportLoading" :data="reports" v-loading="reportLoading" stripe border>
+      <el-table v-if="reports.length > 0 || reportLoading" :data="reports" v-loading="reportLoading" stripe
+        class="kechang-table" style="width:100%">
         <el-table-column prop="studentNo" label="学号" width="120" />
         <el-table-column prop="studentName" label="姓名" width="110" />
         <el-table-column prop="reportContent" label="报告内容" min-width="220" show-overflow-tooltip />
@@ -543,5 +545,41 @@ onMounted(() => {
   color: #909399;
   white-space: nowrap;
   font-size: 12px;
+}
+
+:deep(.kechang-table) {
+  width: 100%;
+  border: none;
+}
+
+:deep(.kechang-table .el-table__header-wrapper th.el-table__cell) {
+  background-color: #F5F7FA !important;
+  color: #606266;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+:deep(.kechang-table .el-table__body-wrapper td.el-table__cell) {
+  border-bottom: none;
+}
+
+:deep(.kechang-table .el-table__cell) {
+  border-right: none;
+}
+
+:deep(.kechang-table::before),
+:deep(.kechang-table::after),
+:deep(.kechang-table .el-table__inner-wrapper::before),
+:deep(.kechang-table .el-table__border-left-patch),
+:deep(.kechang-table .el-table__border-right-patch) {
+  display: none;
+}
+
+:deep(.kechang-table.el-table--striped .el-table__body tr.el-table__row--striped td.el-table__cell) {
+  background-color: rgba(163, 177, 138, 0.06);
+}
+
+:deep(.kechang-table .el-table__body tr.el-table__row:hover td) {
+  background-color: rgba(163, 177, 138, 0.08) !important;
 }
 </style>

@@ -123,3 +123,47 @@
 .el-calendar-table .el-calendar-day:hover {
   background-color: rgba(163, 177, 138, 0.1);
 }
+
+/* ============================================================
+   无边框表格 (Borderless Table)
+   去除 el-table 的行间分割线，用于 DataPanel 等卡片容器
+   ============================================================ */
+
+/* 去掉表格行之间的下边框 */
+.is-borderless .el-table__body td.el-table__cell {
+  border-bottom: none;
+}
+
+/* 去掉表格行的上边框 */
+.is-borderless .el-table__body tr.el-table__row td.el-table__cell {
+  border-bottom: none;
+}
+
+/* 保留表头底部有一根细线作为视觉分隔 */
+.is-borderless th.el-table__cell {
+  border-bottom: 1px solid rgba(163, 177, 138, 0.15);
+}
+
+/* 去掉表格内部的所有竖线边框 */
+.is-borderless .el-table__cell {
+  border-right: none;
+}
+
+/* 去掉表格的外包边框 */
+.is-borderless::before,
+.is-borderless::after,
+.is-borderless .el-table__inner-wrapper::before,
+.is-borderless .el-table__border-left-patch,
+.is-borderless .el-table__border-right-patch {
+  display: none;
+}
+
+/* 斑马纹行 — 更淡更自然 */
+.is-borderless.el-table--striped .el-table__body tr.el-table__row--striped td.el-table__cell {
+  background-color: rgba(163, 177, 138, 0.06);
+}
+
+/* 行悬浮高亮 */
+.is-borderless .el-table__body tr.el-table__row:hover td {
+  background-color: rgba(163, 177, 138, 0.08) !important;
+}

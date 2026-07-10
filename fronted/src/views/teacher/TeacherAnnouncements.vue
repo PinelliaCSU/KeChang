@@ -7,13 +7,14 @@
 
     <div class="panel">
       <div class="search-bar">
-        <el-select v-model="courseFilter" placeholder="按课程筛选" clearable style="width:200px" @change="fetchAnnouncements">
+        <el-select v-model="courseFilter" placeholder="按课程筛选" clearable style="width:200px"
+          @change="fetchAnnouncements">
           <el-option v-for="c in courseList" :key="c.id" :label="c.courseName" :value="c.id" />
         </el-select>
       </div>
 
-      <el-table v-if="announcements.length > 0 || loading" :data="announcements" v-loading="loading" stripe border
-        style="width:100%">
+      <el-table v-if="announcements.length > 0 || loading" :data="announcements" v-loading="loading" stripe
+        class="kechang-table" style="width:100%">
         <el-table-column prop="title" label="公告标题" min-width="180" />
         <el-table-column prop="courseName" label="关联课程" min-width="120" />
         <el-table-column label="发布时间" width="170">
@@ -65,7 +66,7 @@
 
     <!-- 确认列表弹窗 -->
     <el-dialog v-model="confirmDialogVisible" :title="'确认列表 - ' + confirmTitle" width="650px" destroy-on-close>
-      <el-table :data="confirmList" stripe border style="width:100%">
+      <el-table :data="confirmList" stripe class="kechang-table" style="width:100%">
         <el-table-column prop="studentName" label="学生姓名" min-width="120" />
         <el-table-column prop="studentNo" label="学号" min-width="120" />
         <el-table-column prop="username" label="用户名" min-width="100" />
@@ -204,9 +205,70 @@ onMounted(() => { fetchCourses(); fetchAnnouncements() })
 </script>
 
 <style scoped>
-.page-shell { display: flex; flex-direction: column; gap: 20px; }
-.page-title-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
-.page-title { font-size: 20px; font-weight: 600; color: #303133; margin: 0; }
-.panel { background: #fff; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); padding: 24px; }
-.search-bar { margin-bottom: 16px; }
+.page-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.page-title-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.page-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #303133;
+  margin: 0;
+}
+
+.panel {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  padding: 24px;
+}
+
+.search-bar {
+  margin-bottom: 16px;
+}
+
+:deep(.kechang-table) {
+  width: 100%;
+  border: none;
+}
+
+:deep(.kechang-table .el-table__header-wrapper th.el-table__cell) {
+  background-color: #F5F7FA !important;
+  color: #606266;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+:deep(.kechang-table .el-table__body-wrapper td.el-table__cell) {
+  border-bottom: none;
+}
+
+:deep(.kechang-table .el-table__cell) {
+  border-right: none;
+}
+
+:deep(.kechang-table::before),
+:deep(.kechang-table::after),
+:deep(.kechang-table .el-table__inner-wrapper::before),
+:deep(.kechang-table .el-table__border-left-patch),
+:deep(.kechang-table .el-table__border-right-patch) {
+  display: none;
+}
+
+:deep(.kechang-table.el-table--striped .el-table__body tr.el-table__row--striped td.el-table__cell) {
+  background-color: rgba(163, 177, 138, 0.06);
+}
+
+:deep(.kechang-table .el-table__body tr.el-table__row:hover td) {
+  background-color: rgba(163, 177, 138, 0.08) !important;
+}
 </style>

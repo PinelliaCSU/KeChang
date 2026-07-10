@@ -12,7 +12,7 @@
         </el-select>
       </div>
 
-      <el-table v-if="surveys.length > 0 || loading" :data="surveys" v-loading="loading" stripe border
+      <el-table v-if="surveys.length > 0 || loading" :data="surveys" v-loading="loading" stripe class="kechang-table"
         style="width:100%">
         <el-table-column prop="title" label="问卷标题" min-width="180" />
         <el-table-column prop="courseName" label="关联课程" min-width="120" />
@@ -445,5 +445,41 @@ onMounted(() => { fetchCourses(); fetchSurveys() })
   flex-wrap: wrap;
   gap: 4px;
   padding-left: 12px;
+}
+
+:deep(.kechang-table) {
+  width: 100%;
+  border: none;
+}
+
+:deep(.kechang-table .el-table__header-wrapper th.el-table__cell) {
+  background-color: #F5F7FA !important;
+  color: #606266;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+:deep(.kechang-table .el-table__body-wrapper td.el-table__cell) {
+  border-bottom: none;
+}
+
+:deep(.kechang-table .el-table__cell) {
+  border-right: none;
+}
+
+:deep(.kechang-table::before),
+:deep(.kechang-table::after),
+:deep(.kechang-table .el-table__inner-wrapper::before),
+:deep(.kechang-table .el-table__border-left-patch),
+:deep(.kechang-table .el-table__border-right-patch) {
+  display: none;
+}
+
+:deep(.kechang-table.el-table--striped .el-table__body tr.el-table__row--striped td.el-table__cell) {
+  background-color: rgba(163, 177, 138, 0.06);
+}
+
+:deep(.kechang-table .el-table__body tr.el-table__row:hover td) {
+  background-color: rgba(163, 177, 138, 0.08) !important;
 }
 </style>

@@ -15,7 +15,8 @@
         </el-select>
       </div>
 
-      <el-table v-if="papers.length > 0 || loading" :data="papers" v-loading="loading" stripe border style="width:100%">
+      <el-table v-if="papers.length > 0 || loading" :data="papers" v-loading="loading" stripe class="kechang-table"
+        style="width:100%">
         <el-table-column prop="paperName" label="试卷名称" min-width="200" />
         <el-table-column prop="courseName" label="所属课程" min-width="140" />
         <el-table-column prop="totalScore" label="总分" width="90" />
@@ -85,8 +86,8 @@
             <el-input v-model="qKeyword" placeholder="搜索题目" style="width:200px" clearable @change="loadQuestions" />
             <span class="selected-count">已选: {{ selectedQuestions.length }} 题 / 合计 {{ selectedTotalScore }} 分</span>
           </div>
-          <el-table :data="bankQuestions" v-loading="qLoading" stripe border max-height="300" style="width:100%"
-            @selection-change="onSelectionChange" ref="qTableRef">
+          <el-table :data="bankQuestions" v-loading="qLoading" stripe class="kechang-table" max-height="300"
+            style="width:100%" @selection-change="onSelectionChange" ref="qTableRef">
             <el-table-column type="selection" width="45" />
             <el-table-column prop="content" label="题目" min-width="240" show-overflow-tooltip />
             <el-table-column label="题型" width="70">
@@ -376,5 +377,41 @@ onMounted(() => { fetchCourses(); fetchPapers() })
 
 .paper-question-item p {
   margin: 4px 0;
+}
+
+:deep(.kechang-table) {
+  width: 100%;
+  border: none;
+}
+
+:deep(.kechang-table .el-table__header-wrapper th.el-table__cell) {
+  background-color: #F5F7FA !important;
+  color: #606266;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+:deep(.kechang-table .el-table__body-wrapper td.el-table__cell) {
+  border-bottom: none;
+}
+
+:deep(.kechang-table .el-table__cell) {
+  border-right: none;
+}
+
+:deep(.kechang-table::before),
+:deep(.kechang-table::after),
+:deep(.kechang-table .el-table__inner-wrapper::before),
+:deep(.kechang-table .el-table__border-left-patch),
+:deep(.kechang-table .el-table__border-right-patch) {
+  display: none;
+}
+
+:deep(.kechang-table.el-table--striped .el-table__body tr.el-table__row--striped td.el-table__cell) {
+  background-color: rgba(163, 177, 138, 0.06);
+}
+
+:deep(.kechang-table .el-table__body tr.el-table__row:hover td) {
+  background-color: rgba(163, 177, 138, 0.08) !important;
 }
 </style>
