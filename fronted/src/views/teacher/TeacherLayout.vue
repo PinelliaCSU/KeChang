@@ -4,7 +4,11 @@
     <div class="layout-body">
       <AppSidebar />
       <main class="main-content">
-        <router-view />
+        <router-view v-slot="{ Component, route }">
+          <transition name="fade-slide" mode="out-in">
+            <component :is="Component" :key="route.path" />
+          </transition>
+        </router-view>
       </main>
     </div>
   </div>
