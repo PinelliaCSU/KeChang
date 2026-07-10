@@ -185,9 +185,12 @@ const truncateContent = (content) => {
   return text.length > 200 ? text.substring(0, 200) + '...' : text
 }
 
-const previewFile = (resource) => {
+const previewFile = async (resource) => {
   previewResource.value = resource
   previewVisible.value = true
+  try {
+    await courseApi.markResourceViewed(courseId(), resource.id)
+  } catch { /* ignore */ }
 }
 
 const saveNote = async () => {

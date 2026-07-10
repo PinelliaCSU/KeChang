@@ -48,6 +48,7 @@ const props = defineProps({
 const loading = ref(false)
 const textContent = ref('')
 const previewUrl = ref('')
+const previewFailed = ref(false)
 
 const resolvedOriginalUrl = computed(() => resolveFileUrl(props.url))
 const effectivePreviewUrl = computed(() => previewUrl.value || props.url)
@@ -73,25 +74,33 @@ const typeLabel = computed(() => {
 })
 
 const unsupportedTitle = computed(() => {
+  if (previewFailed.value) return '预览生成失败'
   if (['doc', 'docx'].includes(extension.value)) return 'Word 文件正在转换为 PDF 预览'
   if (['ppt', 'pptx', 'xls', 'xlsx'].includes(extension.value)) return 'Office 文件暂不支持浏览器内嵌预览'
   return '该文件类型暂不支持内嵌预览'
 })
 
 const unsupportedTip = computed(() => {
+  if (previewFailed.value) return '当前文件无法生成在线预览，请下载原文件查看。'
   if (['doc', 'docx'].includes(extension.value)) return '转换完成后会显示 PDF 预览，原 Word 文件仍可下载归档。'
   return '可以在新窗口打开，或下载到本地查看。'
 })
 
 const loadPreview = async () => {
   previewUrl.value = ''
+  previewFailed.value = false
   if (!['doc', 'docx'].includes(extension.value) || !props.url) return
   loading.value = true
   try {
     const res = await uploadApi.preview({ url: props.url, name: fileName.value })
     if (res.data.code === 200) {
       previewUrl.value = res.data.data?.url || ''
+      previewFailed.value = !previewUrl.value
+    } else {
+      previewFailed.value = true
     }
+  } catch {
+    previewFailed.value = true
   } finally {
     loading.value = false
   }
@@ -116,6 +125,9 @@ watch(() => [props.url, fileName.value], loadPreview, { immediate: true })
 
 watch(() => [resolvedPreviewUrl.value, previewType.value], () => {
   loading.value = ['image', 'pdf', 'video', 'audio'].includes(previewType.value)
+  if (loading.value) {
+    window.setTimeout(() => { loading.value = false }, 8000)
+  }
   loadText()
 }, { immediate: true })
 

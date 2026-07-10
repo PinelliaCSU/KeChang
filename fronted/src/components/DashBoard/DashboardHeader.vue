@@ -1,7 +1,7 @@
 <template>
     <header class="top-header">
         <div class="header-left">
-            <div class="logo-area" @click="router.push('/dashboard')" style="cursor:pointer">
+            <div class="logo-area" @click="router.push(roleHome())" style="cursor:pointer">
                 <img src="@/img/logo.jpg" alt="Logo" class="logo-img" />
             </div>
         </div>
@@ -14,7 +14,7 @@
                     </el-icon></span>
                 <template #dropdown>
                     <el-dropdown-menu>
-                        <el-dropdown-item command="dashboard">我的课程</el-dropdown-item>
+                        <el-dropdown-item command="dashboard">主页</el-dropdown-item>
                         <el-dropdown-item command="profile">个人中心</el-dropdown-item>
                         <el-dropdown-item command="password">修改密码</el-dropdown-item>
                         <el-dropdown-item divided command="logout">退出登录</el-dropdown-item>
@@ -126,6 +126,13 @@ let checkinTimer = null
 
 const displayName = computed(() => userStore.nickname || userStore.username || '同学')
 
+const roleHome = () => {
+    if (userStore.isAdmin) return '/admin/courses'
+    if (userStore.isTeacher) return '/teacher/dashboard'
+    if (userStore.isStudent) return '/student/dashboard'
+    return '/dashboard'
+}
+
 // ==================== 通知相关 ====================
 const fetchNotifications = async () => {
     if (!userStore.isLoggedIn) return
@@ -165,7 +172,7 @@ const formatTime = (t) => {
 
 // ==================== 用户操作 ====================
 const handleMyHomeCmd = (cmd) => {
-    if (cmd === 'dashboard') router.push('/dashboard')
+    if (cmd === 'dashboard') router.push(roleHome())
     else if (cmd === 'profile') router.push('/profile')
     else if (cmd === 'password') changePassword()
     else if (cmd === 'logout') handleLogout()

@@ -143,3 +143,32 @@ body::before {
   pointer-events: none;
   opacity: 0.06;
 }
+
+/* ---------- 路由过渡动画 ---------- */
+/* 页面进入：淡入 + 轻微上移，干净利落 */
+.fade-slide-enter-active,
+.fade-slide-leave-active {
+  transition: opacity var(--bio-dur-normal) var(--bio-ease-out),
+              transform var(--bio-dur-normal) var(--bio-ease-out);
+}
+
+.fade-slide-enter-from {
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+.fade-slide-leave-to {
+  opacity: 0;
+  transform: translateY(-6px);
+}
+
+/* 顶层路由切换 — 仅淡入淡出，无位移（Login ↔ 主页） */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity var(--bio-dur-normal) var(--bio-ease-out);
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}

@@ -132,8 +132,8 @@
             </div>
           </div>
           <div style="display:flex;gap:8px;align-items:center">
-            <el-upload :http-request="uploadPlanFile" :show-file-list="false">
-              <el-button :loading="planUploadLoading">上传文件</el-button>
+            <el-upload :http-request="uploadPlanFile" :show-file-list="false" :disabled="planUploadLoading">
+              <el-button :loading="planUploadLoading" :disabled="planUploadLoading">上传文件</el-button>
             </el-upload>
             <span style="font-size:12px;color:#909399">可上传多个文件</span>
           </div>
@@ -141,7 +141,7 @@
       </el-form>
       <template #footer>
         <el-button @click="planEditVisible = false">取消</el-button>
-        <el-button type="primary" :loading="planSubmitting" @click="handlePlanSubmit">保存</el-button>
+        <el-button type="primary" :loading="planSubmitting" :disabled="planUploadLoading" @click="handlePlanSubmit">保存</el-button>
       </template>
     </el-dialog>
 
@@ -156,14 +156,14 @@
             <span class="file-name">{{ materialForm.fileName }}</span>
             <el-button size="small" type="danger" link @click="clearMaterialFile">移除</el-button>
           </div>
-          <el-upload v-else :http-request="uploadMaterialFile" :show-file-list="false">
-            <el-button :loading="materialUploadLoading">选择文件</el-button>
+          <el-upload v-else :http-request="uploadMaterialFile" :show-file-list="false" :disabled="materialUploadLoading">
+            <el-button :loading="materialUploadLoading" :disabled="materialUploadLoading">选择文件</el-button>
           </el-upload>
         </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="materialDialogVisible = false">取消</el-button>
-        <el-button type="primary" :loading="materialSubmitting" @click="handleMaterialSubmit">上传</el-button>
+        <el-button type="primary" :loading="materialSubmitting" :disabled="materialUploadLoading" @click="handleMaterialSubmit">上传</el-button>
       </template>
     </el-dialog>
 
@@ -185,8 +185,8 @@
             </div>
           </div>
           <div style="display:flex;gap:8px;align-items:center">
-            <el-upload :http-request="uploadTaskFile" :show-file-list="false">
-              <el-button :loading="taskUploadLoading">上传文件</el-button>
+            <el-upload :http-request="uploadTaskFile" :show-file-list="false" :disabled="taskUploadLoading">
+              <el-button :loading="taskUploadLoading" :disabled="taskUploadLoading">上传文件</el-button>
             </el-upload>
             <span style="font-size:12px;color:#909399">可上传多个文件</span>
           </div>
@@ -200,7 +200,7 @@
       </el-form>
       <template #footer>
         <el-button @click="taskFormVisible = false">取消</el-button>
-        <el-button type="primary" :loading="taskSubmitting" @click="handleTaskSubmit">
+        <el-button type="primary" :loading="taskSubmitting" :disabled="taskUploadLoading" @click="handleTaskSubmit">
           {{ isEditTask ? '保存' : '发布' }}
         </el-button>
       </template>
@@ -208,6 +208,10 @@
 
     <!-- 报告列表弹窗 -->
     <el-dialog v-model="reportDialogVisible" :title="currentTask ? '提交列表 - ' + currentTask.taskName : '提交列表'" width="920px">
+      <div class="dialog-toolbar">
+        <span class="toolbar-muted">共 {{ reports.length }} 份提交</span>
+        <el-button size="small" :disabled="reports.length === 0" @click="exportTrainingReports">导出实训评分</el-button>
+      </div>
       <el-table v-if="reports.length > 0 || reportLoading" :data="reports" v-loading="reportLoading" stripe border>
         <el-table-column prop="studentNo" label="学号" width="120" />
         <el-table-column prop="studentName" label="姓名" width="110" />
@@ -263,6 +267,7 @@
       <template #footer>
         <el-button @click="reportGradeVisible = false">取消</el-button>
         <el-button type="primary" :loading="reportGrading" @click="doReportGrade">确认</el-button>
+        <el-button type="success" plain :disabled="!hasNextReport" @click="openNextReport">评分下一个</el-button>
       </template>
     </el-dialog>
 
@@ -335,6 +340,8 @@ const currentReport = ref(null)
 const reportScore = ref(0)
 const reportComment = ref('')
 const reportGrading = ref(false)
+const currentReportIndex = computed(() => reports.value.findIndex(item => item.id === currentReport.value?.id))
+const hasNextReport = computed(() => currentReportIndex.value >= 0 && currentReportIndex.value < reports.value.length - 1)
 
 // --- Preview ---
 const previewVisible = ref(false)
@@ -603,12 +610,63 @@ const doReportGrade = async () => {
   try {
     await trainingApi.gradeReport(currentReport.value.id, { score: reportScore.value, comment: reportComment.value })
     ElMessage.success('评分成功')
-    reportGradeVisible.value = false
-    await viewReports(currentTask.value)
+    const reportId = currentReport.value.id
+    await refreshReports()
+    const latest = reports.value.find(item => item.id === reportId)
+    if (latest) {
+      currentReport.value = latest
+      reportScore.value = latest.score ?? reportScore.value
+      reportComment.value = latest.comment || reportComment.value
+    }
     // Refresh task counts
     if (currentTask.value?.taskType === 'DOCUMENT') fetchDocuments()
     else fetchTasks()
   } finally { reportGrading.value = false }
+}
+
+const refreshReports = async () => {
+  if (!currentTask.value?.id) return
+  reportLoading.value = true
+  try {
+    const res = await trainingApi.listReports(currentTask.value.id, { page: 1, size: 100 })
+    if (res.data.code === 200) reports.value = res.data.data?.records || []
+  } finally { reportLoading.value = false }
+}
+
+const openNextReport = () => {
+  if (!hasNextReport.value) return
+  openReportGrade(reports.value[currentReportIndex.value + 1])
+}
+
+const csvCell = (value) => {
+  const text = value == null ? '' : String(value)
+  return `"${text.replace(/"/g, '""')}"`
+}
+
+const downloadCsv = (filename, rows) => {
+  const content = '\ufeff' + rows.map(row => row.map(csvCell).join(',')).join('\n')
+  const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' })
+  const link = document.createElement('a')
+  link.href = URL.createObjectURL(blob)
+  link.download = filename
+  link.click()
+  URL.revokeObjectURL(link.href)
+}
+
+const exportTrainingReports = () => {
+  if (!reports.value.length) return
+  const rows = [
+    ['学号', '姓名', '提交内容', '提交时间', '评分', '评语'],
+    ...reports.value.map(item => [
+      item.studentNo || '',
+      item.studentName || '',
+      item.reportContent || '',
+      item.submitTime || '',
+      item.score != null ? item.score : '未评',
+      item.comment || ''
+    ])
+  ]
+  downloadCsv(`${currentTask.value?.taskName || '实训任务'}-评分表.csv`, rows)
 }
 
 onMounted(() => {
@@ -635,6 +693,18 @@ onMounted(() => {
 
 /* ---------- Tabs 工具栏 ---------- */
 .tab-toolbar { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+
+.dialog-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.toolbar-muted {
+  color: #909399;
+  font-size: 13px;
+}
 
 /* ---------- 内容区块 ---------- */
 .content-group { margin-top: 16px; }

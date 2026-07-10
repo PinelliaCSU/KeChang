@@ -23,6 +23,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -38,6 +39,8 @@ public class TrainingService {
     private final AttachmentFileMapper attachmentFileMapper;
     private final StudentProfileMapper studentProfileMapper;
     private final SysUserMapper sysUserMapper;
+    private final NotificationService notificationService;
+    private final OperationLogService operationLogService;
 
     public PageResult<TrainingProject> listProjects(int page, int size, Long userId, boolean teacher) {
         LambdaQueryWrapper<TrainingProject> wrapper = new LambdaQueryWrapper<>();
@@ -63,6 +66,11 @@ public class TrainingService {
         projectMapper.insert(project);
         // 自动创建默认文档提交任务
         createDefaultDocuments(project.getId());
+        notificationService.sendToRole("ROLE_STUDENT", teacherId, "实训",
+                "新实训项目：" + project.getProjectName(),
+                "教师发布了新的实训项目，请进入实训中心查看任务要求。");
+        operationLogService.record(teacherId, "实训管理", "发布实训项目", "TRAINING_PROJECT", project.getId(), project.getProjectName(),
+                "发布实训项目");
     }
 
     @Transactional
@@ -130,6 +138,12 @@ public class TrainingService {
 
         // 保存多文件附件
         saveAttachments("TASK", task.getId(), task.getAttachmentUrls(), task.getAttachmentNames(), task.getAttachmentSizes());
+        TrainingProject project = projectMapper.selectById(projectId);
+        notificationService.sendToRole("ROLE_STUDENT", teacherId, "实训",
+                "新实训任务：" + task.getTaskName(),
+                "实训项目《" + (project != null ? project.getProjectName() : "实训项目") + "》发布了新任务，请按时完成。");
+        operationLogService.record(teacherId, "实训管理", "发布实训任务", "TRAINING_TASK", task.getId(), task.getTaskName(),
+                "发布实训任务");
     }
 
     @Transactional
@@ -237,6 +251,12 @@ public class TrainingService {
         report.setComment(comment);
         report.setStatus("已批改");
         reportMapper.updateById(report);
+        TrainingProject project = projectMapper.selectById(task.getProjectId());
+        notificationService.sendToUser(report.getStudentId(), teacherId, null, "实训",
+                "实训报告已评分：" + task.getTaskName(),
+                "你在《" + (project != null ? project.getProjectName() : "实训项目") + "》中的报告已评分，得分：" + score + "。");
+        operationLogService.record(teacherId, "实训管理", "评分实训报告", "TRAINING_REPORT", report.getId(), task.getTaskName(),
+                "评分学生实训报告");
     }
 
     // ==================== 项目详情 & 实习计划 ====================
@@ -341,6 +361,7 @@ public class TrainingService {
                 .collect(Collectors.toList());
         project.setReportCount(taskIds.isEmpty() ? 0L : reportMapper.selectCount(new LambdaQueryWrapper<TrainingReport>()
                 .in(TrainingReport::getTaskId, taskIds)));
+        project.setStatus(computeProjectStatus(project, taskIds));
     }
 
     private void fillTaskExtra(TrainingTask task, Long userId, boolean student) {
@@ -355,7 +376,7 @@ public class TrainingService {
                 .eq(TrainingReport::getTaskId, task.getId())
                 .eq(TrainingReport::getStudentId, userId));
         if (report == null) {
-            task.setReportStatus("未提交");
+            task.setReportStatus(computeTaskStatus(task, null));
             return;
         }
         task.setMyReportId(report.getId());
@@ -364,7 +385,7 @@ public class TrainingService {
         task.setSubmitTime(report.getSubmitTime());
         task.setScore(report.getScore());
         task.setComment(report.getComment());
-        task.setReportStatus(report.getStatus());
+        task.setReportStatus(computeTaskStatus(task, report));
         // 填充学生提交的附件
         task.setAttachments(getAttachments("REPORT", report.getId()));
     }
@@ -428,6 +449,36 @@ public class TrainingService {
             throw BusinessException.forbidden("只能管理自己创建的实训项目");
         }
         return project;
+    }
+
+    private String computeProjectStatus(TrainingProject project, List<Long> taskIds) {
+        if (!taskIds.isEmpty()) {
+            Long reportCount = reportMapper.selectCount(new LambdaQueryWrapper<TrainingReport>().in(TrainingReport::getTaskId, taskIds));
+            Long gradedCount = reportMapper.selectCount(new LambdaQueryWrapper<TrainingReport>()
+                    .in(TrainingReport::getTaskId, taskIds)
+                    .eq(TrainingReport::getStatus, "已批改"));
+            if (reportCount != null && reportCount > 0 && reportCount.equals(gradedCount)) {
+                return "已评分";
+            }
+        }
+        LocalDate today = LocalDate.now();
+        if (project.getStartDate() != null && today.isBefore(project.getStartDate())) {
+            return "未开始";
+        }
+        if (project.getEndDate() != null && today.isAfter(project.getEndDate())) {
+            return "已截止";
+        }
+        return "进行中";
+    }
+
+    private String computeTaskStatus(TrainingTask task, TrainingReport report) {
+        if (report != null && "已批改".equals(report.getStatus())) {
+            return "已评分";
+        }
+        if (task.getDeadline() != null && LocalDateTime.now().isAfter(task.getDeadline())) {
+            return "已截止";
+        }
+        return report == null ? "进行中" : "已提交";
     }
 
     private String fallbackName(Long userId) {

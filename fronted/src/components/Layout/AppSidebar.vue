@@ -142,7 +142,8 @@ const adminMenus = [
     title: '数据统计',
     icon: 'DataAnalysis',
     children: [
-      { path: '/admin/surveys', title: '问卷统计' }
+      { path: '/admin/surveys', title: '问卷统计' },
+      { path: '/admin/operation-logs', title: '操作日志' }
     ]
   }
 ]
