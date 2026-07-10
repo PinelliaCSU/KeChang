@@ -74,6 +74,49 @@ const shortcuts = ref([])
 
 const STORAGE_KEY = 'kechang_shortcuts'
 
+// 获取当前角色的默认入口
+const getDefaultEntries = () => {
+    const common = [
+        { id: 'calendar', label: '日历', icon: 'Calendar', route: '/calendar', color: '#a5c4d4', visible: true },
+        { id: 'profile', label: '个人中心', icon: 'User', route: '/profile', color: '#b08968', visible: true }
+    ]
+    let roleEntries = []
+    if (userStore.isStudent) {
+        roleEntries = [
+            { id: 's-courses', label: '课程中心', icon: 'Reading', route: '/student/courses', color: '#7f8c52', visible: true },
+            { id: 's-assignments', label: '我的作业', icon: 'Edit', route: '/student/assignments', color: '#b08968', visible: true },
+            { id: 's-exams', label: '在线考试', icon: 'Timer', route: '/student/exams', color: '#c4665a', visible: true },
+            { id: 's-grades', label: '我的成绩', icon: 'TrendCharts', route: '/student/grades', color: '#6b8e4e', visible: true },
+            { id: 's-notes', label: '学习笔记', icon: 'Notebook', route: '/student/notes', color: '#5c7a8a', visible: true },
+            { id: 's-trainings', label: '实训中心', icon: 'Tools', route: '/student/trainings', color: '#9c6644', visible: true },
+            { id: 's-posts', label: '互动问答', icon: 'ChatDotRound', route: '/student/posts', color: '#7a9fb5', visible: true },
+            { id: 's-knowledge', label: '知识库', icon: 'Collection', route: '/student/knowledge', color: '#606c38', visible: true },
+            { id: 's-evaluations', label: '教学评价', icon: 'List', route: '/student/evaluations', color: '#c4956a', visible: true },
+            { id: 's-surveys', label: '问卷调查', icon: 'Document', route: '/student/surveys', color: '#a3b18a', visible: true }
+        ]
+    } else if (userStore.isTeacher) {
+        roleEntries = [
+            { id: 't-courses', label: '课程管理', icon: 'Reading', route: '/teacher/courses', color: '#7f8c52', visible: true },
+            { id: 't-questions', label: '试题管理', icon: 'Connection', route: '/teacher/questions', color: '#5c7a8a', visible: true },
+            { id: 't-papers', label: '试卷管理', icon: 'DocumentCopy', route: '/teacher/papers', color: '#b08968', visible: true },
+            { id: 't-exams', label: '考试管理', icon: 'Timer', route: '/teacher/exams', color: '#c4665a', visible: true },
+            { id: 't-assignments', label: '作业管理', icon: 'Edit', route: '/teacher/assignments', color: '#9c6644', visible: true },
+            { id: 't-grades', label: '成绩管理', icon: 'TrendCharts', route: '/teacher/grades', color: '#6b8e4e', visible: true },
+            { id: 't-trainings', label: '实训管理', icon: 'Tools', route: '/teacher/trainings', color: '#606c38', visible: true },
+            { id: 't-surveys', label: '问卷管理', icon: 'Document', route: '/teacher/surveys', color: '#a3b18a', visible: true },
+            { id: 't-evaluations', label: '教学评价', icon: 'List', route: '/teacher/evaluations', color: '#c4956a', visible: true },
+            { id: 't-posts', label: '互动问答', icon: 'ChatDotRound', route: '/teacher/posts', color: '#7a9fb5', visible: true }
+        ]
+    } else if (userStore.isAdmin) {
+        roleEntries = [
+            { id: 'a-courses', label: '课程总览', icon: 'Reading', route: '/admin/courses', color: '#7f8c52', visible: true },
+            { id: 'a-grades', label: '成绩概览', icon: 'TrendCharts', route: '/admin/grades', color: '#6b8e4e', visible: true },
+            { id: 'a-surveys', label: '问卷统计', icon: 'Document', route: '/admin/surveys', color: '#a3b18a', visible: true }
+        ]
+    }
+    return [...common, ...roleEntries]
+}
+
 const loadShortcuts = () => {
     try {
         const saved = localStorage.getItem(STORAGE_KEY)
@@ -85,7 +128,8 @@ const loadShortcuts = () => {
             }
         }
     } catch (e) { /* ignore */ }
-    shortcuts.value = []
+    // 无缓存数据时使用默认入口，确保首次打开就有显示
+    shortcuts.value = getDefaultEntries()
 }
 
 const visibleShortcuts = computed(() => shortcuts.value.filter(s => s.visible))

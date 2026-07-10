@@ -2,12 +2,8 @@
     <el-dialog v-model="dialogVisible" title="常用入口管理" width="680px" top="5vh" :close-on-click-modal="false"
         destroy-on-close class="shortcut-dialog" @closed="onDialogClosed">
         <div class="dialog-toolbar">
-            <span class="toolbar-hint">长按卡片或点击排序按钮开始拖拽排序，点击眼睛按钮切换显示/隐藏</span>
+            <span class="toolbar-hint">长按卡片进入拖拽排序模式，点击眼睛按钮切换显示/隐藏</span>
             <div class="toolbar-actions">
-                <el-tooltip :content="dragEnabled ? '点击排序完成' : '长按拖拽排序'" placement="top">
-                    <el-button :type="dragEnabled ? 'primary' : 'default'" :icon="dragEnabled ? 'CircleCheck' : 'Rank'"
-                        size="small" circle @click="toggleDragMode" />
-                </el-tooltip>
                 <el-tooltip content="重置为默认" placement="top">
                     <el-button icon="Refresh" size="small" circle @click="resetDefaults" />
                 </el-tooltip>
@@ -53,12 +49,7 @@
                     </el-icon>
                 </button>
 
-                <!-- 排序手柄 -->
-                <span v-if="dragEnabled" class="drag-handle">
-                    <el-icon :size="14">
-                        <Rank />
-                    </el-icon>
-                </span>
+
             </div>
         </div>
 
@@ -67,7 +58,8 @@
             <span class="footer-hint">
                 已显示 {{ visibleCount }} / {{ localEntries.length }} 个
             </span>
-            <span v-if="dragEnabled" class="drag-hint">拖拽卡片可调整顺序</span>
+            <span v-if="dragEnabled" class="drag-hint">🖐 拖拽卡片调整顺序，点击<span style="color:var(--bio-moss);cursor:pointer"
+                    @click.stop="dragEnabled = false">完成排序</span></span>
         </div>
     </el-dialog>
 </template>
@@ -239,14 +231,6 @@ const cancelLongPress = () => {
     if (longPressTimer.value) {
         clearTimeout(longPressTimer.value)
         longPressTimer.value = null
-    }
-}
-
-// ========== 拖拽模式切换 ==========
-const toggleDragMode = () => {
-    dragEnabled.value = !dragEnabled.value
-    if (!dragEnabled.value) {
-        draggingIndex.value = -1
     }
 }
 
