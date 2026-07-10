@@ -29,7 +29,7 @@
                 </div>
                 <div class="card-body">
                     <h4 class="card-title" :title="course.name">{{ course.name }}</h4>
-                    <p class="card-author">{{ course.teacherName || course.createByName || '未知教师' }}</p>
+                    <p class="card-author">教师 ：{{ course.teacherName || course.createByName || '未知教师' }}</p>
                     <p class="card-student-id">{{ course.courseCode || '' }}</p>
                 </div>
                 <div class="card-footer">
@@ -101,6 +101,7 @@ const getCoverGradient = (id) => gradientPalette[(id - 1) % gradientPalette.leng
     min-height: 0;
     display: flex;
     flex-direction: column;
+    max-height: 60%;
 }
 
 .course-scroll {
