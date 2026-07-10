@@ -29,6 +29,21 @@
                 </el-icon>
             </span>
 
+            <!-- 签到 -->
+            <el-popover ref="checkinPopover" placement="bottom" :width="340" trigger="click"
+                @show="onCheckinPopoverShow">
+                <template #reference>
+                    <span class="header-action header-icon" title="课堂签到">
+                        <el-icon :size="18">
+                            <Checked />
+                        </el-icon>
+                        <span class="badge-dot checkin-badge" v-if="activeCheckinCount > 0">{{ activeCheckinCount
+                            }}</span>
+                    </span>
+                </template>
+                <CheckinHeaderEntry ref="checkinEntryRef" />
+            </el-popover>
+
             <!-- 通知 -->
             <el-popover ref="notifyPopover" placement="bottom" :width="340" trigger="click" @show="fetchNotifications">
                 <template #reference>
@@ -93,8 +108,9 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useUserStore } from '@/stores/user'
-import { authApi, notificationApi } from '@/api'
+import { authApi, notificationApi, checkinApi } from '@/api'
 import { passwordInputValidator } from '@/utils/validators'
+import CheckinHeaderEntry from '@/components/checkin/CheckinHeaderEntry.vue'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -102,7 +118,11 @@ const userStore = useUserStore()
 const unreadCount = ref(0)
 const notifications = ref([])
 const notifyPopover = ref(null)
+const checkinPopover = ref(null)
+const checkinEntryRef = ref(null)
+const activeCheckinCount = ref(0)
 let notifyTimer = null
+let checkinTimer = null
 
 const displayName = computed(() => userStore.nickname || userStore.username || '同学')
 
@@ -166,8 +186,35 @@ const changePassword = async () => {
 
 const handleLogout = () => { userStore.clearLoginData(); ElMessage.success('已退出登录'); router.push('/login') }
 
-onMounted(() => { fetchNotifications(); notifyTimer = setInterval(fetchNotifications, 30000) })
-onUnmounted(() => { if (notifyTimer) { clearInterval(notifyTimer); notifyTimer = null } })
+// ==================== 签到相关 ====================
+const fetchCheckinCount = async () => {
+    if (!userStore.isLoggedIn) return
+    try {
+        if (userStore.isTeacher) {
+            const res = await checkinApi.teacherList({})
+            const data = res.data.data || []
+            activeCheckinCount.value = data.filter(s => s.status === 'ACTIVE').length
+        } else {
+            const res = await checkinApi.studentActiveList()
+            activeCheckinCount.value = (res.data.data || []).length
+        }
+    } catch { activeCheckinCount.value = 0 }
+}
+
+const onCheckinPopoverShow = () => {
+    if (checkinEntryRef.value) checkinEntryRef.value.fetchSessions()
+}
+
+onMounted(() => {
+    fetchNotifications()
+    fetchCheckinCount()
+    notifyTimer = setInterval(fetchNotifications, 30000)
+    checkinTimer = setInterval(fetchCheckinCount, 30000)
+})
+onUnmounted(() => {
+    if (notifyTimer) { clearInterval(notifyTimer); notifyTimer = null }
+    if (checkinTimer) { clearInterval(checkinTimer); checkinTimer = null }
+})
 </script>
 
 <style scoped>
@@ -254,6 +301,20 @@ onUnmounted(() => { if (notifyTimer) { clearInterval(notifyTimer); notifyTimer =
     background: #e8a87c;
     border-radius: 50%;
     border: 1.5px solid #4a5c38;
+}
+
+.checkin-badge {
+    width: auto;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 4px;
+    border-radius: 8px;
+    font-size: 10px;
+    color: #fff;
+    line-height: 16px;
+    text-align: center;
+    top: -4px;
+    right: -8px;
 }
 
 .user-area {

@@ -79,6 +79,7 @@ const teacherMenus = [
     icon: 'ChatDotRound',
     children: [
       { path: '/teacher/roll-call', title: '随机点名' },
+      { path: '/teacher/checkin', title: '课堂签到' },
       { path: '/teacher/announcements', title: '公告管理' },
       { path: '/teacher/posts', title: '互动问答' },
       { path: '/teacher/surveys', title: '问卷管理' },
@@ -98,6 +99,7 @@ const studentMenus = [
       { path: '/student/assignments', title: '我的作业' },
       { path: '/student/exams', title: '在线考试' },
       { path: '/student/class-quizzes', title: '随堂测验' },
+      { path: '/student/checkin', title: '课堂签到' },
       { path: '/student/trainings', title: '实训中心' },
       { path: '/student/notes', title: '学习笔记' }
     ]

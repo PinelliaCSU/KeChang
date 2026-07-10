@@ -74,6 +74,22 @@ export const participationApi = {
   my: () => request.get('/participation/my')
 }
 
+/** 课堂签到 API */
+export const checkinApi = {
+  // 教师端
+  teacherList: (params) => request.get('/checkin/teacher', { params }),
+  create: (data) => request.post('/checkin', data),
+  detail: (id) => request.get(`/checkin/${id}`),
+  stats: (id) => request.get(`/checkin/${id}/stats`),
+  close: (id) => request.put(`/checkin/${id}/close`),
+  // 学生端
+  studentActiveList: () => request.get('/checkin/student/active'),
+  checkin: (id, data) => request.post(`/checkin/${id}/checkin`, data),
+  // 课程维度
+  courseRecords: (courseId) => request.get(`/checkin/course/${courseId}/records`),
+  courseStats: (courseId) => request.get(`/checkin/course/${courseId}/stats`)
+}
+
 /** 作业 API */
 export const assignmentApi = {
   list: (params) => request.get('/assignments', { params }),
