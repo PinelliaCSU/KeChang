@@ -221,14 +221,14 @@ defineExpose({ open })
 }
 
 .type-card:hover {
-    border-color: var(--bio-moss, #606c38);
-    background: #f8faf5;
+    border-color: var(--bio-primary);
+    background: #fff;
 }
 
 .type-card.selected {
-    border-color: var(--bio-moss, #606c38);
-    background: linear-gradient(135deg, #eef3e6, #f8faf5);
-    color: var(--bio-moss, #606c38);
+    border-color: var(--bio-primary);
+    background: var(--bio-primary-soft);
+    color: var(--bio-primary);
     font-weight: 600;
 }
 

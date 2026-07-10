@@ -10,7 +10,7 @@
     <div class="stat-row">
       <div class="stat-card">
         <div class="stat-icon" style="background:#e8eddf">
-          <el-icon :size="28" color="#7f8c52">
+          <el-icon :size="28" color="#20c4cc">
             <Reading />
           </el-icon>
         </div>
@@ -37,7 +37,7 @@
       </div>
       <div class="stat-card">
         <div class="stat-icon" style="background:#dde8d6">
-          <el-icon :size="28" color="#6b8e4e">
+          <el-icon :size="28" color="#20c4cc">
             <TrendCharts />
           </el-icon>
         </div>
@@ -227,8 +227,8 @@ onMounted(async () => {
       series: [{
         data: (stats.value.activeTrend || []).map(item => item.count || 0),
         type: 'line', smooth: true,
-        areaStyle: { color: 'rgba(127,140,82,0.2)' },
-        itemStyle: { color: '#7f8c52' }
+        areaStyle: { color: 'rgba(32,196,204,0.16)' },
+        itemStyle: { color: '#20c4cc' }
       }]
     })
   }
@@ -278,7 +278,7 @@ onUnmounted(() => {
 }
 
 .stat-card {
-  background: linear-gradient(145deg, #ffffff 0%, #fbfaf5 100%);
+  background: #fff;
   border-radius: 14px;
   box-shadow: var(--bio-shadow-sm);
   padding: 20px 24px;
@@ -302,6 +302,12 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  background: var(--bio-primary-soft) !important;
+  color: var(--bio-primary) !important;
+}
+
+.stat-icon :deep(.el-icon) {
+  color: var(--bio-primary) !important;
 }
 
 .stat-num {
@@ -430,7 +436,7 @@ onUnmounted(() => {
 }
 
 .dot-qa {
-  background: #7f8c52;
+  background: var(--bio-primary);
 }
 
 .todo-body {
@@ -473,8 +479,8 @@ onUnmounted(() => {
 }
 
 .shortcut-item:hover {
-  color: var(--bio-moss);
-  background: #edf2e4;
+  color: var(--bio-primary);
+  background: var(--bio-primary-soft);
   transform: translateY(-1px);
 }
 </style>

@@ -218,7 +218,7 @@ onMounted(() => { fetchSessions() })
 
 .entry-countdown {
     font-size: 12px;
-    color: var(--bio-moss, #606c38);
+    color: var(--bio-primary);
     font-weight: 500;
     white-space: nowrap;
 }
@@ -236,7 +236,7 @@ onMounted(() => { fetchSessions() })
 
 .entry-footer a {
     font-size: 12px;
-    color: var(--bio-moss, #606c38);
+    color: var(--bio-primary);
     text-decoration: none;
     display: inline-flex;
     align-items: center;

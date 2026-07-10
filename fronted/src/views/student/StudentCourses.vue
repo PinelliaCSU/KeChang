@@ -3,44 +3,46 @@
     <div class="page-title-bar">
       <h2 class="page-title">课程中心</h2>
       <div class="page-actions">
-        <el-input v-model="keyword" placeholder="搜索课程..." size="default" style="width:240px" clearable />
+        <el-input v-model="keyword" placeholder="搜索课程..." style="width: 260px" clearable />
       </div>
     </div>
 
     <div class="panel" v-if="filteredCourses.length > 0">
       <div class="course-grid">
-        <div class="course-card" v-for="course in filteredCourses" :key="course.id" @click="viewDetail(course)">
-          <div class="card-cover"
-            :style="{ background: course.coverImg ? `url(${resolveFileUrl(course.coverImg)}) center/cover no-repeat` : getCoverGradient(course.id) }"
-            :class="{ 'has-cover': course.coverImg }">
+        <article v-for="course in filteredCourses" :key="course.id" class="course-card" @click="viewDetail(course)">
+          <div
+            class="card-cover"
+            :style="{ background: course.coverImg ? `url(${resolveFileUrl(course.coverImg)}) center/cover no-repeat` : getCoverColor(course.id) }"
+            :class="{ 'has-cover': course.coverImg }"
+          >
             <CourseCoverPattern v-if="!course.coverImg" />
           </div>
+
           <div class="card-body">
-            <h4 class="card-title" :title="course.courseName || course.name">{{ course.courseName || course.name }}</h4>
+            <div class="card-title-row">
+              <h4 class="card-title" :title="course.courseName || course.name">{{ course.courseName || course.name }}</h4>
+              <el-tag :type="statusTagType(computeStatus(course.startDate, course.endDate))" effect="plain" size="small">
+                {{ computeStatus(course.startDate, course.endDate) }}
+              </el-tag>
+            </div>
             <p class="card-meta">{{ course.teacherName || '未知教师' }}</p>
           </div>
-          <div class="card-status">
-            <el-tag :type="statusTagType(computeStatus(course.startDate, course.endDate))" size="small">
-              {{ computeStatus(course.startDate, course.endDate) }}
-            </el-tag>
-          </div>
+
           <div class="card-footer">
-            <button class="btn-enter" :disabled="!course.enrolled"
-              @click.stop="course.enrolled ? enterLearn(course) : viewDetail(course)">
-              {{ course.enrolled ? '进入学习' : '查看详情' }}
-            </button>
-            <button v-if="!course.enrolled" :class="canEnroll(course) ? 'btn-enroll' : 'btn-enroll btn-disabled'"
-              :disabled="!canEnroll(course)" @click.stop="canEnroll(course) && enrollCourse(course)">
+            <button v-if="course.enrolled" class="btn-enter" @click.stop="enterLearn(course)">进入学习</button>
+            <button v-else class="btn-detail" @click.stop="viewDetail(course)">查看详情</button>
+
+            <button
+              v-if="!course.enrolled"
+              :class="canEnroll(course) ? 'btn-enroll' : 'btn-enroll btn-disabled'"
+              :disabled="!canEnroll(course)"
+              @click.stop="canEnroll(course) && enrollCourse(course)"
+            >
               {{ canEnroll(course) ? '加入课程' : '暂不可选' }}
             </button>
-            <button v-else class="btn-unenroll" @click.stop="unenrollCourse(course)">
-              退出课程
-            </button>
-            <button class="btn-detail" @click.stop="viewDetail(course)">
-              查看详情
-            </button>
+            <button v-else class="btn-unenroll" @click.stop="unenrollCourse(course)">退出课程</button>
           </div>
-        </div>
+        </article>
       </div>
     </div>
 
@@ -64,16 +66,7 @@ const router = useRouter()
 const courses = ref([])
 const keyword = ref('')
 
-const gradientPalette = [
-  'linear-gradient(135deg, #3b5998 0%, #4c6da7 50%, #5b7ec2 100%)',
-  'linear-gradient(135deg, #1e4d92 0%, #2d6bc4 50%, #3b82f6 100%)',
-  'linear-gradient(135deg, #0d7377 0%, #14a3a8 50%, #20c997 100%)',
-  'linear-gradient(135deg, #4a1a8a 0%, #6b3fb8 50%, #8b5cf6 100%)',
-  'linear-gradient(135deg, #b45309 0%, #d97706 50%, #f59e0b 100%)',
-  'linear-gradient(135deg, #9b1b30 0%, #c0392b 50%, #e74c3c 100%)',
-  'linear-gradient(135deg, #2c3e50 0%, #3498db 50%, #2980b9 100%)',
-  'linear-gradient(135deg, #6c3483 0%, #8e44ad 50%, #a569bd 100%)'
-]
+const coverPalette = ['#f5f7fa', '#f2f6f8', '#f7f8fa', '#eef7f8']
 
 const filteredCourses = computed(() => {
   const kw = keyword.value.trim().toLowerCase()
@@ -81,12 +74,9 @@ const filteredCourses = computed(() => {
   return courses.value.filter(course => String(course.courseName || course.name || '').toLowerCase().includes(kw))
 })
 
-const getCoverGradient = (id) => gradientPalette[((id || 1) - 1) % gradientPalette.length]
+const getCoverColor = (id) => coverPalette[((id || 1) - 1) % coverPalette.length]
 
-const canEnroll = (course) => {
-  const status = computeStatus(course.startDate, course.endDate)
-  return status === '进行中'
-}
+const canEnroll = (course) => computeStatus(course.startDate, course.endDate) === '进行中'
 
 const viewDetail = (course) => {
   router.push(`/student/courses/${course.id}`)
@@ -109,7 +99,7 @@ const enrollCourse = async (course) => {
     await courseApi.enroll(course.id)
     course.enrolled = true
     course.studentCount = Number(course.studentCount || 0) + 1
-    ElMessage.success('选课成功，现在可以在我的作业中查看该课程作业')
+    ElMessage.success('选课成功')
   } catch (e) {
     ElMessage.error(e.response?.data?.message || '选课失败')
   }
@@ -154,53 +144,34 @@ onMounted(fetchCourses)
   gap: 20px;
 }
 
-.page-title-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 4px;
-}
-
-.page-title {
-  font-size: 20px;
-  font-weight: 600;
-  color: #303133;
-  margin: 0;
-}
-
-.panel {
-  background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-  padding: 24px;
-}
-
 .course-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 18px;
 }
 
 .course-card {
-  background: #fff;
-  border-radius: 12px;
-  border: 1px solid #ebeef5;
-  overflow: hidden;
-  transition: all 0.3s;
   display: flex;
   flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+  background: #fff;
+  border: 1px solid var(--bio-border);
+  border-radius: 0;
   cursor: pointer;
+  transition: border-color 160ms ease, background-color 160ms ease;
 }
 
 .course-card:hover {
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
-  transform: translateY(-4px);
+  border-color: var(--bio-primary);
+  background: #fcffff;
 }
 
 .card-cover {
-  height: 100px;
   position: relative;
+  height: 116px;
   overflow: hidden;
+  border-bottom: 1px solid var(--bio-border);
 }
 
 .card-cover.has-cover {
@@ -209,104 +180,84 @@ onMounted(fetchCourses)
 }
 
 .card-body {
-  padding: 12px 14px 8px;
   flex: 1;
+  min-width: 0;
+  padding: 16px 16px 10px;
+}
+
+.card-title-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
 }
 
 .card-title {
-  font-size: 14px;
-  font-weight: 600;
-  color: #303133;
-  margin-bottom: 6px;
-  white-space: nowrap;
+  min-width: 0;
+  margin: 0;
   overflow: hidden;
+  color: var(--bio-ink);
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1.4;
   text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .card-meta {
-  font-size: 12px;
-  color: #606266;
-  margin-bottom: 2px;
-}
-
-.card-code {
-  font-size: 11px;
-  color: #c0c4cc;
-}
-
-.card-status {
-  padding: 0 14px;
+  margin: 8px 0 0;
+  color: var(--bio-ink-muted);
+  font-size: 15px;
 }
 
 .card-footer {
-  padding: 8px 14px 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+  display: grid;
+  gap: 10px;
+  padding: 10px 16px 16px;
 }
 
 .btn-enter,
 .btn-enroll,
-.btn-unenroll {
+.btn-unenroll,
+.btn-detail {
   width: 100%;
-  height: 34px;
-  border: none;
-  border-radius: 8px;
-  font-size: 13px;
-  cursor: pointer;
-  transition: all 0.2s;
+  height: 38px;
+  border: 1px solid transparent;
+  border-radius: 4px;
   font-family: inherit;
+  font-size: 15px;
+  cursor: pointer;
+  transition: background 160ms ease, border-color 160ms ease, color 160ms ease;
 }
 
-.btn-enter {
-  background: #ecf5ff;
-  color: #409eff;
-}
-
-.btn-enter:hover {
-  background: #d9ecff;
-}
-
+.btn-enter,
 .btn-enroll {
-  background: #f0f9eb;
-  color: #67c23a;
+  background: var(--bio-primary);
+  color: #fff;
 }
 
+.btn-enter:hover,
 .btn-enroll:hover {
-  background: #e1f3d8;
-}
-
-.btn-unenroll {
-  background: #fef0f0;
-  color: #f56c6c;
-}
-
-.btn-unenroll:hover {
-  background: #fde2e2;
+  background: var(--bio-primary-dark);
 }
 
 .btn-detail {
-  width: 100%;
-  height: 34px;
-  border: none;
-  border-radius: 8px;
-  font-size: 13px;
-  cursor: pointer;
-  transition: all 0.2s;
-  font-family: inherit;
-  background: #f4f4f5;
-  color: #606266;
+  background: #f5f6f8;
+  color: var(--bio-primary);
 }
 
 .btn-detail:hover {
-  background: #e9e9eb;
-  color: #409eff;
+  background: var(--bio-primary-soft);
 }
 
-.btn-enter:disabled {
-  background: #f4f4f5;
-  color: #a8abb2;
-  cursor: not-allowed;
+.btn-unenroll {
+  background: #fff;
+  border-color: var(--bio-danger);
+  color: var(--bio-danger);
+}
+
+.btn-unenroll:hover {
+  background: #fff5f7;
 }
 
 .btn-enroll.btn-disabled {
@@ -315,30 +266,10 @@ onMounted(fetchCourses)
   cursor: not-allowed;
 }
 
-.btn-enroll.btn-disabled:hover {
-  background: #f4f4f5;
-}
-
 .empty-panel {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 60px 24px;
-}
-
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 16px;
-}
-
-.empty-illustration {
-  opacity: 0.6;
-}
-
-.empty-text {
-  color: #c0c4cc;
-  font-size: 14px;
+  min-height: 280px;
 }
 </style>

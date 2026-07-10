@@ -416,23 +416,33 @@ onMounted(loadAll)
 }
 
 .page-title {
-  font-size: 20px;
+  font-size: 24px;
   font-weight: 600;
-  color: #303133;
+  color: var(--bio-ink);
   margin: 0;
 }
 
 .page-subtitle {
-  color: #909399;
-  font-size: 13px;
+  color: var(--bio-ink-muted);
+  font-size: 15px;
   margin: 6px 0 0;
 }
 
 .panel {
   background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, .05);
+  border: 1px solid var(--bio-border);
+  border-radius: 16px;
+  box-shadow: none;
   padding: 24px;
+}
+
+.panel :deep(.el-tabs__active-bar) {
+  background: var(--bio-primary);
+}
+
+.panel :deep(.el-tabs__item.is-active),
+.panel :deep(.el-tabs__item:hover) {
+  color: var(--bio-primary);
 }
 
 .tab-toolbar {
@@ -456,8 +466,8 @@ onMounted(loadAll)
 }
 
 .chapter-stat {
-  color: #909399;
-  font-size: 13px;
+  color: var(--bio-ink-muted);
+  font-size: 14px;
   font-weight: 400;
 }
 
@@ -469,15 +479,15 @@ onMounted(loadAll)
 }
 
 .content-group {
-  border-top: 1px solid #ebeef5;
+  border-top: 1px solid var(--bio-border);
   padding-top: 14px;
   margin-top: 14px;
 }
 
 .group-title {
   margin: 0 0 10px;
-  color: #303133;
-  font-size: 14px;
+  color: var(--bio-ink);
+  font-size: 16px;
 }
 
 .item-list {
@@ -492,27 +502,27 @@ onMounted(loadAll)
   gap: 12px;
   align-items: center;
   padding: 12px 14px;
-  background: #fafafa;
-  border: 1px solid #ebeef5;
-  border-radius: 8px;
+  background: #fff;
+  border: 1px solid var(--bio-border);
+  border-radius: 6px;
 }
 
 .item-kind {
-  color: #409eff;
-  background: #ecf5ff;
+  color: var(--bio-primary);
+  background: var(--bio-primary-soft);
   border-radius: 4px;
   padding: 3px 8px;
   text-align: center;
-  font-size: 12px;
+  font-size: 13px;
 }
 
 .item-kind.assignment {
-  color: #e6a23c;
-  background: #fdf6ec;
+  color: var(--bio-primary);
+  background: var(--bio-primary-soft);
 }
 
 .item-title {
-  color: #303133;
+  color: var(--bio-ink);
   font-weight: 500;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -520,8 +530,8 @@ onMounted(loadAll)
 }
 
 .item-meta {
-  color: #909399;
-  font-size: 13px;
+  color: var(--bio-ink-muted);
+  font-size: 14px;
 }
 
 .item-actions {
@@ -570,34 +580,35 @@ onMounted(loadAll)
 }
 
 .stat-card {
-  background: #fafafa;
-  border: 1px solid #ebeef5;
-  border-radius: 10px;
+  background: #fff;
+  border: 1px solid var(--bio-border);
+  border-radius: 6px;
   padding: 20px;
   text-align: center;
   transition: all 0.25s;
 }
 
 .stat-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  transform: none;
+  box-shadow: none;
+  border-color: var(--bio-primary);
 }
 
 .stat-value {
   font-size: 28px;
   font-weight: 700;
-  color: #303133;
+  color: var(--bio-ink);
   line-height: 1.2;
   margin-bottom: 4px;
 }
 
 .stat-label {
-  font-size: 13px;
-  color: #909399;
+  font-size: 14px;
+  color: var(--bio-ink-muted);
 }
 
 .stat-card.highlight .stat-value {
-  color: #409eff;
+  color: var(--bio-primary);
 }
 
 .stat-card.warn .stat-value {
@@ -605,13 +616,13 @@ onMounted(loadAll)
 }
 
 .stat-card.success .stat-value {
-  color: #67c23a;
+  color: var(--bio-primary);
 }
 
 .section-title {
   margin: 0 0 16px;
   font-size: 15px;
-  color: #303133;
+  color: var(--bio-ink);
 }
 
 .dist-chart {
@@ -629,7 +640,7 @@ onMounted(loadAll)
 .dist-label {
   width: 100px;
   font-size: 13px;
-  color: #606266;
+  color: var(--bio-ink-soft);
   text-align: right;
   flex-shrink: 0;
 }
@@ -637,7 +648,7 @@ onMounted(loadAll)
 .dist-track {
   flex: 1;
   height: 22px;
-  background: #f0f0f0;
+  background: #e9eef3;
   border-radius: 11px;
   overflow: hidden;
 }
@@ -650,11 +661,11 @@ onMounted(loadAll)
 }
 
 .dist-fill.bar-excellent {
-  background: linear-gradient(90deg, #67c23a, #85ce61);
+  background: var(--bio-primary);
 }
 
 .dist-fill.bar-good {
-  background: linear-gradient(90deg, #409eff, #66b1ff);
+  background: var(--bio-primary);
 }
 
 .dist-fill.bar-medium {
@@ -672,7 +683,7 @@ onMounted(loadAll)
 .dist-count {
   width: 44px;
   font-size: 13px;
-  color: #606266;
+  color: var(--bio-ink-soft);
   text-align: left;
   flex-shrink: 0;
 }
@@ -681,6 +692,6 @@ onMounted(loadAll)
   display: flex;
   gap: 24px;
   font-size: 13px;
-  color: #909399;
+  color: var(--bio-ink-muted);
 }
 </style>

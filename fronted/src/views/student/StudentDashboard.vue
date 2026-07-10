@@ -10,7 +10,7 @@
     <div class="stat-row">
       <div class="stat-card">
         <div class="stat-icon" style="background:#e8eddf">
-          <el-icon :size="28" color="#7f8c52">
+          <el-icon :size="28" color="#20c4cc">
             <Reading />
           </el-icon>
         </div>
@@ -37,7 +37,7 @@
       </div>
       <div class="stat-card point-card" @click="pointsVisible = true">
         <div class="stat-icon" style="background:#dde8d6">
-          <el-icon :size="28" color="#6b8e4e">
+          <el-icon :size="28" color="#20c4cc">
             <TrendCharts />
           </el-icon>
         </div>
@@ -314,7 +314,7 @@ const fetchData = async () => {
         id: c.id,
         name: c.courseName,
         progress: Math.max(0, Math.min(100, Math.round(Number(c.progress || 0)))),
-        color: ['#7f8c52', '#6b8e4e', '#b08968', '#5c7a8a', '#9c6644'][i % 5]
+        color: ['#20c4cc', '#64748b', '#f59e0b', '#8a94a6', '#ef476f'][i % 5]
       }))
     }
   } catch { /* ignore */ }
@@ -339,7 +339,7 @@ onMounted(async () => {
       series: [{
         data: activeTrend.value.map(item => item.count || 0),
         type: 'bar', barWidth: '50%',
-        itemStyle: { color: '#7f8c52', borderRadius: [4, 4, 0, 0] }
+        itemStyle: { color: '#20c4cc', borderRadius: [4, 4, 0, 0] }
       }]
     })
   }
@@ -384,7 +384,7 @@ onUnmounted(() => {
 }
 
 .stat-card {
-  background: linear-gradient(145deg, #ffffff 0%, #fbfaf5 100%);
+  background: #fff;
   border-radius: 14px;
   box-shadow: var(--bio-shadow-sm);
   padding: 20px 24px;
@@ -416,6 +416,12 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  background: var(--bio-primary-soft) !important;
+  color: var(--bio-primary) !important;
+}
+
+.stat-icon :deep(.el-icon) {
+  color: var(--bio-primary) !important;
 }
 
 .stat-num {
@@ -487,8 +493,8 @@ onUnmounted(() => {
 .progress-card {
   padding: 16px;
   border-radius: 12px;
-  background: linear-gradient(145deg, #fbfaf5 0%, #f4f7ed 100%);
-  border: 1px solid rgba(163, 177, 138, 0.14);
+  background: #fff;
+  border: 1px solid var(--bio-border);
 }
 
 .progress-card-head {
@@ -500,7 +506,7 @@ onUnmounted(() => {
 }
 
 .progress-card-head strong {
-  color: var(--bio-moss);
+  color: var(--bio-primary);
   font-size: 18px;
 }
 
@@ -658,8 +664,8 @@ onUnmounted(() => {
 }
 
 .shortcut-item:hover {
-  color: var(--bio-moss);
-  background: #edf2e4;
+  color: var(--bio-primary);
+  background: var(--bio-primary-soft);
   transform: translateY(-1px);
 }
 

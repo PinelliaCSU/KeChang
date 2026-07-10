@@ -138,12 +138,12 @@ const statusLabel = (s) => ({ SUCCESS: '正常', LATE: '迟到', ABSENT: '缺勤
 
 .session-card:hover {
     box-shadow: var(--bio-shadow-md, 0 4px 12px rgba(0, 0, 0, .1));
-    border-color: var(--bio-moss, #606c38);
+    border-color: var(--bio-primary);
 }
 
 .session-card.active {
     border-color: #e8a87c;
-    background: linear-gradient(135deg, #fef9f5, #fff);
+    background: #fff;
 }
 
 .card-header {
@@ -196,7 +196,7 @@ const statusLabel = (s) => ({ SUCCESS: '正常', LATE: '迟到', ABSENT: '缺勤
 }
 
 .stat-bar-seg.success {
-    background: var(--bio-success, #6b8e4e);
+    background: var(--bio-primary);
 }
 
 .stat-bar-seg.late {
@@ -229,7 +229,7 @@ const statusLabel = (s) => ({ SUCCESS: '正常', LATE: '迟到', ABSENT: '缺勤
 }
 
 .success-dot {
-    background: var(--bio-success, #6b8e4e);
+    background: var(--bio-primary);
 }
 
 .late-dot {
@@ -246,7 +246,7 @@ const statusLabel = (s) => ({ SUCCESS: '正常', LATE: '迟到', ABSENT: '缺勤
 }
 
 .card-my-status.success {
-    color: var(--bio-success, #6b8e4e);
+    color: var(--bio-primary);
 }
 
 .card-my-status.absent {

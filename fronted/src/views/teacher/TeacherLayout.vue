@@ -24,7 +24,7 @@ import AppSidebar from '@/components/Layout/AppSidebar.vue'
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background: var(--bio-cream);
+  background: var(--bio-page);
   font-family: var(--bio-font);
 }
 
@@ -36,10 +36,9 @@ import AppSidebar from '@/components/Layout/AppSidebar.vue'
 
 .main-content {
   flex: 1;
-  padding: 24px;
+  min-width: 0;
+  padding: 24px 28px;
   overflow-y: auto;
-  background:
-    radial-gradient(ellipse 60% 40% at 30% 20%, rgba(163, 177, 138, 0.04) 0%, transparent 60%),
-    radial-gradient(ellipse 50% 50% at 80% 70%, rgba(165, 196, 212, 0.04) 0%, transparent 60%);
+  background: var(--bio-page);
 }
 </style>

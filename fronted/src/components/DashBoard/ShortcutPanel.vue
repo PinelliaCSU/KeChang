@@ -83,42 +83,42 @@ const ENTRY_DEFS = {
         { id: 'profile', label: '个人中心', icon: 'User', route: '/profile', color: '#b08968' }
     ],
     student: [
-        { id: 's-courses', label: '课程中心', icon: 'Reading', route: '/student/courses', color: '#7f8c52' },
+        { id: 's-courses', label: '课程中心', icon: 'Reading', route: '/student/courses', color: '#20c4cc' },
         { id: 's-assignments', label: '我的作业', icon: 'Edit', route: '/student/assignments', color: '#b08968' },
         { id: 's-exams', label: '在线考试', icon: 'Timer', route: '/student/exams', color: '#c4665a' },
         { id: 's-class-quizzes', label: '随堂测验', icon: 'Connection', route: '/student/class-quizzes', color: '#5c7a8a' },
-        { id: 's-checkin', label: '课堂签到', icon: 'Checked', route: '/student/checkin', color: '#6b8e4e' },
-        { id: 's-grades', label: '我的成绩', icon: 'TrendCharts', route: '/student/grades', color: '#6b8e4e' },
+        { id: 's-checkin', label: '课堂签到', icon: 'Checked', route: '/student/checkin', color: '#20c4cc' },
+        { id: 's-grades', label: '我的成绩', icon: 'TrendCharts', route: '/student/grades', color: '#20c4cc' },
         { id: 's-notes', label: '学习笔记', icon: 'Notebook', route: '/student/notes', color: '#5c7a8a' },
         { id: 's-trainings', label: '实训中心', icon: 'Tools', route: '/student/trainings', color: '#9c6644' },
         { id: 's-posts', label: '互动问答', icon: 'ChatDotRound', route: '/student/posts', color: '#7a9fb5' },
-        { id: 's-knowledge', label: '知识库', icon: 'Collection', route: '/student/knowledge', color: '#606c38' },
+        { id: 's-knowledge', label: '知识库', icon: 'Collection', route: '/student/knowledge', color: '#20c4cc' },
         { id: 's-evaluations', label: '教学评价', icon: 'List', route: '/student/evaluations', color: '#c4956a' },
-        { id: 's-surveys', label: '问卷调查', icon: 'Document', route: '/student/surveys', color: '#a3b18a' },
+        { id: 's-surveys', label: '问卷调查', icon: 'Document', route: '/student/surveys', color: '#20c4cc' },
         { id: 's-announcements', label: '课程公告', icon: 'Bell', route: '/student/announcements', color: '#b08968' },
-        { id: 's-messages', label: '私信', icon: 'ChatLineSquare', route: '/student/messages', color: '#7f8c52' }
+        { id: 's-messages', label: '私信', icon: 'ChatLineSquare', route: '/student/messages', color: '#20c4cc' }
     ],
     teacher: [
-        { id: 't-courses', label: '课程管理', icon: 'Reading', route: '/teacher/courses', color: '#7f8c52' },
+        { id: 't-courses', label: '课程管理', icon: 'Reading', route: '/teacher/courses', color: '#20c4cc' },
         { id: 't-questions', label: '试题管理', icon: 'Connection', route: '/teacher/questions', color: '#5c7a8a' },
         { id: 't-papers', label: '试卷管理', icon: 'DocumentCopy', route: '/teacher/papers', color: '#b08968' },
         { id: 't-exams', label: '考试管理', icon: 'Timer', route: '/teacher/exams', color: '#c4665a' },
         { id: 't-class-quizzes', label: '随堂测验', icon: 'Connection', route: '/teacher/class-quizzes', color: '#5c7a8a' },
-        { id: 't-checkin', label: '课堂签到', icon: 'Checked', route: '/teacher/checkin', color: '#6b8e4e' },
+        { id: 't-checkin', label: '课堂签到', icon: 'Checked', route: '/teacher/checkin', color: '#20c4cc' },
         { id: 't-roll-call', label: '随机点名', icon: 'User', route: '/teacher/roll-call', color: '#9c6644' },
         { id: 't-assignments', label: '作业管理', icon: 'Edit', route: '/teacher/assignments', color: '#9c6644' },
-        { id: 't-grades', label: '成绩管理', icon: 'TrendCharts', route: '/teacher/grades', color: '#6b8e4e' },
-        { id: 't-trainings', label: '实训管理', icon: 'Tools', route: '/teacher/trainings', color: '#606c38' },
-        { id: 't-surveys', label: '问卷管理', icon: 'Document', route: '/teacher/surveys', color: '#a3b18a' },
+        { id: 't-grades', label: '成绩管理', icon: 'TrendCharts', route: '/teacher/grades', color: '#20c4cc' },
+        { id: 't-trainings', label: '实训管理', icon: 'Tools', route: '/teacher/trainings', color: '#20c4cc' },
+        { id: 't-surveys', label: '问卷管理', icon: 'Document', route: '/teacher/surveys', color: '#20c4cc' },
         { id: 't-evaluations', label: '教学评价', icon: 'List', route: '/teacher/evaluations', color: '#c4956a' },
         { id: 't-posts', label: '互动问答', icon: 'ChatDotRound', route: '/teacher/posts', color: '#7a9fb5' },
         { id: 't-announcements', label: '公告管理', icon: 'Bell', route: '/teacher/announcements', color: '#b08968' },
-        { id: 't-messages', label: '私信', icon: 'ChatLineSquare', route: '/teacher/messages', color: '#7f8c52' }
+        { id: 't-messages', label: '私信', icon: 'ChatLineSquare', route: '/teacher/messages', color: '#20c4cc' }
     ],
     admin: [
-        { id: 'a-courses', label: '课程总览', icon: 'Reading', route: '/admin/courses', color: '#7f8c52' },
-        { id: 'a-grades', label: '成绩概览', icon: 'TrendCharts', route: '/admin/grades', color: '#6b8e4e' },
-        { id: 'a-surveys', label: '问卷统计', icon: 'Document', route: '/admin/surveys', color: '#a3b18a' },
+        { id: 'a-courses', label: '课程总览', icon: 'Reading', route: '/admin/courses', color: '#20c4cc' },
+        { id: 'a-grades', label: '成绩概览', icon: 'TrendCharts', route: '/admin/grades', color: '#20c4cc' },
+        { id: 'a-surveys', label: '问卷统计', icon: 'Document', route: '/admin/surveys', color: '#20c4cc' },
         { id: 'a-operation-logs', label: '操作日志', icon: 'List', route: '/admin/operation-logs', color: '#5c7a8a' }
     ]
 }
@@ -228,7 +228,7 @@ onMounted(() => {
     border-radius: 14px;
     box-shadow: var(--bio-shadow-sm);
     padding: 24px;
-    border: 1px solid rgba(163, 177, 138, 0.08);
+    border: 1px solid var(--bio-border);
 }
 
 .section-head {
@@ -253,9 +253,9 @@ onMounted(() => {
 }
 
 .shortcut-item {
-    border: none;
+    border: 1px solid var(--bio-border);
     border-radius: 12px;
-    background: #f5f6ef;
+    background: #fff;
     color: var(--bio-ink-soft);
     padding: 14px 8px;
     display: flex;
@@ -268,8 +268,8 @@ onMounted(() => {
 }
 
 .shortcut-item:hover {
-    color: var(--bio-moss);
-    background: #edf2e4;
+    color: var(--bio-primary);
+    background: var(--bio-primary-soft);
     transform: translateY(-1px);
 }
 
@@ -279,7 +279,7 @@ onMounted(() => {
 }
 
 .shortcut-item:hover .shortcut-icon {
-    color: var(--bio-moss);
+    color: var(--bio-primary);
 }
 
 .shortcut-label {
@@ -315,7 +315,7 @@ onMounted(() => {
 .dialog-card {
     position: relative;
     background: var(--bio-paper);
-    border: 1px solid rgba(163, 177, 138, 0.12);
+    border: 1px solid var(--bio-border);
     border-radius: var(--bio-radius-md);
     padding: 14px 12px;
     cursor: grab;
@@ -328,7 +328,7 @@ onMounted(() => {
 
 .dialog-card:hover {
     box-shadow: var(--bio-shadow-md);
-    border-color: rgba(163, 177, 138, 0.25);
+    border-color: var(--bio-primary);
 }
 
 .dialog-card:active {
@@ -363,8 +363,8 @@ onMounted(() => {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(163, 177, 138, 0.15);
-    color: var(--bio-moss);
+    background: var(--bio-primary-soft);
+    color: var(--bio-primary);
     flex-shrink: 0;
 }
 
@@ -402,8 +402,8 @@ onMounted(() => {
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    background: rgba(163, 177, 138, 0.15);
-    color: var(--bio-moss);
+    background: var(--bio-primary-soft);
+    color: var(--bio-primary);
     transition: all var(--bio-dur-fast);
     opacity: 0;
 }

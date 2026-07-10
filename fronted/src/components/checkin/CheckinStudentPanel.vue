@@ -11,7 +11,7 @@
 
         <!-- 已签到状态 -->
         <div v-if="session?.checkedIn" class="done-state">
-            <el-icon :size="48" color="#6b8e4e">
+            <el-icon :size="48" color="#20c4cc">
                 <CircleCheckFilled />
             </el-icon>
             <p>签到成功</p>
@@ -40,7 +40,7 @@
             <!-- 二维码签到：仅扫码，不允许手动输入 -->
             <div v-if="session?.checkinType === 'QR_CODE'" class="qr-section">
                 <div v-if="prefilledCode" class="qr-scanned">
-                    <el-icon :size="40" color="#6b8e4e">
+                    <el-icon :size="40" color="#20c4cc">
                         <PictureFilled />
                     </el-icon>
                     <p class="qr-code-display">{{ code }}</p>
@@ -52,7 +52,7 @@
                     </el-button>
                 </div>
                 <div v-else class="qr-waiting">
-                    <el-icon :size="48" color="#a3b18a">
+                    <el-icon :size="48" color="#20c4cc">
                         <PictureFilled />
                     </el-icon>
                     <p>二维码签到</p>
@@ -272,7 +272,7 @@ onUnmounted(() => { if (timer) clearInterval(timer) })
 
 .prefill-hint {
     font-size: 12px;
-    color: var(--bio-moss, #606c38);
+    color: var(--bio-primary);
     margin: 0;
 }
 
@@ -295,7 +295,7 @@ onUnmounted(() => { if (timer) clearInterval(timer) })
     font-size: 32px;
     font-weight: 800;
     letter-spacing: 8px;
-    color: var(--bio-moss, #606c38);
+    color: var(--bio-primary);
     font-family: 'JetBrains Mono', monospace;
     margin: 0;
 }
@@ -345,6 +345,6 @@ onUnmounted(() => { if (timer) clearInterval(timer) })
 }
 
 .loc-status.located {
-    color: var(--bio-moss, #606c38);
+    color: var(--bio-primary);
 }
 </style>

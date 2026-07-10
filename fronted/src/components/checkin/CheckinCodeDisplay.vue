@@ -1,19 +1,24 @@
 <template>
-    <div class="code-display" :class="{ fullscreen: fullscreen }">
+    <div class="code-display" :class="{ fullscreen }">
         <div class="display-header" v-if="fullscreen">
-            <h2>{{ session?.courseName }} — {{ session?.title || '课堂签到' }}</h2>
-            <el-button @click="$emit('close')" circle><el-icon>
-                    <Close />
-                </el-icon></el-button>
+            <h2>{{ session?.courseName }} - {{ session?.title || '课堂签到' }}</h2>
+            <el-button @click="$emit('close')" circle>
+                <el-icon><Close /></el-icon>
+            </el-button>
         </div>
 
         <div class="display-body">
-            <!-- 倒计时 -->
             <div class="countdown-ring">
                 <svg class="ring-svg" viewBox="0 0 120 120">
                     <circle class="ring-bg" cx="60" cy="60" r="52" />
-                    <circle class="ring-progress" cx="60" cy="60" r="52" :stroke-dasharray="circumference"
-                        :stroke-dashoffset="dashOffset" />
+                    <circle
+                        class="ring-progress"
+                        cx="60"
+                        cy="60"
+                        r="52"
+                        :stroke-dasharray="circumference"
+                        :stroke-dashoffset="dashOffset"
+                    />
                 </svg>
                 <div class="ring-text">
                     <span class="time-num">{{ countdown.minutes }}</span>
@@ -22,7 +27,6 @@
                 </div>
             </div>
 
-            <!-- QR码签到 -->
             <template v-if="session?.checkinType === 'QR_CODE'">
                 <div class="qr-wrapper">
                     <canvas ref="qrCanvas" class="qr-canvas"></canvas>
@@ -30,20 +34,16 @@
                 <p class="code-hint">请使用手机扫描二维码签到</p>
             </template>
 
-            <!-- 数字码签到 -->
             <div v-if="session?.checkinType !== 'LOCATION'" class="code-box">
                 <span v-for="(ch, i) in codeChars" :key="i" class="code-char">{{ ch }}</span>
             </div>
             <p v-if="session?.checkinType === 'NUMERIC_CODE'" class="code-hint">请在手机端输入上方数字码完成签到</p>
-            <p v-if="session?.checkinType === 'QR_CODE'" class="code-hint">或输入上方数字码完成签到</p>
+            <p v-if="session?.checkinType === 'QR_CODE'" class="code-hint">也可以输入上方数字码完成签到</p>
 
-            <!-- 位置签到提示 -->
             <div v-if="session?.checkinType === 'LOCATION'" class="loc-info">
-                <el-icon :size="28">
-                    <Location />
-                </el-icon>
+                <el-icon :size="28"><Location /></el-icon>
                 <p>已设定签到位置</p>
-                <p class="loc-detail">有效范围：{{ session?.locationRadius || 100 }}米</p>
+                <p class="loc-detail">有效范围：{{ session?.locationRadius || 100 }} 米</p>
             </div>
         </div>
 
@@ -67,9 +67,8 @@
                 </div>
             </div>
             <el-button type="danger" @click="$emit('closeCheckin')" :loading="closing">
-                <el-icon>
-                    <SwitchButton />
-                </el-icon>结束签到
+                <el-icon><SwitchButton /></el-icon>
+                结束签到
             </el-button>
         </div>
     </div>
@@ -93,11 +92,7 @@ const qrCanvas = ref(null)
 const now = ref(new Date())
 let timer = null
 
-const codeChars = computed(() => {
-    const code = props.session?.code || ''
-    return code.split('')
-})
-
+const codeChars = computed(() => String(props.session?.code || '').split(''))
 const circumference = 2 * Math.PI * 52
 
 const countdown = computed(() => {
@@ -125,7 +120,7 @@ const generateQR = async () => {
         await QRCode.toCanvas(qrCanvas.value, url, {
             width: 200,
             margin: 1,
-            color: { dark: '#2c3630', light: '#ffffff' }
+            color: { dark: '#1f2937', light: '#ffffff' }
         })
     } catch { /* ignore */ }
 }
@@ -156,22 +151,24 @@ onUnmounted(() => { if (timer) clearInterval(timer) })
     position: fixed;
     inset: 0;
     z-index: 1000;
-    background: linear-gradient(135deg, #3b4a2e 0%, #4a5c38 40%, #5a6e42 100%);
+    background: #3b465f;
     padding: 32px;
     color: #fff;
 }
 
-.display-header {
+.display-header,
+.display-footer {
     display: flex;
     justify-content: space-between;
     align-items: center;
     width: 100%;
-    max-width: 800px;
+    max-width: 860px;
 }
 
 .display-header h2 {
     color: #fff;
-    font-size: 20px;
+    font-size: 22px;
+    font-weight: 500;
     margin: 0;
 }
 
@@ -179,12 +176,11 @@ onUnmounted(() => { if (timer) clearInterval(timer) })
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 16px;
+    gap: 18px;
     flex: 1;
     justify-content: center;
 }
 
-/* 倒计时环 */
 .countdown-ring {
     position: relative;
     width: 120px;
@@ -199,14 +195,14 @@ onUnmounted(() => { if (timer) clearInterval(timer) })
 
 .ring-bg {
     fill: none;
-    stroke: rgba(255, 255, 255, .15);
-    stroke-width: 6;
+    stroke: rgba(255, 255, 255, .18);
+    stroke-width: 7;
 }
 
 .ring-progress {
     fill: none;
-    stroke: #8cb369;
-    stroke-width: 6;
+    stroke: #20c4cc;
+    stroke-width: 7;
     stroke-linecap: round;
     transition: stroke-dashoffset .3s linear;
 }
@@ -221,24 +217,23 @@ onUnmounted(() => { if (timer) clearInterval(timer) })
 }
 
 .time-num {
+    min-width: 36px;
+    color: #fff;
     font-size: 28px;
     font-weight: 700;
-    font-family: 'JetBrains Mono', monospace;
-    color: #fff;
-    min-width: 36px;
     text-align: center;
+    font-family: 'JetBrains Mono', Consolas, monospace;
 }
 
 .time-sep {
+    color: rgba(255, 255, 255, .7);
     font-size: 24px;
-    color: rgba(255, 255, 255, .6);
 }
 
-/* QR */
 .qr-wrapper {
     background: #fff;
     padding: 12px;
-    border-radius: var(--bio-radius-md, 14px);
+    border-radius: 0;
 }
 
 .qr-canvas {
@@ -247,31 +242,31 @@ onUnmounted(() => { if (timer) clearInterval(timer) })
     height: 200px;
 }
 
-/* 数字码 */
 .code-box {
     display: flex;
     gap: 10px;
 }
 
 .code-char {
-    width: 48px;
-    height: 60px;
+    width: 50px;
+    height: 62px;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(255, 255, 255, .15);
-    border-radius: var(--bio-radius-sm, 8px);
+    background: rgba(255, 255, 255, .12);
+    border: 1px solid rgba(255, 255, 255, .26);
+    border-radius: 0;
+    color: #fff;
     font-size: 32px;
     font-weight: 800;
-    color: #fff;
-    font-family: 'JetBrains Mono', monospace;
-    border: 1.5px solid rgba(255, 255, 255, .25);
+    font-family: 'JetBrains Mono', Consolas, monospace;
 }
 
-.code-hint {
-    font-size: 13px;
-    color: rgba(255, 255, 255, .7);
+.code-hint,
+.loc-detail {
     margin: 0;
+    color: rgba(255, 255, 255, .72);
+    font-size: 14px;
 }
 
 .loc-info {
@@ -279,27 +274,9 @@ onUnmounted(() => { if (timer) clearInterval(timer) })
     color: #fff;
 }
 
-.loc-info p {
-    margin: 4px 0;
-}
-
-.loc-detail {
-    font-size: 13px;
-    opacity: .7;
-}
-
-.display-footer {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    width: 100%;
-    max-width: 800px;
-    gap: 20px;
-}
-
 .stats-inline {
     display: flex;
-    gap: 32px;
+    gap: 34px;
 }
 
 .stat-item {
@@ -307,56 +284,49 @@ onUnmounted(() => { if (timer) clearInterval(timer) })
 }
 
 .stat-num {
+    display: block;
     font-size: 28px;
     font-weight: 700;
-    display: block;
 }
 
 .stat-label {
     font-size: 12px;
-    opacity: .7;
+    opacity: .72;
 }
 
-/* 非全屏模式 */
-.code-display:not(.fullscreen) .countdown-ring {
-    width: 90px;
-    height: 90px;
-}
-
+.code-display:not(.fullscreen) .countdown-ring,
 .code-display:not(.fullscreen) .ring-svg {
     width: 90px;
     height: 90px;
 }
 
 .code-display:not(.fullscreen) .time-num {
-    font-size: 20px;
     min-width: 26px;
-    color: var(--bio-ink, #2c3630);
+    color: #1f2937;
+    font-size: 20px;
 }
 
 .code-display:not(.fullscreen) .time-sep {
+    color: #8a94a6;
     font-size: 18px;
-    color: var(--bio-ink-muted, #7a8278);
 }
 
 .code-display:not(.fullscreen) .ring-bg {
-    stroke: #e8ecdf;
+    stroke: #e5e7eb;
 }
 
 .code-display:not(.fullscreen) .code-char {
     width: 36px;
     height: 48px;
+    color: #1f2937;
+    background: #fff;
+    border-color: #dcdfe6;
     font-size: 24px;
-    background: var(--bio-paper, #fff);
-    color: var(--bio-ink, #2c3630);
-    border-color: #e8ecdf;
 }
 
-.code-display:not(.fullscreen) .code-hint {
-    color: var(--bio-ink-muted, #7a8278);
-}
-
+.code-display:not(.fullscreen) .code-hint,
+.code-display:not(.fullscreen) .loc-detail,
 .code-display:not(.fullscreen) .loc-info {
-    color: var(--bio-ink, #2c3630);
+    color: #4b5563;
 }
 </style>

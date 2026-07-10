@@ -1,7 +1,7 @@
 /**
- * 根据开始和结束日期/时间计算状态
- * @param {string|null} start - 开始日期/时间
- * @param {string|null} end - 结束日期/时间
+ * 根据开始和结束日期计算状态。
+ * @param {string|null} start
+ * @param {string|null} end
  * @returns {'未开始'|'进行中'|'已结束'}
  */
 export function computeStatus(start, end) {
@@ -16,11 +16,15 @@ export function computeStatus(start, end) {
 }
 
 /**
- * 返回状态对应的标签类型
+ * 返回状态对应的 Element Plus 标签类型。
  * @param {string} status
  * @returns {'success'|'warning'|'info'|'danger'}
  */
 export function statusTagType(status) {
-  const map = { 未开始: 'warning', 进行中: 'success', 已结束: 'info' }
+  const map = {
+    未开始: 'warning',
+    进行中: 'success',
+    已结束: 'info'
+  }
   return map[status] || 'info'
 }

@@ -25,7 +25,7 @@
             <div class="rate-ring-wrap">
                 <svg viewBox="0 0 120 120" class="rate-ring">
                     <circle cx="60" cy="60" r="52" fill="none" stroke="#e8ecdf" stroke-width="8" />
-                    <circle cx="60" cy="60" r="52" fill="none" stroke="#6b8e4e" stroke-width="8" stroke-linecap="round"
+                    <circle cx="60" cy="60" r="52" fill="none" stroke="#20c4cc" stroke-width="8" stroke-linecap="round"
                         :stroke-dasharray="rateCircumference" :stroke-dashoffset="rateOffset"
                         transform="rotate(-90 60 60)" />
                 </svg>
@@ -128,7 +128,7 @@ const formatTime = (t) => {
 }
 
 .stat-card.success .stat-num {
-    color: var(--bio-success, #6b8e4e);
+    color: var(--bio-primary);
 }
 
 .stat-card.late .stat-num {
@@ -171,7 +171,7 @@ const formatTime = (t) => {
 .rate-pct {
     font-size: 22px;
     font-weight: 700;
-    color: var(--bio-moss, #606c38);
+    color: var(--bio-primary);
 }
 
 .rate-sub {

@@ -9,7 +9,7 @@
       <div class="knowledge-grid">
         <div class="knowledge-card" v-for="item in items" :key="item.id">
           <div class="k-icon">
-            <el-icon :size="28" color="#7f8c52" v-if="item.type === 'doc'">
+            <el-icon :size="28" color="#20c4cc" v-if="item.type === 'doc'">
               <Document />
             </el-icon>
             <el-icon :size="28" color="#5c7a8a" v-else-if="item.type === 'video'">

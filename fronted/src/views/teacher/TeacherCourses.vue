@@ -20,6 +20,7 @@
           <div class="card-cover"
             :style="{ background: course.coverImg ? `url(${resolveFileUrl(course.coverImg)}) center/cover no-repeat` : getCoverGradient(course.id) }"
             :class="{ 'has-cover': course.coverImg }">
+            <CourseCoverPattern v-if="!course.coverImg" />
             <el-tag :type="statusTagType(computeStatus(course.startDate, course.endDate))" class="status-tag">
               {{ computeStatus(course.startDate, course.endDate) }}
             </el-tag>
@@ -88,6 +89,7 @@ import { courseApi } from '@/api'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { computeStatus, statusTagType } from '@/utils/status'
 import { resolveFileUrl } from '@/utils/fileUrl'
+import CourseCoverPattern from '@/components/CourseCoverPattern.vue'
 
 const router = useRouter()
 const courses = ref([])
@@ -112,11 +114,11 @@ const defaultForm = () => ({
 const courseForm = reactive(defaultForm())
 
 const gradientPalette = [
-  'linear-gradient(135deg, #3b5998 0%, #4c6da7 50%, #5b7ec2 100%)',
-  'linear-gradient(135deg, #0d7377 0%, #14a3a8 50%, #20c997 100%)',
-  'linear-gradient(135deg, #b45309 0%, #d97706 50%, #f59e0b 100%)',
-  'linear-gradient(135deg, #9b1b30 0%, #c0392b 50%, #e74c3c 100%)',
-  'linear-gradient(135deg, #2c3e50 0%, #3498db 50%, #2980b9 100%)'
+  '#f5f7fa',
+  '#f2f6f8',
+  '#f7f8fa',
+  '#eef7f8',
+  '#f5f7fa'
 ]
 
 const getCoverGradient = (id) => gradientPalette[((id || 1) - 1) % gradientPalette.length]

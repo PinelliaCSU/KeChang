@@ -1,33 +1,41 @@
 <template>
   <div class="page-shell">
     <div class="page-title-bar">
-      <h2 class="page-title">实训中心</h2>
+      <div>
+        <h2 class="page-title">实训中心</h2>
+        <p class="page-subtitle">查看实训任务、资料与提交进度。</p>
+      </div>
     </div>
 
-    <div class="panel" v-if="trainings.length > 0">
+    <div class="panel training-panel" v-if="trainings.length > 0">
       <div class="training-grid">
-        <div class="training-card" v-for="t in trainings" :key="t.id" @click="viewProject(t)">
-          <div class="training-cover" :style="{ background: getCoverGradient(t.id) }">
-            <span class="training-tag">{{ t.status || '实训' }}</span>
+        <article v-for="t in trainings" :key="t.id" class="training-card" @click="viewProject(t)">
+          <div class="training-cover">
+            <div class="cover-mark">
+              <el-icon><Tools /></el-icon>
+            </div>
+            <el-tag effect="plain" size="small">{{ t.status || computeStatus(t.startDate, t.endDate) }}</el-tag>
           </div>
+
           <div class="training-body">
-            <h4 class="training-title">{{ t.projectName }}</h4>
-            <p class="training-desc">{{ t.description || '暂无描述' }}</p>
+            <h3 :title="t.projectName">{{ t.projectName }}</h3>
+            <p>{{ t.description || '暂无项目说明' }}</p>
             <div class="meta-row">
               <span>任务 {{ t.taskCount || 0 }}</span>
-              <span>已交报告 {{ t.reportCount || 0 }}</span>
+              <span>报告 {{ t.reportCount || 0 }}</span>
             </div>
+            <div class="deadline">截止 {{ t.endDate || '未设置' }}</div>
           </div>
+
           <div class="training-footer">
-            <span class="training-deadline">{{ t.endDate || '未设结束' }}</span>
-            <el-button size="small" type="primary" plain>进入实训</el-button>
+            <el-button type="primary" plain @click.stop="viewProject(t)">进入实训</el-button>
           </div>
-        </div>
+        </article>
       </div>
     </div>
 
     <div class="panel empty-panel" v-else>
-      <el-empty description="暂无实训项目" :image-size="100" />
+      <el-empty description="暂无实训项目" :image-size="110" />
     </div>
   </div>
 </template>
@@ -35,18 +43,12 @@
 <script setup>
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { Tools } from '@element-plus/icons-vue'
 import { trainingApi } from '@/api'
+import { computeStatus } from '@/utils/status'
 
 const router = useRouter()
 const trainings = ref([])
-
-const gradientPalette = [
-  'linear-gradient(135deg, #3b5998, #4c6da7)',
-  'linear-gradient(135deg, #0d7377, #20c997)',
-  'linear-gradient(135deg, #6b5b95, #8b5cf6)',
-  'linear-gradient(135deg, #5f7f3f, #8aac62)'
-]
-const getCoverGradient = (id) => gradientPalette[(id - 1) % gradientPalette.length]
 
 const fetchProjects = async () => {
   const res = await trainingApi.listProjects({ page: 1, size: 100 })
@@ -61,20 +63,126 @@ onMounted(fetchProjects)
 </script>
 
 <style scoped>
-.page-shell { display: flex; flex-direction: column; gap: 20px; }
-.page-title-bar { display: flex; align-items: center; justify-content: space-between; }
-.page-title { margin: 0; font-size: 20px; font-weight: 600; color: #303133; }
-.panel { background: #fff; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); padding: 24px; }
-.training-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
-.training-card { background: #fff; border: 1px solid #ebeef5; border-radius: 8px; overflow: hidden; transition: box-shadow 0.2s, transform 0.2s; cursor: pointer; }
-.training-card:hover { box-shadow: 0 8px 24px rgba(0,0,0,0.1); transform: translateY(-2px); }
-.training-cover { height: 80px; display: flex; align-items: flex-end; padding: 10px 14px; }
-.training-tag { font-size: 11px; color: #fff; background: rgba(255,255,255,0.2); padding: 2px 8px; border-radius: 4px; }
-.training-body { padding: 14px; }
-.training-title { margin: 0 0 6px; font-size: 15px; font-weight: 600; color: #303133; }
-.training-desc { min-height: 36px; line-height: 1.5; font-size: 12px; color: #909399; }
-.meta-row { display: flex; gap: 12px; font-size: 12px; color: #909399; }
-.training-footer { display: flex; align-items: center; justify-content: space-between; padding: 0 14px 14px; }
-.training-deadline { font-size: 12px; color: #909399; }
-.empty-panel { display: flex; align-items: center; justify-content: center; padding: 60px 24px; }
+.page-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.page-subtitle {
+  margin: 8px 0 0;
+  color: var(--bio-ink-muted);
+  font-size: 15px;
+}
+
+.training-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 18px;
+}
+
+.training-card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+  background: #fff;
+  border: 1px solid var(--bio-border);
+  border-radius: 0;
+  cursor: pointer;
+  transition: border-color 160ms ease, background-color 160ms ease;
+}
+
+.training-card:hover {
+  border-color: var(--bio-primary);
+  background: #fcffff;
+}
+
+.training-cover {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  height: 96px;
+  padding: 16px;
+  background: #f5f7fa;
+  border-bottom: 1px solid var(--bio-border);
+}
+
+.cover-mark {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  background: var(--bio-primary-soft);
+  color: var(--bio-primary);
+  font-size: 24px;
+}
+
+.training-body {
+  flex: 1;
+  min-width: 0;
+  padding: 16px;
+}
+
+.training-body h3 {
+  margin: 0;
+  overflow: hidden;
+  color: var(--bio-ink);
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.4;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.training-body p {
+  display: -webkit-box;
+  min-height: 46px;
+  margin: 8px 0 0;
+  overflow: hidden;
+  color: var(--bio-ink-muted);
+  font-size: 15px;
+  line-height: 1.55;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.meta-row span,
+.deadline {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 4px 10px;
+  border: 1px solid var(--bio-border);
+  background: #f7f8fa;
+  color: var(--bio-ink-soft);
+  font-size: 14px;
+}
+
+.deadline {
+  margin-top: 10px;
+}
+
+.training-footer {
+  padding: 0 16px 16px;
+}
+
+.training-footer .el-button {
+  width: 100%;
+}
+
+.empty-panel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 280px;
+}
 </style>

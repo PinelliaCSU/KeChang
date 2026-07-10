@@ -15,6 +15,8 @@ backend/*.log
 fronted/node_modules/
 fronted/dist/
 fronted/.vite/
+fronted/dev-server.log
+fronted/dev-server.err
 
 # 环境变量（个人本地覆盖）
 .env

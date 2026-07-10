@@ -1,169 +1,213 @@
-/* ============================================================
-   Element Plus Biophilic 主题覆盖
-   将 Element Plus 默认色板替换为亲自然色盘
-   ============================================================ */
-
+/* Element Plus overrides for the clean campus theme */
 :root {
-  /* Element Plus 主色 → 苔绿 */
-  --el-color-primary: #606c38;
-  --el-color-primary-light-3: #7a8645;
-  --el-color-primary-light-5: #8b9352;
-  --el-color-primary-light-7: #a3b18a;
-  --el-color-primary-light-8: #b7c9a8;
-  --el-color-primary-light-9: #dde8d0;
-  --el-color-primary-dark-2: #4a5c2a;
-
-  /* Element Plus 成功色 → 叶绿 */
-  --el-color-success: #6b8e4e;
-  --el-color-success-light-3: #7fa85c;
-  --el-color-success-light-5: #96bf6e;
-  --el-color-success-light-7: #b7d898;
-  --el-color-success-light-9: #e8f2dc;
-
-  /* Element Plus 警告色 → 暖土 */
-  --el-color-warning: #c4956a;
-  --el-color-warning-light-3: #d4a878;
-  --el-color-warning-light-5: #e0be96;
-  --el-color-warning-light-7: #edd4b8;
-  --el-color-warning-light-9: #faf1e6;
-
-  /* Element Plus 危险色 → 陶土红 */
-  --el-color-danger: #c4665a;
-  --el-color-danger-light-3: #d48278;
-  --el-color-danger-light-5: #e0a098;
-  --el-color-danger-light-7: #edc0ba;
-  --el-color-danger-light-9: #faece9;
-
-  /* Element Plus 信息色 → 天光蓝 */
-  --el-color-info: #7a9fb5;
-  --el-color-info-light-3: #91b2c4;
-  --el-color-info-light-5: #aec8d5;
-  --el-color-info-light-7: #c5dbe8;
-  --el-color-info-light-9: #e3eef5;
-
-  /* 文字色 */
-  --el-text-color-primary: #2c3630;
-  --el-text-color-regular: #4a544c;
-  --el-text-color-secondary: #7a8278;
-  --el-text-color-placeholder: #b0b5ad;
-
-  /* 边框色 */
-  --el-border-color: rgba(163, 177, 138, 0.18);
-  --el-border-color-light: rgba(163, 177, 138, 0.10);
-  --el-border-color-lighter: rgba(163, 177, 138, 0.06);
-
-  /* 背景色 */
-  --el-bg-color: #fefefc;
-  --el-bg-color-page: #faf8f0;
-  --el-bg-color-overlay: #fefefc;
-
-  /* 填充色 */
-  --el-fill-color: #f7f8f2;
-  --el-fill-color-light: #fafbf7;
-  --el-fill-color-lighter: #fdfbf7;
-  --el-fill-color-blank: #fefefc;
-
-  /* 圆角 — 更有机 */
-  --el-border-radius-base: 8px;
-  --el-border-radius-small: 6px;
-  --el-border-radius-round: 20px;
-
-  /* 阴影 */
-  --el-box-shadow-light: 0 2px 8px rgba(44, 54, 48, 0.06);
-  --el-box-shadow: 0 4px 16px rgba(44, 54, 48, 0.07);
-  --el-box-shadow-dark: 0 8px 28px rgba(44, 54, 48, 0.09);
+  --el-color-primary: #20c4cc;
+  --el-color-primary-light-3: #4fd3d8;
+  --el-color-primary-light-5: #82e1e5;
+  --el-color-primary-light-7: #b6eef1;
+  --el-color-primary-light-8: #d4f6f7;
+  --el-color-primary-light-9: #ecfbfc;
+  --el-color-primary-dark-2: #12aab2;
+  --el-color-success: #20c4cc;
+  --el-color-warning: #f59e0b;
+  --el-color-danger: #ef476f;
+  --el-color-info: #64748b;
+  --el-text-color-primary: #1f2937;
+  --el-text-color-regular: #4b5563;
+  --el-text-color-secondary: #8a94a6;
+  --el-text-color-placeholder: #b7bfcc;
+  --el-border-color: #dcdfe6;
+  --el-border-color-light: #e5e7eb;
+  --el-border-color-lighter: #eef1f4;
+  --el-bg-color: #ffffff;
+  --el-bg-color-page: #f2f2f2;
+  --el-bg-color-overlay: #ffffff;
+  --el-fill-color: #f6f7f9;
+  --el-fill-color-light: #fafafa;
+  --el-fill-color-lighter: #fcfcfc;
+  --el-fill-color-blank: #ffffff;
+  --el-border-radius-base: 4px;
+  --el-border-radius-small: 3px;
+  --el-border-radius-round: 999px;
+  --el-box-shadow-light: none;
+  --el-box-shadow: none;
+  --el-box-shadow-dark: 0 8px 24px rgba(43, 58, 85, 0.12);
 }
 
-/* 按钮 hover — 亮度上浮 */
+.el-button {
+  border-radius: 4px;
+  font-weight: 500;
+  font-size: 15px;
+}
+
+.el-button--primary {
+  --el-button-bg-color: var(--el-color-primary);
+  --el-button-border-color: var(--el-color-primary);
+  --el-button-hover-bg-color: var(--el-color-primary-dark-2);
+  --el-button-hover-border-color: var(--el-color-primary-dark-2);
+  --el-button-active-bg-color: var(--el-color-primary-dark-2);
+  --el-button-active-border-color: var(--el-color-primary-dark-2);
+}
+
 .el-button--primary:hover,
-.el-button--primary:focus {
-  filter: brightness(1.12);
-}
+.el-button--primary:focus,
 .el-button--primary:active {
-  filter: brightness(0.96);
-  transform: translateY(1px);
+  filter: none;
+  transform: none;
 }
 
-/* 输入框 focus — 叶绿色光晕 */
-.el-input__wrapper.is-focus {
+.el-input__wrapper,
+.el-select__wrapper,
+.el-textarea__inner {
+  border-radius: 4px !important;
+  box-shadow: 0 0 0 1px var(--el-border-color) inset !important;
+}
+
+.el-input__wrapper.is-focus,
+.el-select__wrapper.is-focused,
+.el-textarea__inner:focus {
   box-shadow: 0 0 0 1px var(--el-color-primary) inset !important;
 }
 
-/* 菜单项 hover */
+.el-dialog {
+  border-radius: 12px;
+  box-shadow: 0 18px 48px rgba(43, 58, 85, 0.18);
+  border: 1px solid var(--el-border-color);
+  overflow: hidden;
+}
+
+.el-dialog__header {
+  padding: 20px 24px 14px;
+  border-bottom: 1px solid var(--el-border-color-light);
+  background: #fff;
+}
+
+.el-dialog__title {
+  color: var(--el-text-color-primary);
+  font-size: 19px;
+  font-weight: 600;
+}
+
+.el-dialog__body {
+  padding: 24px;
+  font-size: 16px;
+}
+
+.el-dialog__footer {
+  border-top: 1px solid var(--el-border-color-light);
+  padding: 16px 24px 20px;
+  background: #fafafa;
+}
+
+.el-popover.el-popper,
+.el-dropdown__popper .el-dropdown-menu {
+  border-radius: 4px;
+  border: 1px solid var(--el-border-color);
+  box-shadow: 0 8px 24px rgba(43, 58, 85, 0.12);
+}
+
+.el-message-box {
+  border: 1px solid var(--el-border-color);
+  border-radius: 12px;
+  box-shadow: 0 18px 48px rgba(43, 58, 85, 0.18);
+  padding-bottom: 12px;
+}
+
+.el-message-box__title {
+  color: var(--el-text-color-primary);
+  font-size: 19px;
+  font-weight: 600;
+}
+
+.el-message-box__content {
+  color: var(--el-text-color-regular);
+  font-size: 16px;
+}
+
+.el-message-box__btns {
+  padding-top: 16px;
+}
+
+.el-dropdown-menu__item:hover,
 .el-menu-item:hover,
 .el-sub-menu__title:hover {
-  filter: brightness(1.05);
+  background-color: var(--el-color-primary-light-9) !important;
+  color: var(--el-color-primary) !important;
+  filter: none;
 }
 
-/* 标签/Tag */
-.el-tag--primary {
-  --el-tag-bg-color: rgba(96, 108, 56, 0.1);
-  --el-tag-border-color: rgba(96, 108, 56, 0.15);
-  --el-tag-text-color: #606c38;
+.el-tag {
+  border-radius: 4px;
 }
 
-/* 表格 hover */
-.el-table__body tr:hover > td {
-  background-color: #f7f8f2 !important;
+.el-table,
+.kechang-table,
+.is-borderless {
+  --el-table-header-bg-color: #f0f1f3;
+  --el-table-tr-bg-color: #ffffff;
+  --el-table-row-hover-bg-color: #ecfbfc;
+  --el-table-border-color: #dcdfe6;
+  border: 1px solid var(--el-table-border-color) !important;
+  border-radius: 0 !important;
+  color: var(--el-text-color-primary);
+  font-size: 16px;
 }
 
-/* 弹窗 */
-.el-dialog {
-  border-radius: var(--bio-radius-lg);
-  box-shadow: var(--bio-shadow-lg);
-}
-
-/* 下拉菜单 */
-.el-dropdown-menu__item:hover {
-  background-color: #f7f8f2 !important;
-  color: var(--bio-moss) !important;
-}
-
-/* 日历 */
-.el-calendar-table .el-calendar-day:hover {
-  background-color: rgba(163, 177, 138, 0.1);
-}
-
-/* ============================================================
-   无边框表格 (Borderless Table)
-   去除 el-table 的行间分割线，用于 DataPanel 等卡片容器
-   ============================================================ */
-
-/* 去掉表格行之间的下边框 */
-.is-borderless .el-table__body td.el-table__cell {
-  border-bottom: none;
-}
-
-/* 去掉表格行的上边框 */
-.is-borderless .el-table__body tr.el-table__row td.el-table__cell {
-  border-bottom: none;
-}
-
-/* 保留表头底部有一根细线作为视觉分隔 */
+.el-table th.el-table__cell,
+.kechang-table th.el-table__cell,
 .is-borderless th.el-table__cell {
-  border-bottom: 1px solid rgba(163, 177, 138, 0.15);
+  height: 54px;
+  background: #f0f1f3 !important;
+  color: #1f2937;
+  font-size: 16px;
+  font-weight: 600;
+  border-bottom: 1px solid #dcdfe6 !important;
 }
 
-/* 去掉表格内部的所有竖线边框 */
-.is-borderless .el-table__cell {
-  border-right: none;
+.el-table td.el-table__cell,
+.kechang-table td.el-table__cell,
+.is-borderless td.el-table__cell {
+  height: 54px;
+  padding: 10px 0;
+  border-bottom: 1px solid #e5e7eb !important;
 }
 
-/* 去掉表格的外包边框 */
+.el-table .cell {
+  line-height: 22px;
+}
+
+.el-table--striped .el-table__body tr.el-table__row--striped td.el-table__cell,
+.kechang-table.el-table--striped .el-table__body tr.el-table__row--striped td.el-table__cell,
+.is-borderless.el-table--striped .el-table__body tr.el-table__row--striped td.el-table__cell {
+  background-color: #fbfbfb !important;
+}
+
+.el-table__body tr:hover > td,
+.kechang-table .el-table__body tr:hover > td,
+.is-borderless .el-table__body tr:hover > td {
+  background-color: #ecfbfc !important;
+}
+
+.el-table::before,
+.el-table::after,
+.el-table .el-table__inner-wrapper::before,
+.kechang-table::before,
+.kechang-table::after,
+.kechang-table .el-table__inner-wrapper::before,
 .is-borderless::before,
 .is-borderless::after,
-.is-borderless .el-table__inner-wrapper::before,
-.is-borderless .el-table__border-left-patch,
-.is-borderless .el-table__border-right-patch {
-  display: none;
+.is-borderless .el-table__inner-wrapper::before {
+  display: none !important;
 }
 
-/* 斑马纹行 — 更淡更自然 */
-.is-borderless.el-table--striped .el-table__body tr.el-table__row--striped td.el-table__cell {
-  background-color: rgba(163, 177, 138, 0.06);
+.el-pagination {
+  --el-pagination-hover-color: var(--el-color-primary);
 }
 
-/* 行悬浮高亮 */
-.is-borderless .el-table__body tr.el-table__row:hover td {
-  background-color: rgba(163, 177, 138, 0.08) !important;
+.el-tabs__active-bar {
+  background-color: var(--el-color-primary);
+}
+
+.el-tabs__item.is-active,
+.el-tabs__item:hover {
+  color: var(--el-color-primary);
 }

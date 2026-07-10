@@ -363,7 +363,7 @@ onMounted(() => {
 /* ---------- 文件/资源列表 ---------- */
 .item-list { display: flex; flex-direction: column; gap: 10px; }
 .content-item { display: grid; grid-template-columns: 56px minmax(160px, 1fr) minmax(120px, auto) auto; gap: 12px; align-items: center; padding: 12px 14px; background: #fafafa; border: 1px solid #ebeef5; border-radius: 8px; }
-.item-kind { color: #409eff; background: #ecf5ff; border-radius: 4px; padding: 3px 8px; text-align: center; font-size: 12px; }
+.item-kind { color: var(--bio-primary); background: var(--bio-primary-soft); border-radius: 4px; padding: 3px 8px; text-align: center; font-size: 13px; }
 .item-title { color: #303133; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .item-meta { color: #909399; font-size: 13px; }
 .item-actions { display: flex; align-items: center; gap: 8px; }

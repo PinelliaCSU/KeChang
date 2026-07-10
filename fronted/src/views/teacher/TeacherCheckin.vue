@@ -374,7 +374,7 @@ onUnmounted(() => { stopPolling() })
 }
 
 .cs-item.success {
-    color: var(--bio-success, #6b8e4e);
+    color: var(--bio-primary);
     font-weight: 600;
 }
 
