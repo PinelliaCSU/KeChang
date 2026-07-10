@@ -51,6 +51,8 @@ const teacherMenus = [
       { path: '/teacher/questions', title: '试题管理' },
       { path: '/teacher/papers', title: '试卷管理' },
       { path: '/teacher/exams', title: '考试管理' },
+      { path: '/teacher/class-quizzes', title: '随堂测验' },
+      { path: '/teacher/roll-call', title: '随机点名' },
       { path: '/teacher/assignments', title: '作业管理' }
     ]
   },
@@ -84,6 +86,7 @@ const studentMenus = [
   { path: '/student/courses', title: '课程中心', icon: 'Reading' },
   { path: '/student/assignments', title: '我的作业', icon: 'Notebook' },
   { path: '/student/exams', title: '在线考试', icon: 'Timer' },
+  { path: '/student/class-quizzes', title: '随堂测验', icon: 'DataLine' },
   { path: '/student/grades', title: '我的成绩', icon: 'TrendCharts' },
   { path: '/student/notes', title: '学习笔记', icon: 'Edit' },
   { path: '/student/trainings', title: '实训中心', icon: 'Monitor' },

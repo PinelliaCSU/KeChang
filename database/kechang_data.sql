@@ -626,6 +626,83 @@ CREATE TABLE `attachment_file` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='附件文件表';
 
 -- ============================================================
+-- 模块十二：随堂测验
+-- ============================================================
+
+DROP TABLE IF EXISTS `class_quiz`;
+CREATE TABLE `class_quiz` (
+  `id`               BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '主键ID',
+  `course_id`        BIGINT       NOT NULL COMMENT '课程ID',
+  `question_id`      BIGINT       NOT NULL COMMENT '题库试题ID',
+  `title`            VARCHAR(255) DEFAULT NULL COMMENT '测验标题',
+  `duration_seconds` INT          DEFAULT 120 COMMENT '限时秒数',
+  `status`           VARCHAR(20)  DEFAULT 'ACTIVE' COMMENT '状态：ACTIVE / ENDED',
+  `create_by`        BIGINT       DEFAULT NULL COMMENT '创建教师ID',
+  `start_time`       DATETIME     NOT NULL COMMENT '开始时间',
+  `end_time`         DATETIME     NOT NULL COMMENT '结束时间',
+  `create_time`      DATETIME     DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time`      DATETIME     DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `is_deleted`       TINYINT(1)   DEFAULT 0 COMMENT '逻辑删除',
+  INDEX `idx_course_id` (`course_id`),
+  INDEX `idx_question_id` (`question_id`),
+  INDEX `idx_status` (`status`),
+  INDEX `idx_create_by` (`create_by`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='随堂测验会话表';
+
+DROP TABLE IF EXISTS `class_quiz_answer`;
+CREATE TABLE `class_quiz_answer` (
+  `id`          BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '主键ID',
+  `quiz_id`     BIGINT      NOT NULL COMMENT '随堂测验ID',
+  `question_id` BIGINT      DEFAULT NULL COMMENT '试题ID',
+  `student_id`  BIGINT      NOT NULL COMMENT '学生用户ID',
+  `answer`      TEXT        DEFAULT NULL COMMENT '学生答案',
+  `is_correct`  TINYINT(1)  DEFAULT NULL COMMENT '是否正确：0错误 / 1正确',
+  `submit_time` DATETIME    DEFAULT CURRENT_TIMESTAMP COMMENT '提交时间',
+  `create_time` DATETIME    DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` DATETIME    DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `is_deleted`  TINYINT(1)  DEFAULT 0 COMMENT '逻辑删除',
+  UNIQUE INDEX `idx_quiz_student_question` (`quiz_id`, `student_id`, `question_id`),
+  INDEX `idx_quiz_id` (`quiz_id`),
+  INDEX `idx_student_id` (`student_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='随堂测验作答表';
+
+DROP TABLE IF EXISTS `class_quiz_question`;
+CREATE TABLE `class_quiz_question` (
+  `id`          BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '主键ID',
+  `quiz_id`     BIGINT      NOT NULL COMMENT '随堂测验ID',
+  `question_id` BIGINT      NOT NULL COMMENT '试题ID',
+  `sort_order`  INT         DEFAULT 0 COMMENT '题目顺序',
+  `create_time` DATETIME    DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` DATETIME    DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `is_deleted`  TINYINT(1)  DEFAULT 0 COMMENT '逻辑删除',
+  UNIQUE INDEX `idx_quiz_question` (`quiz_id`, `question_id`),
+  INDEX `idx_quiz_id` (`quiz_id`),
+  INDEX `idx_question_id` (`question_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='随堂测验题目关联表';
+
+-- ============================================================
+-- 模块十三：课堂互动积分
+-- ============================================================
+
+DROP TABLE IF EXISTS `participation_point`;
+CREATE TABLE `participation_point` (
+  `id`          BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '主键ID',
+  `course_id`   BIGINT      NOT NULL COMMENT '课程ID',
+  `student_id`  BIGINT      NOT NULL COMMENT '学生用户ID',
+  `teacher_id`  BIGINT      DEFAULT NULL COMMENT '操作教师ID',
+  `points`      INT         DEFAULT 1 COMMENT '积分',
+  `source_type` VARCHAR(30) DEFAULT '随机点名' COMMENT '来源类型',
+  `reason`      VARCHAR(255) DEFAULT NULL COMMENT '积分说明',
+  `event_time`  DATETIME    DEFAULT CURRENT_TIMESTAMP COMMENT '发生时间',
+  `create_time` DATETIME    DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` DATETIME    DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `is_deleted`  TINYINT(1)  DEFAULT 0 COMMENT '逻辑删除',
+  INDEX `idx_student_id` (`student_id`),
+  INDEX `idx_course_id` (`course_id`),
+  INDEX `idx_event_time` (`event_time`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='课堂参与积分流水表';
+
+-- ============================================================
 -- 初始数据
 -- ============================================================
 

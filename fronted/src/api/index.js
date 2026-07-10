@@ -55,6 +55,25 @@ export const examApi = {
   mark: (recordId, params) => request.put(`/exams/records/${recordId}/mark`, null, { params })
 }
 
+/** 随堂测验 API */
+export const classQuizApi = {
+  teacherList: (params) => request.get('/class-quizzes/teacher', { params }),
+  studentActiveList: () => request.get('/class-quizzes/student/active'),
+  create: (data) => request.post('/class-quizzes', data),
+  detail: (id) => request.get(`/class-quizzes/${id}`),
+  stats: (id) => request.get(`/class-quizzes/${id}/stats`),
+  submit: (id, data) => request.post(`/class-quizzes/${id}/answer`, data),
+  close: (id) => request.put(`/class-quizzes/${id}/close`)
+}
+
+/** 课堂积分 / 随机点名 API */
+export const participationApi = {
+  rollCall: (data) => request.post('/participation/roll-call', data),
+  award: (data) => request.post('/participation/award', data),
+  scoreboard: (courseId) => request.get(`/participation/courses/${courseId}/scoreboard`),
+  my: () => request.get('/participation/my')
+}
+
 /** 作业 API */
 export const assignmentApi = {
   list: (params) => request.get('/assignments', { params }),

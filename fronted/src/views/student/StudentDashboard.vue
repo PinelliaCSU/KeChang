@@ -32,14 +32,14 @@
         <div class="stat-num">{{ stats.upcomingExamCount ?? '--' }}</div>
         <div class="stat-label">待考试</div>
       </div>
-      <div class="stat-card">
+      <div class="stat-card point-card" @click="pointsVisible = true">
         <div class="stat-icon" style="background:#dde8d6">
           <el-icon :size="28" color="#6b8e4e">
             <TrendCharts />
           </el-icon>
         </div>
-        <div class="stat-num">Top 15%</div>
-        <div class="stat-label">综合排名</div>
+        <div class="stat-num">{{ pointsOverview.courseCount || 0 }}</div>
+        <div class="stat-label">课堂积分</div>
       </div>
     </div>
 
@@ -65,22 +65,60 @@
         <el-progress :percentage="c.progress" :color="c.color" :stroke-width="14" />
       </div>
     </div>
+
+    <el-dialog v-model="pointsVisible" title="课堂积分详情" width="720px">
+      <el-empty v-if="!pointCourses.length" description="暂无积分记录" />
+      <el-collapse v-else class="point-course-list">
+        <el-collapse-item v-for="course in pointCourses" :key="course.courseId" :name="course.courseId">
+          <template #title>
+            <div class="course-point-title">
+              <span>{{ course.courseName }}</span>
+              <el-tag :type="course.totalPoints >= 0 ? 'success' : 'danger'">{{ course.totalPoints }} 分</el-tag>
+            </div>
+          </template>
+          <el-table :data="course.records || []" class="point-table">
+            <el-table-column prop="eventTime" label="时间" width="180" />
+            <el-table-column label="来源" min-width="180">
+              <template #default="{ row }">
+                <div class="point-source">{{ row.sourceType || '课堂互动' }}</div>
+                <div class="point-reason">{{ row.reason || '-' }}</div>
+              </template>
+            </el-table-column>
+            <el-table-column label="积分" width="90" align="center">
+              <template #default="{ row }">
+                <el-tag :type="row.points >= 0 ? 'success' : 'danger'">{{ row.points > 0 ? '+' : '' }}{{ row.points || 0 }}</el-tag>
+              </template>
+            </el-table-column>
+          </el-table>
+        </el-collapse-item>
+      </el-collapse>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, nextTick } from 'vue'
-import { dashboardApi, courseApi } from '@/api'
+import { computed, ref, onMounted, nextTick } from 'vue'
+import { dashboardApi, courseApi, participationApi } from '@/api'
 import * as echarts from 'echarts'
 
 const stats = ref({})
 const courses = ref([])
 const chartRef = ref(null)
+const pointsOverview = ref({ courseCount: 0, courses: [], records: [] })
+const pointsVisible = ref(false)
+const pointCourses = computed(() => Array.isArray(pointsOverview.value.courses) ? pointsOverview.value.courses : [])
 
 const fetchData = async () => {
   try {
     const res = await dashboardApi.studentStats()
     if (res.data.code === 200) stats.value = res.data.data
+  } catch (e) { /* ignore */ }
+
+  try {
+    const pointRes = await participationApi.my()
+    if (pointRes.data.code === 200) {
+      pointsOverview.value = pointRes.data.data || { courseCount: 0, courses: [], records: [] }
+    }
   } catch (e) { /* ignore */ }
 
   try {
@@ -160,6 +198,14 @@ onMounted(async () => {
   box-shadow: var(--bio-shadow-md);
 }
 
+.point-card {
+  cursor: pointer;
+}
+
+.point-card:hover {
+  transform: translateY(-1px);
+}
+
 .stat-icon {
   width: 56px;
   height: 56px;
@@ -223,6 +269,35 @@ onMounted(async () => {
   font-size: 13px;
   color: var(--bio-ink-soft);
   flex-shrink: 0;
+}
+
+.point-table {
+  width: 100%;
+}
+
+.point-course-list {
+  --el-collapse-header-height: 52px;
+}
+
+.course-point-title {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-right: 16px;
+  font-weight: 700;
+  color: var(--bio-ink);
+}
+
+.point-source {
+  font-weight: 600;
+  color: var(--bio-ink);
+}
+
+.point-reason {
+  font-size: 12px;
+  color: var(--bio-ink-muted);
+  margin-top: 2px;
 }
 
 @media (max-width: 1024px) {
