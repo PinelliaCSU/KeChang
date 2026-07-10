@@ -17,8 +17,8 @@
         </el-tabs>
       </div>
 
-      <el-table v-if="evaluations.length > 0 || loading" :data="evaluations" v-loading="loading" stripe border
-        style="width:100%">
+      <el-table v-if="evaluations.length > 0 || loading" :data="evaluations" v-loading="loading" stripe
+        class="kechang-table" style="width:100%">
         <el-table-column prop="evaluationName" label="评价名称" min-width="200" />
         <el-table-column label="评价类型" width="120">
           <template #default="{ row }">
@@ -434,5 +434,41 @@ onMounted(() => { fetchCourses(); fetchEvaluations() })
   color: #909399;
   max-width: 300px;
   word-break: break-all;
+}
+
+:deep(.kechang-table) {
+  width: 100%;
+  border: none;
+}
+
+:deep(.kechang-table .el-table__header-wrapper th.el-table__cell) {
+  background-color: #F5F7FA !important;
+  color: #606266;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+:deep(.kechang-table .el-table__body-wrapper td.el-table__cell) {
+  border-bottom: none;
+}
+
+:deep(.kechang-table .el-table__cell) {
+  border-right: none;
+}
+
+:deep(.kechang-table::before),
+:deep(.kechang-table::after),
+:deep(.kechang-table .el-table__inner-wrapper::before),
+:deep(.kechang-table .el-table__border-left-patch),
+:deep(.kechang-table .el-table__border-right-patch) {
+  display: none;
+}
+
+:deep(.kechang-table.el-table--striped .el-table__body tr.el-table__row--striped td.el-table__cell) {
+  background-color: rgba(163, 177, 138, 0.06);
+}
+
+:deep(.kechang-table .el-table__body tr.el-table__row:hover td) {
+  background-color: rgba(163, 177, 138, 0.08) !important;
 }
 </style>

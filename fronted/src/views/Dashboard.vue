@@ -47,11 +47,11 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/stores/user'
-import { courseApi, assignmentApi, examApi, trainingApi, dashboardApi, notificationApi } from '@/api'
+import { courseApi, assignmentApi, examApi, trainingApi, dashboardApi, notificationApi, messageApi, qaApi, evaluationApi, surveyApi, announcementApi } from '@/api'
 import DashboardHeader from '@/components/DashboardHeader.vue'
 import DashboardTodoPanel from '@/components/DashboardTodoPanel.vue'
 import DashboardShortcutManager from '@/components/DashboardShortcutManager.vue'
@@ -119,35 +119,221 @@ const handleCourseAction = (cmd, course) => {
 // ==================== 待办相关 ====================
 const fetchTodos = async () => {
     try {
-        const [assignRes, examRes, trainRes] = await Promise.allSettled([
-            assignmentApi.list({ page: 1, size: 50 }),
-            examApi.listExams({ page: 1, size: 50 }),
-            trainingApi.listProjects({ page: 1, size: 50 })
-        ])
         const todos = []
         const extractList = (res) => {
             if (res.status !== 'fulfilled' || res.value.data.code !== 200) return []
             const d = res.value.data.data
             return Array.isArray(d?.records) ? d.records : Array.isArray(d?.list) ? d.list : Array.isArray(d) ? d : []
         }
-        extractList(assignRes).forEach(a => todos.push({
-            id: `a-${a.id}`, type: 'assignment', typeLabel: '作业', title: a.title,
-            courseName: a.courseName || '', deadline: a.deadline || a.endTime || '未设定',
-            overdue: a.deadline ? new Date(a.deadline) < new Date() : false,
-            raw: a, route: userStore.isTeacher ? '/teacher/assignments' : '/student/assignments'
-        }))
-        extractList(examRes).forEach(e => todos.push({
-            id: `e-${e.id}`, type: 'exam', typeLabel: '考试', title: e.name || e.title,
-            courseName: e.courseName || '', deadline: e.startTime || e.endTime || '未设定',
-            overdue: e.endTime ? new Date(e.endTime) < new Date() : false,
-            raw: e, route: userStore.isTeacher ? '/teacher/exams' : '/student/exams'
-        }))
-        extractList(trainRes).forEach(t => todos.push({
-            id: `t-${t.id}`, type: 'training', typeLabel: '实训', title: t.name || t.title,
-            courseName: t.courseName || '', deadline: t.deadline || t.endTime || '未设定',
-            overdue: t.deadline ? new Date(t.deadline) < new Date() : false,
-            raw: t, route: '/student/trainings'
-        }))
+
+        if (userStore.isTeacher) {
+            // ===== 教师待办 =====
+            const [assignRes, examRes, trainRes] = await Promise.allSettled([
+                assignmentApi.list({ page: 1, size: 50 }),
+                examApi.listExams({ page: 1, size: 50 }),
+                trainingApi.listProjects({ page: 1, size: 50 })
+            ])
+            extractList(assignRes).forEach(a => todos.push({
+                id: `a-${a.id}`, type: 'assignment', typeLabel: '作业', title: a.title,
+                courseName: a.courseName || '', deadline: a.deadline || a.endTime || '未设定',
+                overdue: a.deadline ? new Date(a.deadline) < new Date() : false,
+                raw: a, route: '/teacher/assignments'
+            }))
+            extractList(examRes).forEach(e => todos.push({
+                id: `e-${e.id}`, type: 'exam', typeLabel: '考试', title: e.name || e.title,
+                courseName: e.courseName || '', deadline: e.startTime || e.endTime || '未设定',
+                overdue: e.endTime ? new Date(e.endTime) < new Date() : false,
+                raw: e, route: '/teacher/exams'
+            }))
+            extractList(trainRes).forEach(t => todos.push({
+                id: `t-${t.id}`, type: 'training', typeLabel: '实训', title: t.name || t.title,
+                courseName: t.courseName || '', deadline: t.deadline || t.endTime || '未设定',
+                overdue: t.deadline ? new Date(t.deadline) < new Date() : false,
+                raw: t, route: '/teacher/trainings'
+            }))
+
+            // 私信未回复
+            try {
+                const convRes = await messageApi.conversations({ page: 1, size: 30 })
+                if (convRes.data.code === 200) {
+                    const convs = convRes.data.data?.records || convRes.data.data || []
+                    convs.forEach((c, i) => {
+                        if (c.unreadCount > 0) {
+                            todos.push({
+                                id: `msg-${c.partnerId || c.userId || i}`,
+                                type: 'message', typeLabel: '回复',
+                                title: `回复 ${c.partnerName || c.name || c.username || '学生'} 的私信`,
+                                courseName: c.courseName || '',
+                                deadline: c.lastTime ? new Date(c.lastTime).toISOString().slice(0, 16).replace('T', ' ') : '今天',
+                                overdue: false, raw: c, route: '/teacher/messages'
+                            })
+                        }
+                    })
+                }
+            } catch { /* ignore */ }
+
+            // 问答未回复
+            try {
+                const postRes = await qaApi.listPosts({ page: 1, size: 10, replyStatus: 'unanswered' })
+                if (postRes.data.code === 200) {
+                    const posts = postRes.data.data?.records || []
+                    posts.forEach(p => {
+                        todos.push({
+                            id: `qa-${p.id}`, type: 'qa', typeLabel: '问答',
+                            title: `回答「${p.title}」的问题`,
+                            courseName: p.courseName || '',
+                            deadline: p.createTime ? new Date(p.createTime).toISOString().slice(0, 16).replace('T', ' ') : '今天',
+                            overdue: false, raw: p, route: '/teacher/posts'
+                        })
+                    })
+                }
+            } catch { /* ignore */ }
+        } else {
+            // ===== 学生待办 =====
+            const now = new Date()
+            const fmt = (d) => d ? new Date(d).toISOString().slice(0, 16).replace('T', ' ') : '未设定'
+            const isOverdue = (d) => d && new Date(d) < now
+
+            // 1. 待提交作业
+            try {
+                const res = await assignmentApi.list({ page: 1, size: 50 })
+                if (res.data.code === 200) {
+                    const list = extractList({ status: 'fulfilled', value: res })
+                    list.forEach(a => {
+                        if (!a.submitted) {
+                            todos.push({
+                                id: `a-${a.id}`, type: 'assignment', typeLabel: '作业',
+                                title: `提交作业：${a.title}`,
+                                courseName: a.courseName || '',
+                                deadline: fmt(a.deadline),
+                                overdue: isOverdue(a.deadline),
+                                raw: a, route: '/student/assignments'
+                            })
+                        }
+                    })
+                }
+            } catch { /* ignore */ }
+
+            // 2. 待参加考试
+            try {
+                const res = await examApi.listExams({ page: 1, size: 50 })
+                if (res.data.code === 200) {
+                    const list = extractList({ status: 'fulfilled', value: res })
+                    list.forEach(e => {
+                        if (e.submitted !== 1 && e.startTime && new Date(e.startTime) <= now && e.endTime && new Date(e.endTime) >= now) {
+                            todos.push({
+                                id: `e-${e.id}`, type: 'exam', typeLabel: '考试',
+                                title: `参加考试：${e.examName || e.title}`,
+                                courseName: e.courseName || '',
+                                deadline: fmt(e.endTime),
+                                overdue: false,
+                                raw: e, route: '/student/exams'
+                            })
+                        }
+                    })
+                }
+            } catch { /* ignore */ }
+
+            // 3. 待提交实训报告
+            try {
+                const res = await trainingApi.listProjects({ page: 1, size: 50 })
+                if (res.data.code === 200) {
+                    const list = extractList({ status: 'fulfilled', value: res })
+                    list.forEach(t => {
+                        if (t.taskCount > 0 && (t.reportCount == null || t.reportCount < t.taskCount)) {
+                            todos.push({
+                                id: `t-${t.id}`, type: 'training', typeLabel: '实训',
+                                title: `提交实训报告：${t.projectName || t.name || t.title}`,
+                                courseName: t.courseName || '',
+                                deadline: fmt(t.endDate || t.deadline),
+                                overdue: isOverdue(t.endDate || t.deadline),
+                                raw: t, route: '/student/trainings'
+                            })
+                        }
+                    })
+                }
+            } catch { /* ignore */ }
+
+            // 4. 未读私信
+            try {
+                const convRes = await messageApi.conversations({ page: 1, size: 30 })
+                if (convRes.data.code === 200) {
+                    const convs = convRes.data.data?.records || convRes.data.data || []
+                    convs.forEach((c, i) => {
+                        if (c.unreadCount > 0) {
+                            todos.push({
+                                id: `msg-${c.partnerId || c.userId || i}`, type: 'message', typeLabel: '私信',
+                                title: `查看 ${c.partnerName || c.name || '联系人'} 的私信`,
+                                courseName: c.courseName || '',
+                                deadline: c.lastTime ? fmt(c.lastTime) : '今天',
+                                overdue: false, raw: c, route: '/student/messages'
+                            })
+                        }
+                    })
+                }
+            } catch { /* ignore */ }
+
+            // 5. 待填写教学评价
+            try {
+                const res = await evaluationApi.list({ page: 1, size: 50 })
+                if (res.data.code === 200) {
+                    const list = extractList({ status: 'fulfilled', value: res })
+                    list.forEach(e => {
+                        if (!e.submitted) {
+                            todos.push({
+                                id: `ev-${e.id}`, type: 'evaluation', typeLabel: '评价',
+                                title: `填写教学评价：${e.evaluationName || e.courseName}`,
+                                courseName: e.courseName || '',
+                                deadline: fmt(e.endDate),
+                                overdue: isOverdue(e.endDate),
+                                raw: e, route: '/student/evaluations'
+                            })
+                        }
+                    })
+                }
+            } catch { /* ignore */ }
+
+            // 6. 待填写问卷
+            try {
+                const res = await surveyApi.list({ page: 1, size: 50 })
+                if (res.data.code === 200) {
+                    const list = extractList({ status: 'fulfilled', value: res })
+                    list.forEach(s => {
+                        if (!s.submitted) {
+                            todos.push({
+                                id: `sv-${s.id}`, type: 'survey', typeLabel: '问卷',
+                                title: `填写问卷：${s.title}`,
+                                courseName: s.courseName || '',
+                                deadline: fmt(s.endDate),
+                                overdue: isOverdue(s.endDate),
+                                raw: s, route: '/student/surveys'
+                            })
+                        }
+                    })
+                }
+            } catch { /* ignore */ }
+
+            // 7. 待确认公告
+            try {
+                const res = await announcementApi.list({ page: 1, size: 50 })
+                if (res.data.code === 200) {
+                    const list = extractList({ status: 'fulfilled', value: res })
+                    list.forEach(a => {
+                        if (!a.confirmed) {
+                            todos.push({
+                                id: `an-${a.id}`, type: 'announcement', typeLabel: '公告',
+                                title: `确认公告：${a.title}`,
+                                courseName: a.courseName || '',
+                                deadline: fmt(a.publishTime),
+                                overdue: false,
+                                raw: a, route: '/student/announcements'
+                            })
+                        }
+                    })
+                }
+            } catch { /* ignore */ }
+        }
+
         allTodos.value = todos
     } catch (e) { console.error('获取待办失败', e) }
 }
@@ -191,7 +377,20 @@ const handleShortcut = (target) => {
     }
 }
 
-onMounted(() => { fetchCourses(); fetchTodos(); fetchDashboardStats(); fetchNotifications() })
+const refreshTodos = () => { fetchTodos() }
+
+const onVisibilityChange = () => {
+    if (!document.hidden) refreshTodos()
+}
+
+onMounted(() => {
+    fetchCourses(); fetchTodos(); fetchDashboardStats(); fetchNotifications()
+    document.addEventListener('visibilitychange', onVisibilityChange)
+})
+
+onUnmounted(() => {
+    document.removeEventListener('visibilitychange', onVisibilityChange)
+})
 </script>
 
 <style scoped>

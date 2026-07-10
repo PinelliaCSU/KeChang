@@ -75,7 +75,8 @@ watch(() => props.todos, applyFilter, { immediate: true })
     display: flex;
     flex-direction: column;
     gap: 4px;
-    max-height: 240px;
+    min-height: 300px;
+    max-height: 300px;
     overflow-y: auto;
 }
 
@@ -120,6 +121,31 @@ watch(() => props.todos, applyFilter, { immediate: true })
 .tag-training {
     background: #f0ebe0;
     color: var(--bio-earth-warm);
+}
+
+.tag-qa {
+    background: #e8eddf;
+    color: var(--bio-moss);
+}
+
+.tag-evaluation {
+    background: #f0e6f0;
+    color: #8e6b8e;
+}
+
+.tag-survey {
+    background: #e6f0e6;
+    color: #6b8e6b;
+}
+
+.tag-announcement {
+    background: #f0ece6;
+    color: #8e7a6b;
+}
+
+.tag-message {
+    background: #dce8f0;
+    color: #5c7a8a;
 }
 
 .todo-name {

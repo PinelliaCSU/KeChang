@@ -32,15 +32,6 @@
         <div class="stat-num">{{ stats.pendingQuestionCount || 0 }}</div>
         <div class="stat-label">待回复</div>
       </div>
-      <div class="stat-card">
-        <div class="stat-icon" style="background:#dde8d6">
-          <el-icon :size="28" color="#6b8e4e">
-            <TrendCharts />
-          </el-icon>
-        </div>
-        <div class="stat-num">{{ stats.avgScore || '--' }}</div>
-        <div class="stat-label">平均分</div>
-      </div>
     </div>
 
     <div class="content-row">
@@ -49,12 +40,16 @@
         <div ref="chartRef" style="height:300px"></div>
       </div>
       <div class="panel todo-panel">
-        <h4 class="section-title">待办事项</h4>
-        <el-timeline v-if="todos.length > 0">
-          <el-timeline-item v-for="t in todos" :key="t" :timestamp="t.time" placement="top">
-            {{ t.content }}
-          </el-timeline-item>
-        </el-timeline>
+        <h4 class="section-title">待办事项 ({{ todoTotal }})</h4>
+        <div class="todo-list-scroll" v-if="todos.length > 0">
+          <div v-for="(t, idx) in todos" :key="idx" class="todo-item" @click="handleTodoClick(t)">
+            <span class="todo-dot" :class="'dot-' + t.type"></span>
+            <div class="todo-body">
+              <span class="todo-text">{{ t.content }}</span>
+              <span class="todo-meta">{{ t.courseName }} · {{ t.time }}</span>
+            </div>
+          </div>
+        </div>
         <el-empty v-else description="暂无待办" :image-size="80" />
       </div>
     </div>
@@ -62,23 +57,146 @@
 </template>
 
 <script setup>
-import { ref, onMounted, nextTick } from 'vue'
-import { dashboardApi } from '@/api'
+import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
+import { useRouter } from 'vue-router'
+import { dashboardApi, assignmentApi, examApi, messageApi, qaApi } from '@/api'
 import * as echarts from 'echarts'
 
+const router = useRouter()
 const stats = ref({})
-const todos = ref([
-  { time: '今天', content: '批改《Java高级》第3次作业' },
-  { time: '昨天', content: '回复 张三 的问题' },
-  { time: '2天前', content: '阅卷《软件测试》期中考试' }
-])
+const todos = ref([])
 const chartRef = ref(null)
+
+const todoTotal = computed(() => todos.value.length)
+
+const formatTime = (t) => {
+  if (!t) return '--'
+  const d = new Date(t)
+  const now = new Date()
+  const diff = now - d
+  const days = Math.floor(diff / 86400000)
+  if (days === 0) return '今天'
+  if (days === 1) return '昨天'
+  if (days < 7) return `${days}天前`
+  return `${Math.floor(days / 7)}周前`
+}
+
+const handleTodoClick = (t) => {
+  if (t.route) router.push(t.route)
+}
+
+const fetchTodos = async () => {
+  const items = []
+
+  // 1. 待批改作业 — 查询有提交但未评分的作业
+  try {
+    const assignRes = await assignmentApi.list({ page: 1, size: 100 })
+    if (assignRes.data.code === 200) {
+      const assigns = assignRes.data.data?.records || []
+      for (const a of assigns.slice(0, 10)) {
+        try {
+          const subRes = await assignmentApi.getSubmitList(a.id, { page: 1, size: 100 })
+          if (subRes.data.code === 200) {
+            const submits = subRes.data.data?.records || []
+            const pending = submits.filter(s => s.score == null && s.status !== '已批改')
+            pending.forEach(s => {
+              items.push({
+                type: 'grade',
+                content: `批改《${a.title}》— ${s.studentName || '学生'}的作业`,
+                courseName: a.courseName || '',
+                time: s.submitTime ? formatTime(s.submitTime) : '今天',
+                route: '/teacher/assignments'
+              })
+            })
+          }
+        } catch { /* ignore */ }
+      }
+    }
+  } catch { /* ignore */ }
+
+  // 2. 待阅卷考试 — 查询有记录但未评分的考试
+  try {
+    const examRes = await examApi.listExams({ page: 1, size: 50 })
+    if (examRes.data.code === 200) {
+      const exams = examRes.data.data?.records || []
+      for (const e of exams.slice(0, 5)) {
+        try {
+          const recRes = await examApi.getRecords(e.id)
+          if (recRes.data.code === 200) {
+            const records = recRes.data.data || []
+            const pending = records.filter(r => r.totalScore == null)
+            pending.forEach(r => {
+              items.push({
+                type: 'exam',
+                content: `阅卷《${e.examName}》— ${r.studentName || '学生'}`,
+                courseName: e.courseName || '',
+                time: r.submitTime ? formatTime(r.submitTime) : '今天',
+                route: '/teacher/exams'
+              })
+            })
+          }
+        } catch { /* ignore */ }
+      }
+    }
+  } catch { /* ignore */ }
+
+  // 3. 待回复私信 — 有未读消息的会话需要回复
+  try {
+    const convRes = await messageApi.conversations({ page: 1, size: 50 })
+    if (convRes.data.code === 200) {
+      const convs = convRes.data.data?.records || convRes.data.data || []
+      convs.forEach(c => {
+        if (c.unreadCount > 0) {
+          items.push({
+            type: 'message',
+            content: `回复 ${c.partnerName || c.name || c.username || '学生'} 的私信`,
+            courseName: c.courseName || '',
+            time: c.lastTime ? formatTime(c.lastTime) : '今天',
+            route: '/teacher/messages'
+          })
+        }
+      })
+    }
+  } catch { /* ignore */ }
+
+  // 4. 待回复问答 — 查找未回复的提问帖子
+  try {
+    const postRes = await qaApi.listPosts({ page: 1, size: 20, replyStatus: 'unanswered' })
+    if (postRes.data.code === 200) {
+      const posts = postRes.data.data?.records || []
+      posts.forEach(p => {
+        items.push({
+          type: 'qa',
+          content: `回答「${p.title}」的问题`,
+          courseName: p.courseName || '',
+          time: p.createTime ? formatTime(p.createTime) : '今天',
+          route: '/teacher/posts'
+        })
+      })
+    }
+  } catch { /* ignore */ }
+
+  // 按时间排序，最近的在前
+  items.sort((a, b) => {
+    const order = { '今天': 0, '昨天': 1, '2天前': 2, '3天前': 3 }
+    return (order[a.time] ?? 99) - (order[b.time] ?? 99)
+  })
+
+  todos.value = items
+}
+
+const refreshTodos = () => { fetchTodos() }
 
 onMounted(async () => {
   try {
     const res = await dashboardApi.teacherStats()
     if (res.data.code === 200) stats.value = res.data.data
   } catch (e) { /* ignore */ }
+
+  await fetchTodos()
+
+  // 页面重新可见时刷新待办（处理完待办返回后自动更新）
+  document.addEventListener('visibilitychange', onVisibilityChange)
 
   await nextTick()
   if (chartRef.value) {
@@ -95,6 +213,15 @@ onMounted(async () => {
       }]
     })
   }
+})
+
+const onVisibilityChange = () => {
+  if (!document.hidden) refreshTodos()
+}
+
+// 组件卸载时移除监听
+onUnmounted(() => {
+  document.removeEventListener('visibilitychange', onVisibilityChange)
 })
 </script>
 
@@ -121,7 +248,7 @@ onMounted(async () => {
 
 .stat-row {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 16px;
 }
 
@@ -194,7 +321,7 @@ onMounted(async () => {
 
 @media (max-width: 1024px) {
   .stat-row {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(3, 1fr);
   }
 
   .content-row {
@@ -204,5 +331,74 @@ onMounted(async () => {
   .todo-panel {
     width: 100%;
   }
+}
+
+.todo-list-scroll {
+  max-height: 340px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.todo-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: var(--bio-radius-sm);
+  cursor: pointer;
+  transition: background var(--bio-dur-fast) var(--bio-ease-out);
+}
+
+.todo-item:hover {
+  background: #f7f8f2;
+}
+
+.todo-item:active {
+  transform: translateY(1px);
+}
+
+.todo-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-top: 6px;
+  flex-shrink: 0;
+}
+
+.dot-grade {
+  background: #b08968;
+}
+
+.dot-exam {
+  background: #c4665a;
+}
+
+.dot-message {
+  background: #5c7a8a;
+}
+
+.dot-qa {
+  background: #7f8c52;
+}
+
+.todo-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.todo-text {
+  font-size: 13px;
+  color: var(--bio-ink);
+  line-height: 1.4;
+}
+
+.todo-meta {
+  font-size: 11px;
+  color: var(--bio-ink-faint);
 }
 </style>

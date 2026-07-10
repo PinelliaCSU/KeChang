@@ -27,17 +27,19 @@
       </div>
     </div>
 
-    <div class="panel">
-      <div class="search-bar">
-        <el-input v-model="keyword" placeholder="搜索课程名称" clearable style="width:260px" @change="fetchCourses"
-          @clear="fetchCourses" />
-        <el-select v-model="statusFilter" placeholder="状态筛选" clearable style="width:150px" @change="fetchCourses">
-          <el-option label="进行中" value="进行中" />
-          <el-option label="已结束" value="已结束" />
-        </el-select>
-      </div>
+    <DataPanel max-width="1400px">
+      <template #toolbar>
+        <div class="search-bar">
+          <el-input v-model="keyword" placeholder="搜索课程名称" clearable style="width:260px" @change="fetchCourses"
+            @clear="fetchCourses" />
+          <el-select v-model="statusFilter" placeholder="状态筛选" clearable style="width:150px" @change="fetchCourses">
+            <el-option label="进行中" value="进行中" />
+            <el-option label="已结束" value="已结束" />
+          </el-select>
+        </div>
+      </template>
 
-      <el-table :data="courses" border stripe v-loading="loading">
+      <el-table :data="courses" stripe class="is-borderless" v-loading="loading" style="width:100%">
         <el-table-column prop="courseName" label="课程名称" min-width="180" />
         <el-table-column prop="teacherName" label="授课教师" width="140" />
         <el-table-column prop="studentCount" label="选课人数" width="100" />
@@ -51,7 +53,7 @@
         </el-table-column>
         <el-table-column prop="description" label="简介" min-width="220" show-overflow-tooltip />
       </el-table>
-    </div>
+    </DataPanel>
   </div>
 </template>
 
@@ -60,6 +62,7 @@ import { computed, ref, onMounted } from 'vue'
 import { courseApi } from '@/api'
 import { ElMessage } from 'element-plus'
 import { computeStatus, statusTagType } from '@/utils/status'
+import DataPanel from '@/components/DataPanel.vue'
 
 const courses = ref([])
 const total = ref(0)
@@ -159,15 +162,8 @@ onMounted(fetchCourses)
   margin-top: 6px;
 }
 
-.panel {
-  background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-  padding: 24px;
-}
-
 .search-bar {
+  display: flex;
   gap: 12px;
-  margin-bottom: 16px;
 }
 </style>

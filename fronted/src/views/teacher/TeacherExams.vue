@@ -16,7 +16,8 @@
         </el-select>
       </div>
 
-      <el-table v-if="exams.length > 0 || loading" :data="exams" v-loading="loading" stripe border style="width:100%">
+      <el-table v-if="exams.length > 0 || loading" :data="exams" v-loading="loading" stripe class="kechang-table"
+        style="width:100%">
         <el-table-column prop="examName" label="考试名称" min-width="180" />
         <el-table-column prop="courseName" label="所属课程" min-width="120" />
         <el-table-column prop="startTime" label="开始时间" width="170" />
@@ -93,7 +94,7 @@
 
     <!-- 考试记录弹窗 -->
     <el-dialog v-model="recordDialogVisible" title="考试记录" width="900px">
-      <el-table :data="records" v-loading="recLoading" stripe border>
+      <el-table :data="records" v-loading="recLoading" stripe class="kechang-table" style="width:100%">
         <el-table-column prop="studentId" label="学生ID" width="80" />
         <el-table-column prop="startTime" label="开始时间" width="170" />
         <el-table-column prop="submitTime" label="提交时间" width="170" />
@@ -133,7 +134,7 @@
           </div>
           <div class="answer-row">
             <span>学生答案：<b :style="{ color: ans.isCorrect === 1 ? '#67c23a' : '#f56c6c' }">{{ ans.studentAnswer || '未作答'
-            }}</b></span>
+                }}</b></span>
             <span style="margin-left:20px">参考答案：<b style="color:#409eff">{{ ans.correctAnswer || '' }}</b></span>
           </div>
           <div class="score-row" v-if="ans.questionType === 'ESSAY' || ans.questionType === 'FILL'">
@@ -358,5 +359,41 @@ onMounted(() => { fetchCourses(); fetchExams() })
   margin-top: 8px;
   display: flex;
   align-items: center;
+}
+
+:deep(.kechang-table) {
+  width: 100%;
+  border: none;
+}
+
+:deep(.kechang-table .el-table__header-wrapper th.el-table__cell) {
+  background-color: #F5F7FA !important;
+  color: #606266;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+:deep(.kechang-table .el-table__body-wrapper td.el-table__cell) {
+  border-bottom: none;
+}
+
+:deep(.kechang-table .el-table__cell) {
+  border-right: none;
+}
+
+:deep(.kechang-table::before),
+:deep(.kechang-table::after),
+:deep(.kechang-table .el-table__inner-wrapper::before),
+:deep(.kechang-table .el-table__border-left-patch),
+:deep(.kechang-table .el-table__border-right-patch) {
+  display: none;
+}
+
+:deep(.kechang-table.el-table--striped .el-table__body tr.el-table__row--striped td.el-table__cell) {
+  background-color: rgba(163, 177, 138, 0.06);
+}
+
+:deep(.kechang-table .el-table__body tr.el-table__row:hover td) {
+  background-color: rgba(163, 177, 138, 0.08) !important;
 }
 </style>

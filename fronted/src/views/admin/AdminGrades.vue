@@ -28,8 +28,7 @@
       </div>
     </div>
 
-    <div class="panel">
-      <h3 class="section-title">平台成绩分布</h3>
+    <DataPanel title="平台成绩分布" max-width="1400px">
       <div class="dist-list" v-if="distribution.length">
         <div v-for="item in distribution" :key="item.label" class="dist-row">
           <span class="dist-label">{{ item.label }}</span>
@@ -40,13 +39,14 @@
         </div>
       </div>
       <el-empty v-else description="暂无成绩统计数据" :image-size="100" />
-    </div>
+    </DataPanel>
   </div>
 </template>
 
 <script setup>
 import { onMounted, ref } from 'vue'
 import { gradeApi } from '@/api'
+import DataPanel from '@/components/DataPanel.vue'
 
 const overview = ref({})
 const distribution = ref([])
@@ -113,15 +113,11 @@ onMounted(fetchOverview)
   gap: 16px;
 }
 
-.stat-card,
-.panel {
+.stat-card {
   background: #fff;
   border: 1px solid rgba(163, 177, 138, 0.1);
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-}
-
-.stat-card {
   padding: 18px 22px;
 }
 
@@ -135,15 +131,6 @@ onMounted(fetchOverview)
   margin-top: 4px;
   color: #909399;
   font-size: 13px;
-}
-
-.panel {
-  padding: 24px;
-}
-
-.section-title {
-  margin: 0 0 16px;
-  font-size: 16px;
 }
 
 .dist-list {

@@ -49,12 +49,17 @@
         <div ref="chartRef" style="height:280px"></div>
       </div>
       <div class="panel deadline-panel">
-        <h4 class="section-title">即将截止</h4>
-        <el-timeline>
-          <el-timeline-item timestamp="剩余1天" color="#f5222d">《Java高级》第3次作业</el-timeline-item>
-          <el-timeline-item timestamp="剩余3天" color="#faad14">《软件测试》期中考试</el-timeline-item>
-          <el-timeline-item timestamp="剩余2天" color="#1890ff">《数据库》实训报告</el-timeline-item>
-        </el-timeline>
+        <h4 class="section-title">待办事项 ({{ todoTotal }})</h4>
+        <div class="todo-list-scroll" v-if="todos.length > 0">
+          <div v-for="(t, idx) in todos" :key="idx" class="todo-item" @click="handleTodoClick(t)">
+            <span class="todo-dot" :class="'dot-' + t.type"></span>
+            <div class="todo-body">
+              <span class="todo-text">{{ t.title }}</span>
+              <span class="todo-meta">{{ t.courseName }} · {{ t.deadline }}</span>
+            </div>
+          </div>
+        </div>
+        <el-empty v-else description="暂无待办" :image-size="80" />
       </div>
     </div>
 
@@ -86,7 +91,8 @@
             </el-table-column>
             <el-table-column label="积分" width="90" align="center">
               <template #default="{ row }">
-                <el-tag :type="row.points >= 0 ? 'success' : 'danger'">{{ row.points > 0 ? '+' : '' }}{{ row.points || 0 }}</el-tag>
+                <el-tag :type="row.points >= 0 ? 'success' : 'danger'">{{ row.points > 0 ? '+' : '' }}{{ row.points || 0
+                }}</el-tag>
               </template>
             </el-table-column>
           </el-table>
@@ -97,29 +103,184 @@
 </template>
 
 <script setup>
-import { computed, ref, onMounted, nextTick } from 'vue'
-import { dashboardApi, courseApi, participationApi } from '@/api'
+import { computed, ref, onMounted, onUnmounted, nextTick } from 'vue'
+import { useRouter } from 'vue-router'
+import { dashboardApi, courseApi, participationApi, assignmentApi, examApi, trainingApi, messageApi, evaluationApi, surveyApi, announcementApi } from '@/api'
 import * as echarts from 'echarts'
 
+const router = useRouter()
 const stats = ref({})
 const courses = ref([])
 const chartRef = ref(null)
+const todos = ref([])
 const pointsOverview = ref({ courseCount: 0, courses: [], records: [] })
 const pointsVisible = ref(false)
 const pointCourses = computed(() => Array.isArray(pointsOverview.value.courses) ? pointsOverview.value.courses : [])
+const todoTotal = computed(() => todos.value.length)
+
+const fmt = (d) => {
+  if (!d) return '未设定'
+  const s = String(d)
+  return s.slice(0, 16).replace('T', ' ')
+}
+const isOverdue = (d) => d && new Date(d) < new Date()
+const extractList = (res) => {
+  if (!res || res.data?.code !== 200) return []
+  const d = res.data.data
+  return Array.isArray(d?.records) ? d.records : Array.isArray(d?.list) ? d.list : Array.isArray(d) ? d : []
+}
+
+const handleTodoClick = (t) => {
+  if (t.route) router.push(t.route)
+}
+
+const fetchTodos = async () => {
+  const items = []
+  const now = new Date()
+
+  // 1. 待提交作业
+  try {
+    const res = await assignmentApi.list({ page: 1, size: 50 })
+    const list = extractList(res)
+    list.forEach(a => {
+      if (!a.submitted) {
+        items.push({
+          type: 'assignment',
+          title: `提交作业：${a.title}`,
+          courseName: a.courseName || '',
+          deadline: fmt(a.deadline),
+          overdue: isOverdue(a.deadline),
+          route: '/student/assignments'
+        })
+      }
+    })
+  } catch { /* ignore */ }
+
+  // 2. 待参加考试
+  try {
+    const res = await examApi.listExams({ page: 1, size: 50 })
+    const list = extractList(res)
+    list.forEach(e => {
+      if (e.submitted !== 1 && e.startTime && new Date(e.startTime) <= now && e.endTime && new Date(e.endTime) >= now) {
+        items.push({
+          type: 'exam',
+          title: `参加考试：${e.examName || e.title}`,
+          courseName: e.courseName || '',
+          deadline: fmt(e.endTime),
+          overdue: false,
+          route: '/student/exams'
+        })
+      }
+    })
+  } catch { /* ignore */ }
+
+  // 3. 待提交实训报告
+  try {
+    const res = await trainingApi.listProjects({ page: 1, size: 50 })
+    const list = extractList(res)
+    list.forEach(t => {
+      if (t.taskCount > 0 && (t.reportCount == null || t.reportCount < t.taskCount)) {
+        items.push({
+          type: 'training',
+          title: `提交实训报告：${t.projectName || t.name || t.title}`,
+          courseName: t.courseName || '',
+          deadline: fmt(t.endDate || t.deadline),
+          overdue: isOverdue(t.endDate || t.deadline),
+          route: '/student/trainings'
+        })
+      }
+    })
+  } catch { /* ignore */ }
+
+  // 4. 未读私信
+  try {
+    const convRes = await messageApi.conversations({ page: 1, size: 30 })
+    if (convRes.data?.code === 200) {
+      const convs = convRes.data.data?.records || convRes.data.data || []
+      convs.forEach(c => {
+        if (c.unreadCount > 0) {
+          items.push({
+            type: 'message',
+            title: `查看 ${c.partnerName || c.name || '联系人'} 的私信`,
+            courseName: c.courseName || '',
+            deadline: c.lastTime ? fmt(c.lastTime) : '今天',
+            overdue: false,
+            route: '/student/messages'
+          })
+        }
+      })
+    }
+  } catch { /* ignore */ }
+
+  // 5. 待填写教学评价
+  try {
+    const res = await evaluationApi.list({ page: 1, size: 50 })
+    const list = extractList(res)
+    list.forEach(e => {
+      if (!e.submitted) {
+        items.push({
+          type: 'evaluation',
+          title: `填写教学评价：${e.evaluationName || e.courseName}`,
+          courseName: e.courseName || '',
+          deadline: fmt(e.endDate),
+          overdue: isOverdue(e.endDate),
+          route: '/student/evaluations'
+        })
+      }
+    })
+  } catch { /* ignore */ }
+
+  // 6. 待填写问卷
+  try {
+    const res = await surveyApi.list({ page: 1, size: 50 })
+    const list = extractList(res)
+    list.forEach(s => {
+      if (!s.submitted) {
+        items.push({
+          type: 'survey',
+          title: `填写问卷：${s.title}`,
+          courseName: s.courseName || '',
+          deadline: fmt(s.endDate),
+          overdue: isOverdue(s.endDate),
+          route: '/student/surveys'
+        })
+      }
+    })
+  } catch { /* ignore */ }
+
+  // 7. 待确认公告
+  try {
+    const res = await announcementApi.list({ page: 1, size: 50 })
+    const list = extractList(res)
+    list.forEach(a => {
+      if (!a.confirmed) {
+        items.push({
+          type: 'announcement',
+          title: `确认公告：${a.title}`,
+          courseName: a.courseName || '',
+          deadline: fmt(a.publishTime),
+          overdue: false,
+          route: '/student/announcements'
+        })
+      }
+    })
+  } catch { /* ignore */ }
+
+  todos.value = items
+}
 
 const fetchData = async () => {
   try {
     const res = await dashboardApi.studentStats()
     if (res.data.code === 200) stats.value = res.data.data
-  } catch (e) { /* ignore */ }
+  } catch { /* ignore */ }
 
   try {
     const pointRes = await participationApi.my()
     if (pointRes.data.code === 200) {
       pointsOverview.value = pointRes.data.data || { courseCount: 0, courses: [], records: [] }
     }
-  } catch (e) { /* ignore */ }
+  } catch { /* ignore */ }
 
   try {
     const cRes = await courseApi.list({ page: 1, size: 20, onlyEnrolled: true })
@@ -133,11 +294,18 @@ const fetchData = async () => {
         color: ['#7f8c52', '#6b8e4e', '#b08968', '#5c7a8a', '#9c6644'][i % 5]
       }))
     }
-  } catch (e) { /* ignore */ }
+  } catch { /* ignore */ }
+}
+
+const onVisibilityChange = () => {
+  if (!document.hidden) fetchTodos()
 }
 
 onMounted(async () => {
   await fetchData()
+  await fetchTodos()
+  document.addEventListener('visibilitychange', onVisibilityChange)
+
   await nextTick()
   if (chartRef.value) {
     const chart = echarts.init(chartRef.value)
@@ -152,6 +320,10 @@ onMounted(async () => {
       }]
     })
   }
+})
+
+onUnmounted(() => {
+  document.removeEventListener('visibilitychange', onVisibilityChange)
 })
 </script>
 
@@ -312,5 +484,86 @@ onMounted(async () => {
   .deadline-panel {
     width: 100%;
   }
+}
+
+.todo-list-scroll {
+  max-height: 340px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.todo-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: var(--bio-radius-sm);
+  cursor: pointer;
+  transition: background var(--bio-dur-fast) var(--bio-ease-out);
+}
+
+.todo-item:hover {
+  background: #f7f8f2;
+}
+
+.todo-item:active {
+  transform: translateY(1px);
+}
+
+.todo-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-top: 6px;
+  flex-shrink: 0;
+}
+
+.dot-assignment {
+  background: #b08968;
+}
+
+.dot-exam {
+  background: #c4665a;
+}
+
+.dot-training {
+  background: #9c6644;
+}
+
+.dot-message {
+  background: #5c7a8a;
+}
+
+.dot-evaluation {
+  background: #8e6b8e;
+}
+
+.dot-survey {
+  background: #6b8e6b;
+}
+
+.dot-announcement {
+  background: #8e7a6b;
+}
+
+.todo-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.todo-text {
+  font-size: 13px;
+  color: var(--bio-ink);
+  line-height: 1.4;
+}
+
+.todo-meta {
+  font-size: 11px;
+  color: var(--bio-ink-faint);
 }
 </style>

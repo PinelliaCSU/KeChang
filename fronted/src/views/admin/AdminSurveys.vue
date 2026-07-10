@@ -21,19 +21,17 @@
         </div>
 
         <!-- 按课程统计 -->
-        <div class="panel" v-if="overview.courseStats && overview.courseStats.length > 0">
-            <h3 class="section-title">按课程统计</h3>
-            <el-table :data="overview.courseStats" stripe border style="width:100%">
+        <DataPanel v-if="overview.courseStats && overview.courseStats.length > 0" title="按课程统计" max-width="1400px">
+            <el-table :data="overview.courseStats" stripe class="is-borderless" style="width:100%">
                 <el-table-column prop="courseName" label="课程名称" min-width="180" />
                 <el-table-column prop="surveyCount" label="问卷数" width="100" align="center" />
                 <el-table-column prop="responseCount" label="回收数" width="100" align="center" />
             </el-table>
-        </div>
+        </DataPanel>
 
         <!-- 最近问卷 -->
-        <div class="panel" v-if="overview.recentSurveys && overview.recentSurveys.length > 0">
-            <h3 class="section-title">最近问卷</h3>
-            <el-table :data="overview.recentSurveys" stripe border style="width:100%">
+        <DataPanel v-if="overview.recentSurveys && overview.recentSurveys.length > 0" title="最近问卷" max-width="1400px">
+            <el-table :data="overview.recentSurveys" stripe class="is-borderless" style="width:100%">
                 <el-table-column prop="title" label="问卷标题" min-width="180" />
                 <el-table-column prop="courseName" label="关联课程" min-width="120" />
                 <el-table-column label="状态" width="90">
@@ -50,7 +48,7 @@
                     </template>
                 </el-table-column>
             </el-table>
-        </div>
+        </DataPanel>
 
         <!-- 问卷统计详情弹窗 -->
         <el-dialog v-model="statsDialogVisible" :title="statsTitle" width="800px" destroy-on-close>
@@ -75,7 +73,7 @@
                     <div v-if="qs.textAnswers && qs.textAnswers.length > 0" class="text-answers">
                         <el-tag size="small" v-for="(ta, tai) in qs.textAnswers" :key="tai" style="margin:4px">{{ ta ||
                             '(空)'
-                        }}</el-tag>
+                            }}</el-tag>
                     </div>
                 </div>
             </div>
@@ -89,6 +87,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { surveyApi } from '@/api'
 import { computeStatus, statusTagType } from '@/utils/status'
+import DataPanel from '@/components/DataPanel.vue'
 
 const overview = reactive({
     totalSurveys: 0,
@@ -145,13 +144,6 @@ onMounted(() => { fetchOverview() })
     margin: 0;
 }
 
-.panel {
-    background: #fff;
-    border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-    padding: 24px;
-}
-
 .stats-cards {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -180,13 +172,6 @@ onMounted(() => { fetchOverview() })
     font-size: 14px;
     color: #909399;
     margin-top: 4px;
-}
-
-.section-title {
-    font-size: 16px;
-    font-weight: 600;
-    color: #303133;
-    margin: 0 0 16px 0;
 }
 
 .stats-content {

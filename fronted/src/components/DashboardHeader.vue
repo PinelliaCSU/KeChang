@@ -4,12 +4,6 @@
             <div class="logo-area" @click="router.push('/dashboard')" style="cursor:pointer">
                 <img src="@/img/logo.jpg" alt="Logo" class="logo-img" />
             </div>
-            <nav class="top-nav">
-                <a href="javascript:;" class="nav-item" :class="{ active: topNavActive === 'courses' }"
-                    @click="goToCourses">课程</a>
-                <a href="javascript:;" class="nav-item" :class="{ active: topNavActive === 'resources' }"
-                    @click="goToResources">资源</a>
-            </nav>
         </div>
 
         <div class="header-right">
@@ -105,7 +99,6 @@ import { passwordInputValidator } from '@/utils/validators'
 const router = useRouter()
 const userStore = useUserStore()
 
-const topNavActive = ref('courses')
 const unreadCount = ref(0)
 const notifications = ref([])
 const notifyPopover = ref(null)
@@ -149,10 +142,6 @@ const formatTime = (t) => {
     if (diff < 86400000) return `${Math.floor(diff / 3600000)}小时前`
     return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
 }
-
-// ==================== 导航 ====================
-const goToCourses = () => { topNavActive.value = 'courses'; router.push(userStore.isTeacher ? '/teacher/courses' : '/student/courses') }
-const goToResources = () => { topNavActive.value = 'resources'; userStore.isTeacher ? router.push('/teacher/questions') : ElMessage.info('资源模块仅教师可用') }
 
 // ==================== 用户操作 ====================
 const handleMyHomeCmd = (cmd) => {
@@ -227,33 +216,6 @@ onUnmounted(() => { if (notifyTimer) { clearInterval(notifyTimer); notifyTimer =
     height: 36px;
     background-color: transparent;
     border-radius: 50%;
-}
-
-.top-nav {
-    display: flex;
-    gap: 4px;
-}
-
-.nav-item {
-    color: rgba(255, 255, 255, 0.72);
-    text-decoration: none;
-    font-size: 14px;
-    padding: 6px 16px;
-    border-radius: var(--bio-radius-sm);
-    transition: color var(--bio-dur-normal) var(--bio-ease-out),
-        background var(--bio-dur-normal) var(--bio-ease-out);
-    position: relative;
-}
-
-.nav-item:hover {
-    color: #fff;
-    background: rgba(255, 255, 255, 0.08);
-    filter: brightness(1.1);
-}
-
-.nav-item.active {
-    color: #d4e8c0;
-    background: rgba(180, 200, 150, 0.14);
 }
 
 .header-right {

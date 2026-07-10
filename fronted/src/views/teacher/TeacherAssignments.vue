@@ -17,29 +17,56 @@
         </el-select>
       </div>
 
-      <el-table v-if="assignments.length > 0 || loading" :data="assignments" v-loading="loading" stripe border>
-        <el-table-column prop="title" label="作业标题" min-width="180" />
-        <el-table-column prop="courseName" label="课程" min-width="130" />
-        <el-table-column label="章节" min-width="120">
-          <template #default="{ row }">{{ chapterName(row.chapterId) }}</template>
+      <el-table v-if="assignments.length > 0 || loading" :data="assignments" v-loading="loading" stripe
+        class="kechang-table" style="width:100%">
+        <el-table-column label="作业标题" min-width="220">
+          <template #default="{ row }">
+            <div class="assign-name-cell">
+              <div class="assign-title">{{ row.title }}</div>
+              <div class="assign-status">{{ computeDeadlineStatus(row.deadline) }}</div>
+              <div class="assign-chapter">章节/单元：{{ chapterName(row.chapterId) }}</div>
+            </div>
+          </template>
         </el-table-column>
-        <el-table-column label="资源" width="90">
+        <el-table-column label="课程" min-width="140">
+          <template #default="{ row }">
+            <div class="course-icon-cell">
+              <el-icon class="course-icon">
+                <School />
+              </el-icon>
+              <span class="course-text">{{ row.courseName }}</span>
+            </div>
+          </template>
+        </el-table-column>
+        <el-table-column label="资源" width="90" align="center">
           <template #default="{ row }">
             <el-button v-if="assignmentFiles(row).length" size="small" link type="primary"
               @click="previewFiles(assignmentFiles(row), row.title)">预览</el-button>
             <span v-else class="muted">无</span>
           </template>
         </el-table-column>
-        <el-table-column prop="deadline" label="截止时间" width="170" />
-        <el-table-column prop="totalScore" label="总分" width="80" />
-        <el-table-column label="提交" width="110">
-          <template #default="{ row }">{{ row.submitCount || 0 }}/{{ row.totalStudents || 0 }}</template>
+        <el-table-column label="截止时间" width="170">
+          <template #default="{ row }">
+            <span :class="{ 'deadline-overdue': isOverdue(row.deadline) }">{{ formatDate(row.deadline) }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="提交" width="110" align="center">
+          <template #default="{ row }">
+            <span class="submit-count">{{ row.submitCount || 0 }}</span>
+            <span class="submit-sep">/</span>
+            <span class="submit-total">{{ row.totalStudents || 0 }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="总分" width="80" align="center">
+          <template #default="{ row }">
+            <span class="score-value">{{ row.totalScore }}</span>
+          </template>
         </el-table-column>
         <el-table-column label="操作" width="230" fixed="right">
           <template #default="{ row }">
-            <el-button size="small" @click="openEdit(row)">编辑</el-button>
-            <el-button size="small" type="primary" @click="viewSubmits(row)">批阅</el-button>
-            <el-button size="small" type="danger" @click="handleDelete(row.id)">删除</el-button>
+            <el-button size="small" class="act-btn" @click="openEdit(row)">编辑</el-button>
+            <el-button size="small" type="primary" class="act-btn" @click="viewSubmits(row)">批阅</el-button>
+            <el-button size="small" type="danger" class="act-btn" @click="handleDelete(row.id)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -97,7 +124,8 @@
       <div class="submit-tools">
         <el-button type="primary" plain :disabled="!submits.length" @click="downloadSubmitArchive">下载全部提交附件</el-button>
       </div>
-      <el-table v-if="submits.length > 0 || subLoading" :data="submits" v-loading="subLoading" stripe border>
+      <el-table v-if="submits.length > 0 || subLoading" :data="submits" v-loading="subLoading" stripe
+        class="kechang-table" style="width:100%">
         <el-table-column prop="studentName" label="学生" width="120" />
         <el-table-column prop="studentNo" label="学号" width="130" />
         <el-table-column prop="content" label="提交内容" min-width="190" show-overflow-tooltip />
@@ -189,6 +217,7 @@
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { School } from '@element-plus/icons-vue'
 import { assignmentApi, courseApi, uploadApi } from '@/api'
 import FilePreview from '@/components/FilePreview.vue'
 import DocumentAnnotator from '@/components/DocumentAnnotator.vue'
@@ -418,6 +447,13 @@ const formatFileSize = (size) => {
   return `${(n / 1024 / 1024).toFixed(1)} MB`
 }
 
+const computeDeadlineStatus = (deadline) => {
+  if (!deadline) return '未设定'
+  return new Date(deadline) < new Date() ? '已结束' : '进行中'
+}
+const isOverdue = (deadline) => deadline && new Date(deadline) < new Date()
+const formatDate = (value) => value ? String(value).replace('T', ' ').slice(0, 16) : '未设定'
+
 onMounted(async () => {
   await fetchCourses()
   if (courseList.value.length > 0) {
@@ -571,5 +607,114 @@ onMounted(async () => {
   .review-layout {
     grid-template-columns: 1fr;
   }
+}
+
+/* ===== 新表格样式 ===== */
+:deep(.kechang-table) {
+  width: 100%;
+  border: none;
+}
+
+:deep(.kechang-table .el-table__header-wrapper th.el-table__cell) {
+  background-color: #F5F7FA !important;
+  color: #606266;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+:deep(.kechang-table .el-table__body-wrapper td.el-table__cell) {
+  border-bottom: none;
+}
+
+:deep(.kechang-table .el-table__cell) {
+  border-right: none;
+}
+
+:deep(.kechang-table::before),
+:deep(.kechang-table::after),
+:deep(.kechang-table .el-table__inner-wrapper::before),
+:deep(.kechang-table .el-table__border-left-patch),
+:deep(.kechang-table .el-table__border-right-patch) {
+  display: none;
+}
+
+:deep(.kechang-table.el-table--striped .el-table__body tr.el-table__row--striped td.el-table__cell) {
+  background-color: rgba(163, 177, 138, 0.06);
+}
+
+:deep(.kechang-table .el-table__body tr.el-table__row:hover td) {
+  background-color: rgba(163, 177, 138, 0.08) !important;
+}
+
+.assign-name-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.assign-title {
+  font-weight: 700;
+  color: #303133;
+  font-size: 14px;
+}
+
+.assign-status {
+  font-weight: 700;
+  color: #f56c6c;
+  font-size: 12px;
+}
+
+.assign-chapter {
+  color: #909399;
+  font-size: 12px;
+  margin-top: 6px;
+}
+
+.course-icon-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.course-icon {
+  color: #409EFF;
+  background: #409EFF;
+  border-radius: 50%;
+  padding: 4px;
+  color: white;
+  font-size: 14px;
+}
+
+.course-text {
+  color: #409EFF;
+  font-size: 13px;
+}
+
+.deadline-overdue {
+  color: #f56c6c;
+}
+
+.submit-count {
+  color: #409EFF;
+  font-weight: 600;
+}
+
+.submit-sep {
+  color: #c0c4cc;
+  margin: 0 2px;
+}
+
+.submit-total {
+  color: #909399;
+}
+
+.score-value {
+  color: #13C2C2;
+  font-weight: 700;
+  font-size: 15px;
+}
+
+.act-btn {
+  margin: 0 2px;
 }
 </style>

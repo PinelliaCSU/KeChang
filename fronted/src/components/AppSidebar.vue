@@ -44,26 +44,33 @@ const activeMenu = computed(() => route.path)
 const teacherMenus = [
   { path: '/teacher/dashboard', title: '主页', icon: 'Odometer' },
   {
-    path: 'res-sub',
-    title: '资源管理',
-    icon: 'Folder',
-    children: [
-      { path: '/teacher/questions', title: '试题管理' },
-      { path: '/teacher/papers', title: '试卷管理' },
-      { path: '/teacher/exams', title: '考试管理' },
-      { path: '/teacher/class-quizzes', title: '随堂测验' },
-      { path: '/teacher/roll-call', title: '随机点名' },
-      { path: '/teacher/assignments', title: '作业管理' }
-    ]
-  },
-  {
     path: 'teach-sub',
     title: '教学管理',
     icon: 'Reading',
     children: [
       { path: '/teacher/courses', title: '课程管理' },
+      { path: '/teacher/assignments', title: '作业管理' },
       { path: '/teacher/grades', title: '成绩管理' },
-      { path: '/teacher/trainings', title: '实训管理' }
+      { path: '/teacher/trainings', title: '实训管理' },
+      { path: '/teacher/evaluations', title: '教学评价' }
+    ]
+  },
+  {
+    path: 'res-sub',
+    title: '资源管理',
+    icon: 'Folder',
+    children: [
+      { path: '/teacher/questions', title: '试题管理' },
+      { path: '/teacher/papers', title: '试卷管理' }
+    ]
+  },
+  {
+    path: 'exam-sub',
+    title: '考试测验',
+    icon: 'Timer',
+    children: [
+      { path: '/teacher/exams', title: '考试管理' },
+      { path: '/teacher/class-quizzes', title: '随堂测验' }
     ]
   },
   {
@@ -71,10 +78,10 @@ const teacherMenus = [
     title: '互动管理',
     icon: 'ChatDotRound',
     children: [
+      { path: '/teacher/roll-call', title: '随机点名' },
       { path: '/teacher/announcements', title: '公告管理' },
       { path: '/teacher/posts', title: '互动问答' },
       { path: '/teacher/surveys', title: '问卷管理' },
-      { path: '/teacher/evaluations', title: '教学评价' },
       { path: '/teacher/messages', title: '私信' }
     ]
   }
@@ -82,24 +89,60 @@ const teacherMenus = [
 
 const studentMenus = [
   { path: '/student/dashboard', title: '主页', icon: 'Odometer' },
-  { path: '/student/announcements', title: '课程公告', icon: 'Notification' },
-  { path: '/student/courses', title: '课程中心', icon: 'Reading' },
-  { path: '/student/assignments', title: '我的作业', icon: 'Notebook' },
-  { path: '/student/exams', title: '在线考试', icon: 'Timer' },
-  { path: '/student/class-quizzes', title: '随堂测验', icon: 'DataLine' },
-  { path: '/student/grades', title: '我的成绩', icon: 'TrendCharts' },
-  { path: '/student/notes', title: '学习笔记', icon: 'Edit' },
-  { path: '/student/trainings', title: '实训中心', icon: 'Monitor' },
-  { path: '/student/posts', title: '互动问答', icon: 'ChatDotRound' },
-  { path: '/student/messages', title: '私信', icon: 'Message' },
-  { path: '/student/knowledge', title: '知识库', icon: 'Collection' },
-  { path: '/student/evaluations', title: '教学评价', icon: 'Star' },
-  { path: '/student/surveys', title: '问卷调查', icon: 'DocumentChecked' }
+  {
+    path: 'study-sub',
+    title: '学习中心',
+    icon: 'Reading',
+    children: [
+      { path: '/student/courses', title: '课程中心' },
+      { path: '/student/assignments', title: '我的作业' },
+      { path: '/student/exams', title: '在线考试' },
+      { path: '/student/class-quizzes', title: '随堂测验' },
+      { path: '/student/trainings', title: '实训中心' },
+      { path: '/student/notes', title: '学习笔记' }
+    ]
+  },
+  {
+    path: 'interact-sub',
+    title: '互动交流',
+    icon: 'ChatDotRound',
+    children: [
+      { path: '/student/announcements', title: '课程公告' },
+      { path: '/student/posts', title: '互动问答' },
+      { path: '/student/messages', title: '私信' },
+      { path: '/student/knowledge', title: '知识库' }
+    ]
+  },
+  {
+    path: 'evaluate-sub',
+    title: '我的评价',
+    icon: 'Star',
+    children: [
+      { path: '/student/grades', title: '我的成绩' },
+      { path: '/student/evaluations', title: '教学评价' },
+      { path: '/student/surveys', title: '问卷调查' }
+    ]
+  }
 ]
 
 const adminMenus = [
-  { path: '/admin/courses', title: '课程总览', icon: 'Reading' },
-  { path: '/admin/surveys', title: '问卷统计', icon: 'DataAnalysis' }
+  {
+    path: 'admin-teach',
+    title: '教学管理',
+    icon: 'Reading',
+    children: [
+      { path: '/admin/courses', title: '课程总览' },
+      { path: '/admin/grades', title: '成绩概览' }
+    ]
+  },
+  {
+    path: 'admin-survey',
+    title: '数据统计',
+    icon: 'DataAnalysis',
+    children: [
+      { path: '/admin/surveys', title: '问卷统计' }
+    ]
+  }
 ]
 
 const menuItems = computed(() => {
