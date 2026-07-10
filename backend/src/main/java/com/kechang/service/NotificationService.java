@@ -395,6 +395,39 @@ public class NotificationService {
     }
 
     /**
+     * 删除通知（逻辑删除，只能删除自己的通知）
+     */
+    @Transactional
+    public void deleteNotification(Long id, Long userId) {
+        NotificationUser nu = notifUserMapper.selectOne(
+                new LambdaQueryWrapper<NotificationUser>()
+                        .eq(NotificationUser::getNotificationId, id)
+                        .eq(NotificationUser::getUserId, userId));
+        if (nu != null) {
+            notifUserMapper.deleteById(nu.getId());
+            notifMapper.deleteById(id);
+        }
+    }
+
+    /**
+     * 清空当前用户所有通知
+     */
+    @Transactional
+    public void clearAllNotifications(Long userId) {
+        List<NotificationUser> nus = notifUserMapper.selectList(
+                new LambdaQueryWrapper<NotificationUser>()
+                        .eq(NotificationUser::getUserId, userId));
+        for (NotificationUser nu : nus) {
+            notifUserMapper.deleteById(nu.getId());
+        }
+
+        List<Long> notifIds = nus.stream().map(NotificationUser::getNotificationId).distinct().toList();
+        for (Long id : notifIds) {
+            notifMapper.deleteById(id);
+        }
+    }
+
+    /**
      * 学生确认公告
      */
     public void confirmAnnouncement(Long announcementId, Long studentId) {

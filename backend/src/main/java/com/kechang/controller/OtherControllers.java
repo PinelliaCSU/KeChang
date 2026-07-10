@@ -31,7 +31,6 @@ import java.util.Map;
 import java.util.UUID;
 
 // TrainingController has been moved to com.kechang.controller.training.TrainingController
-
 // ==================== 互动问答 ====================
 @RestController
 @RequestMapping("/api/questions")
@@ -443,6 +442,18 @@ class NotificationController {
         notifService.send(n);
         return Result.success();
     }
+
+    @DeleteMapping("/{id}")
+    public Result<Void> delete(@PathVariable Long id) {
+        notifService.deleteNotification(id, uid());
+        return Result.success();
+    }
+
+    @DeleteMapping("/all")
+    public Result<Void> clearAll() {
+        notifService.clearAllNotifications(uid());
+        return Result.success();
+    }
 }
 
 // ==================== 公告 ====================
@@ -576,7 +587,9 @@ class MessageController {
                 .stream().findFirst().map(Object::toString).orElse("");
     }
 
-    /** 会话列表 */
+    /**
+     * 会话列表
+     */
     @GetMapping("/conversations")
     public Result<PageResult<Map<String, Object>>> listConversations(
             @RequestParam(defaultValue = "1") int page,
@@ -584,7 +597,9 @@ class MessageController {
         return Result.success(messageService.listConversations(uid(), page, size));
     }
 
-    /** 与某用户的聊天记录 */
+    /**
+     * 与某用户的聊天记录
+     */
     @GetMapping("/with/{otherUserId}")
     public Result<PageResult<Map<String, Object>>> getMessages(
             @PathVariable Long otherUserId,
@@ -593,23 +608,38 @@ class MessageController {
         return Result.success(messageService.getMessages(uid(), otherUserId, page, size));
     }
 
-    /** 发送消息 */
+    /**
+     * 发送消息
+     */
     @PostMapping
     @PreAuthorize("hasAnyAuthority('ROLE_TEACHER','ROLE_STUDENT')")
     public Result<Map<String, Object>> send(@Valid @RequestBody SendMessageDTO dto) {
         return Result.success(messageService.sendMessage(uid(), dto));
     }
 
-    /** 未读消息总数 */
+    /**
+     * 未读消息总数
+     */
     @GetMapping("/unread-total")
     public Result<Long> unreadTotal() {
         return Result.success(messageService.unreadTotal(uid()));
     }
 
-    /** 联系人列表 */
+    /**
+     * 联系人列表
+     */
     @GetMapping("/contacts")
     public Result<List<Map<String, Object>>> getContacts(
             @RequestParam(required = false) String keyword) {
         return Result.success(messageService.getContacts(uid(), role(), keyword));
+    }
+
+    /**
+     * 清空与某人的聊天记录
+     */
+    @DeleteMapping("/with/{otherUserId}")
+    public Result<Void> clearConversation(@PathVariable Long otherUserId) {
+        messageService.clearConversation(uid(), otherUserId);
+        return Result.success();
     }
 }

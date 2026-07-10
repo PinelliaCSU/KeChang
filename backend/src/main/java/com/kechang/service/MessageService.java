@@ -30,7 +30,6 @@ public class MessageService {
     private final StudentProfileMapper studentProfileMapper;
 
     // ==================== 会话列表 ====================
-
     /**
      * 获取当前用户的会话列表（按最新消息时间降序）
      */
@@ -99,7 +98,9 @@ public class MessageService {
             } else {
                 latest = latestSent != null ? latestSent : latestRecv;
             }
-            if (latest == null) continue;
+            if (latest == null) {
+                continue;
+            }
 
             // 未读数：对方发给我且我未读的消息数
             long unread = 0;
@@ -132,9 +133,15 @@ public class MessageService {
         conversations.sort((a, b) -> {
             LocalDateTime ta = (LocalDateTime) a.get("lastTime");
             LocalDateTime tb = (LocalDateTime) b.get("lastTime");
-            if (ta == null && tb == null) return 0;
-            if (ta == null) return 1;
-            if (tb == null) return -1;
+            if (ta == null && tb == null) {
+                return 0;
+            }
+            if (ta == null) {
+                return 1;
+            }
+            if (tb == null) {
+                return -1;
+            }
             return tb.compareTo(ta);
         });
 
@@ -148,7 +155,6 @@ public class MessageService {
     }
 
     // ==================== 聊天记录 ====================
-
     /**
      * 获取与某用户的聊天记录，并自动标记已读
      */
@@ -159,12 +165,12 @@ public class MessageService {
                 new LambdaQueryWrapper<Notification>()
                         .eq(Notification::getNotificationType, "私信")
                         .and(w -> w
-                                .and(w1 -> w1.eq(Notification::getSenderId, userId)
-                                        .apply("id IN (SELECT notification_id FROM notification_user WHERE user_id = {0})",
-                                                otherUserId))
-                                .or(w2 -> w2.eq(Notification::getSenderId, otherUserId)
-                                        .apply("id IN (SELECT notification_id FROM notification_user WHERE user_id = {0})",
-                                                userId)))
+                        .and(w1 -> w1.eq(Notification::getSenderId, userId)
+                        .apply("id IN (SELECT notification_id FROM notification_user WHERE user_id = {0})",
+                                otherUserId))
+                        .or(w2 -> w2.eq(Notification::getSenderId, otherUserId)
+                        .apply("id IN (SELECT notification_id FROM notification_user WHERE user_id = {0})",
+                                userId)))
                         .orderByDesc(Notification::getSendTime));
 
         // 2. 自动标记已读（对方发给我的未读消息）
@@ -220,7 +226,6 @@ public class MessageService {
     }
 
     // ==================== 发送消息 ====================
-
     /**
      * 发送私信
      */
@@ -263,7 +268,6 @@ public class MessageService {
     }
 
     // ==================== 未读总数 ====================
-
     /**
      * 获取当前用户私信未读总数
      */
@@ -272,7 +276,9 @@ public class MessageService {
                 new LambdaQueryWrapper<NotificationUser>()
                         .eq(NotificationUser::getUserId, userId)
                         .eq(NotificationUser::getIsRead, 0));
-        if (unreadNus.isEmpty()) return 0;
+        if (unreadNus.isEmpty()) {
+            return 0;
+        }
 
         List<Long> notifIds = unreadNus.stream().map(NotificationUser::getNotificationId).toList();
         return notifMapper.selectCount(
@@ -282,7 +288,6 @@ public class MessageService {
     }
 
     // ==================== 联系人 ====================
-
     /**
      * 获取联系人列表（课程关联 + 自由搜索）
      */
@@ -360,7 +365,7 @@ public class MessageService {
                     new LambdaQueryWrapper<SysUser>()
                             .ne(SysUser::getId, userId)
                             .and(w -> w.like(SysUser::getUsername, keyword)
-                                    .or().like(SysUser::getNickname, keyword))
+                            .or().like(SysUser::getNickname, keyword))
                             .last("LIMIT 20"));
             for (SysUser u : searched) {
                 if (seenIds.add(u.getId())) {
@@ -377,5 +382,43 @@ public class MessageService {
         }
 
         return contacts;
+    }
+
+    // ==================== 清空聊天记录 ====================
+    /**
+     * 清空当前用户与某人的聊天记录（软删除）
+     */
+    @Transactional
+    public void clearConversation(Long userId, Long otherUserId) {
+        // 1. 找到双方之间所有私信通知
+        List<Notification> notifications = notifMapper.selectList(
+                new LambdaQueryWrapper<Notification>()
+                        .eq(Notification::getNotificationType, "私信")
+                        .and(w -> w
+                        .and(w1 -> w1.eq(Notification::getSenderId, userId)
+                        .apply("id IN (SELECT notification_id FROM notification_user WHERE user_id = {0})",
+                                otherUserId))
+                        .or(w2 -> w2.eq(Notification::getSenderId, otherUserId)
+                        .apply("id IN (SELECT notification_id FROM notification_user WHERE user_id = {0})",
+                                userId))));
+
+        if (notifications.isEmpty()) {
+            return;
+        }
+
+        List<Long> notifIds = notifications.stream().map(Notification::getId).toList();
+
+        // 2. 删除 notification_user 记录（@TableLogic 自动软删除）
+        List<NotificationUser> nus = notifUserMapper.selectList(
+                new LambdaQueryWrapper<NotificationUser>()
+                        .in(NotificationUser::getNotificationId, notifIds));
+        for (NotificationUser nu : nus) {
+            notifUserMapper.deleteById(nu.getId());
+        }
+
+        // 3. 删除通知记录（@TableLogic 自动软删除）
+        for (Notification n : notifications) {
+            notifMapper.deleteById(n.getId());
+        }
     }
 }

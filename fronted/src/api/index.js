@@ -219,7 +219,9 @@ export const notificationApi = {
   unreadCount: () => request.get('/notifications/unread-count'),
   markRead: (id) => request.put(`/notifications/${id}/read`),
   markAllRead: () => request.put('/notifications/read-all'),
-  send: (data) => request.post('/notifications', data)
+  send: (data) => request.post('/notifications', data),
+  deleteNotify: (id) => request.delete(`/notifications/${id}`),
+  clearAll: () => request.delete('/notifications/all')
 }
 
 /** 公告 API */
@@ -252,5 +254,7 @@ export const messageApi = {
   messages: (otherUserId, params) => request.get(`/messages/with/${otherUserId}`, { params }),
   send: (data) => request.post('/messages', data),
   unreadTotal: () => request.get('/messages/unread-total'),
-  contacts: (params) => request.get('/messages/contacts', { params })
+  contacts: (params) => request.get('/messages/contacts', { params }),
+  /** 清空与某人的聊天记录 */
+  clearConversation: (otherUserId) => request.delete(`/messages/with/${otherUserId}`)
 }

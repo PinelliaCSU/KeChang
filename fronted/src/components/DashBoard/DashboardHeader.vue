@@ -38,7 +38,7 @@
                             <Checked />
                         </el-icon>
                         <span class="badge-dot checkin-badge" v-if="activeCheckinCount > 0">{{ activeCheckinCount
-                            }}</span>
+                        }}</span>
                     </span>
                 </template>
                 <CheckinHeaderEntry ref="checkinEntryRef" />
@@ -55,16 +55,26 @@
                     </span>
                 </template>
                 <div class="notify-popover">
-                    <div class="notify-pop-header"><span>消息通知</span><a href="javascript:;" @click="markAllRead"
-                            v-if="unreadCount > 0">全部已读</a></div>
+                    <div class="notify-pop-header">
+                        <span>消息通知</span>
+                        <div class="notify-header-actions">
+                            <a href="javascript:;" @click="markAllRead" v-if="unreadCount > 0">全部已读</a>
+                            <span v-if="unreadCount > 0 && notifications.length > 0" class="action-divider">|</span>
+                            <a href="javascript:;" @click="handleClearAllNotifies" v-if="notifications.length > 0"
+                                class="clear-all-link">清空全部</a>
+                        </div>
+                    </div>
                     <div v-if="notifications.length === 0" class="notify-empty">暂无通知</div>
-                    <div v-for="n in notifications.slice(0, 5)" :key="n.id" class="notify-item"
-                        @click="handleNotifyClick(n)">
+                    <div v-for="n in notifications.slice(0, 5)" :key="n.id" class="notify-item">
                         <span class="notify-dot" :class="{ unread: !n.isRead }"></span>
-                        <div class="notify-content">
+                        <div class="notify-content" @click="handleNotifyClick(n)">
                             <p class="notify-title">{{ n.title }}</p>
                             <p class="notify-time">{{ formatTime(n.createTime) }}</p>
                         </div>
+                        <el-tooltip content="删除通知" placement="left">
+                            <el-button icon="Delete" size="small" circle class="notify-delete-btn"
+                                @click.stop="handleDeleteNotify(n)" />
+                        </el-tooltip>
                     </div>
                 </div>
             </el-popover>
@@ -161,6 +171,32 @@ const handleNotifyClick = (n) => {
     // 跳转到通知详情页
     const prefix = userStore.isTeacher ? '/teacher' : '/student'
     router.push(`${prefix}/notifications/${n.id}`)
+}
+
+const handleDeleteNotify = async (n) => {
+    try {
+        await notificationApi.deleteNotify(n.id)
+        // 从本地列表移除
+        notifications.value = notifications.value.filter(item => item.id !== n.id)
+        // 若未读，减少未读数
+        if (!n.isRead) {
+            unreadCount.value = Math.max(0, unreadCount.value - 1)
+        }
+    } catch (e) {
+        /* ignore */
+    }
+}
+
+const handleClearAllNotifies = async () => {
+    try {
+        await ElMessageBox.confirm('确定清空全部消息通知吗？', '清空通知', {
+            confirmButtonText: '清空', cancelButtonText: '取消', type: 'warning'
+        })
+        await notificationApi.clearAll()
+        notifications.value = []
+        unreadCount.value = 0
+        ElMessage.success('已清空全部通知')
+    } catch (e) { /* cancelled */ }
 }
 
 const formatTime = (t) => {
@@ -373,15 +409,33 @@ onUnmounted(() => {
     color: var(--bio-ink);
 }
 
-.notify-pop-header a {
+.notify-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.action-divider {
+    color: #dcdfe6;
+    font-size: 12px;
+    user-select: none;
+}
+
+.notify-pop-header a,
+.clear-all-link {
     font-size: 12px;
     color: var(--bio-moss);
     text-decoration: none;
     font-weight: 400;
 }
 
-.notify-pop-header a:hover {
+.notify-pop-header a:hover,
+.clear-all-link:hover {
     filter: brightness(1.15);
+}
+
+.clear-all-link {
+    color: #e6a23c;
 }
 
 .notify-empty {
@@ -435,6 +489,27 @@ onUnmounted(() => {
     font-size: 11px;
     color: var(--bio-ink-faint);
     margin-top: 2px;
+}
+
+.notify-delete-btn {
+    flex-shrink: 0;
+    width: 22px;
+    height: 22px;
+    color: #c0c4cc;
+    background: transparent;
+    border: none;
+    opacity: 0;
+    transition: opacity 0.15s, color 0.15s, background 0.15s;
+    margin-left: auto;
+}
+
+.notify-item:hover .notify-delete-btn {
+    opacity: 1;
+}
+
+.notify-delete-btn:hover {
+    color: #e6a23c;
+    background: #fdf6ec;
 }
 
 .help-popover p {

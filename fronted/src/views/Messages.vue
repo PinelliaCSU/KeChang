@@ -10,7 +10,9 @@
         <div class="search-box">
           <el-input v-model="searchKeyword" placeholder="搜索联系人..." clearable @input="onSearchInput"
             @clear="clearSearch">
-            <template #prefix><el-icon><Search /></el-icon></template>
+            <template #prefix><el-icon>
+                <Search />
+              </el-icon></template>
           </el-input>
         </div>
 
@@ -25,7 +27,8 @@
             <div class="contact-info">
               <div class="contact-name-row">
                 <span class="contact-name">{{ c.name || c.username }}</span>
-                <el-tag size="small" :type="c.type === 'teacher' ? 'success' : c.type === 'student' ? 'warning' : 'info'">
+                <el-tag size="small"
+                  :type="c.type === 'teacher' ? 'success' : c.type === 'student' ? 'warning' : 'info'">
                   {{ c.type === 'teacher' ? '教师' : c.type === 'student' ? '学生' : '用户' }}
                 </el-tag>
               </div>
@@ -68,11 +71,16 @@
 
         <div class="chat-active" v-else>
           <div class="chat-header">
-            <el-avatar :size="36" :src="activePartner.avatar">{{ (activePartner.name || activePartner.username)?.charAt(0) }}</el-avatar>
+            <el-avatar :size="36" :src="activePartner.avatar">{{ (activePartner.name ||
+              activePartner.username)?.charAt(0)
+            }}</el-avatar>
             <div class="chat-header-info">
               <span class="chat-partner-name">{{ activePartner.name || activePartner.username }}</span>
               <span class="chat-partner-course" v-if="activePartner.courseName">{{ activePartner.courseName }}</span>
             </div>
+            <el-tooltip content="清空聊天记录" placement="top">
+              <el-button icon="Delete" size="small" circle class="clear-btn" @click="handleClearChat" />
+            </el-tooltip>
           </div>
 
           <div class="chat-messages" ref="msgContainer">
@@ -104,8 +112,8 @@
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { messageApi } from '@/api'
 import { useUserStore } from '@/stores/user'
-import { ElMessage } from 'element-plus'
-import { Search } from '@element-plus/icons-vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { Search, Delete } from '@element-plus/icons-vue'
 
 const userStore = useUserStore()
 const userId = userStore.userId
@@ -347,6 +355,32 @@ const sendMessage = async () => {
   finally { sending.value = false }
 }
 
+// 清空聊天记录
+const handleClearChat = async () => {
+  if (!activePartner.value) return
+  try {
+    await ElMessageBox.confirm(
+      `确定要清空与「${activePartner.value.name || activePartner.value.username}」的聊天记录吗？此操作不可撤销。`,
+      '清空聊天记录',
+      { confirmButtonText: '清空', cancelButtonText: '取消', type: 'warning' }
+    )
+    const res = await messageApi.clearConversation(activePartner.value.userId)
+    if (res.data.code === 200) {
+      messages.value = []
+      // 更新联系人列表中的预览
+      const contact = contacts.value.find(c => c.userId === activePartner.value.userId)
+      if (contact) {
+        contact.lastContent = ''
+        contact.lastTime = null
+        contact.hasHistory = false
+      }
+      ElMessage.success('聊天记录已清空')
+    }
+  } catch (e) {
+    if (e !== 'cancel') ElMessage.error('清空失败')
+  }
+}
+
 // 滚动到底部
 const scrollToBottom = () => {
   if (msgBottom.value) {
@@ -455,9 +489,25 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-.page-shell { display: flex; flex-direction: column; gap: 20px; }
-.page-title-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
-.page-title { font-size: 20px; font-weight: 600; color: #303133; margin: 0; }
+.page-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.page-title-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.page-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #303133;
+  margin: 0;
+}
 
 .message-container {
   display: flex;
@@ -478,9 +528,15 @@ onUnmounted(() => {
   flex-shrink: 0;
 }
 
-.search-box { padding: 16px; border-bottom: 1px solid #ebeef5; }
+.search-box {
+  padding: 16px;
+  border-bottom: 1px solid #ebeef5;
+}
 
-.contact-list { flex: 1; overflow-y: auto; }
+.contact-list {
+  flex: 1;
+  overflow-y: auto;
+}
 
 .section-header {
   padding: 10px 16px;
@@ -499,22 +555,82 @@ onUnmounted(() => {
   transition: background 0.15s;
   border-bottom: 1px solid #f5f5f5;
 }
-.contact-item:hover { background: #f8f9fa; }
-.contact-item.active { background: rgba(163, 177, 138, 0.12); border-left: 3px solid #606c38; }
 
-.contact-info { flex: 1; overflow: hidden; min-width: 0; }
-.contact-name-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px; }
-.contact-name { font-size: 14px; font-weight: 500; color: #303133; }
-.contact-time { font-size: 11px; color: #c0c4cc; flex-shrink: 0; margin-left: 8px; }
-.contact-preview-row { display: flex; align-items: center; }
-.contact-preview { margin: 0; font-size: 12px; color: #909399; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
-.contact-course { font-size: 12px; color: #909399; flex-shrink: 0; }
+.contact-item:hover {
+  background: #f8f9fa;
+}
+
+.contact-item.active {
+  background: rgba(163, 177, 138, 0.12);
+  border-left: 3px solid #606c38;
+}
+
+.contact-info {
+  flex: 1;
+  overflow: hidden;
+  min-width: 0;
+}
+
+.contact-name-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2px;
+}
+
+.contact-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: #303133;
+}
+
+.contact-time {
+  font-size: 11px;
+  color: #c0c4cc;
+  flex-shrink: 0;
+  margin-left: 8px;
+}
+
+.contact-preview-row {
+  display: flex;
+  align-items: center;
+}
+
+.contact-preview {
+  margin: 0;
+  font-size: 12px;
+  color: #909399;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+
+.contact-course {
+  font-size: 12px;
+  color: #909399;
+  flex-shrink: 0;
+}
 
 /* 右侧聊天区 */
-.chat-area { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+.chat-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
 
-.chat-empty, .chat-active { display: flex; flex-direction: column; height: 100%; }
-.chat-empty { align-items: center; justify-content: center; }
+.chat-empty,
+.chat-active {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.chat-empty {
+  align-items: center;
+  justify-content: center;
+}
 
 .chat-header {
   display: flex;
@@ -524,9 +640,34 @@ onUnmounted(() => {
   border-bottom: 1px solid #ebeef5;
   background: #fafafa;
 }
-.chat-header-info { display: flex; flex-direction: column; gap: 2px; }
-.chat-partner-name { font-size: 16px; font-weight: 500; color: #303133; }
-.chat-partner-course { font-size: 12px; color: #909399; }
+
+.chat-header-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.chat-partner-name {
+  font-size: 16px;
+  font-weight: 500;
+  color: #303133;
+}
+
+.chat-partner-course {
+  font-size: 12px;
+  color: #909399;
+}
+
+.chat-header .clear-btn {
+  flex-shrink: 0;
+  color: #c0c4cc;
+  transition: color 0.15s, background 0.15s;
+}
+
+.chat-header .clear-btn:hover {
+  color: #e6a23c;
+  background: #fdf6ec;
+}
 
 .chat-messages {
   flex: 1;
@@ -538,9 +679,19 @@ onUnmounted(() => {
   background: #f9fafb;
 }
 
-.message-bubble { max-width: 65%; display: flex; flex-direction: column; }
-.message-bubble.sent { align-self: flex-end; }
-.message-bubble.received { align-self: flex-start; }
+.message-bubble {
+  max-width: 65%;
+  display: flex;
+  flex-direction: column;
+}
+
+.message-bubble.sent {
+  align-self: flex-end;
+}
+
+.message-bubble.received {
+  align-self: flex-start;
+}
 
 .bubble-content {
   padding: 10px 16px;
@@ -549,11 +700,13 @@ onUnmounted(() => {
   line-height: 1.6;
   word-break: break-word;
 }
+
 .message-bubble.sent .bubble-content {
   background: var(--bio-moss, #606c38);
   color: #fff;
   border-bottom-right-radius: 4px;
 }
+
 .message-bubble.received .bubble-content {
   background: #e9ebed;
   color: #303133;
@@ -566,8 +719,14 @@ onUnmounted(() => {
   margin-top: 4px;
   padding: 0 4px;
 }
-.message-bubble.sent .bubble-time { text-align: right; }
-.read-status { margin-left: 6px; }
+
+.message-bubble.sent .bubble-time {
+  text-align: right;
+}
+
+.read-status {
+  margin-left: 6px;
+}
 
 .chat-input {
   display: flex;
@@ -577,6 +736,12 @@ onUnmounted(() => {
   align-items: flex-end;
   background: #fff;
 }
-.chat-input :deep(.el-textarea__inner) { resize: none; }
-.chat-input .el-button { height: 40px; }
+
+.chat-input :deep(.el-textarea__inner) {
+  resize: none;
+}
+
+.chat-input .el-button {
+  height: 40px;
+}
 </style>
