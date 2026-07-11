@@ -1,8 +1,10 @@
 package com.kechang.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.kechang.entity.*;
 import com.kechang.mapper.*;
+import com.kechang.vo.AdminDashboardVO;
 import com.kechang.vo.DashboardVO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -26,6 +28,9 @@ public class DashboardService {
     private final ExamMapper examMapper;
     private final GradeCourseMapper gradeCourseMapper;
     private final CourseStudentMapper courseStudentMapper;
+    private final SysUserMapper sysUserMapper;
+    private final SysRoleMapper sysRoleMapper;
+    private final OperationLogMapper operationLogMapper;
 
     public DashboardVO getTeacherDashboard(Long teacherId) {
         DashboardVO vo = new DashboardVO();
@@ -148,6 +153,85 @@ public class DashboardService {
             trend.add(da);
         }
         vo.setActiveTrend(trend);
+        return vo;
+    }
+
+    public AdminDashboardVO getAdminDashboard() {
+        AdminDashboardVO vo = new AdminDashboardVO();
+
+        // 管理员角色ID
+        SysRole adminRole = sysRoleMapper.selectOne(
+                new LambdaQueryWrapper<SysRole>().eq(SysRole::getRoleCode, "ROLE_ADMIN"));
+        Long adminRoleId = adminRole != null ? adminRole.getId() : null;
+
+        // 用户统计（排除管理员）
+        LambdaQueryWrapper<SysUser> nonAdminWrapper = new LambdaQueryWrapper<>();
+        if (adminRoleId != null) {
+            nonAdminWrapper.ne(SysUser::getRoleId, adminRoleId);
+        }
+        vo.setTotalUsers(sysUserMapper.selectCount(nonAdminWrapper));
+
+        // 教师数
+        SysRole teacherRole = sysRoleMapper.selectOne(
+                new LambdaQueryWrapper<SysRole>().eq(SysRole::getRoleCode, "ROLE_TEACHER"));
+        vo.setTeacherCount(teacherRole != null ? sysUserMapper.selectCount(
+                new LambdaQueryWrapper<SysUser>().eq(SysUser::getRoleId, teacherRole.getId())) : 0);
+
+        // 学生数
+        SysRole studentRole = sysRoleMapper.selectOne(
+                new LambdaQueryWrapper<SysRole>().eq(SysRole::getRoleCode, "ROLE_STUDENT"));
+        vo.setStudentCount(studentRole != null ? sysUserMapper.selectCount(
+                new LambdaQueryWrapper<SysUser>().eq(SysUser::getRoleId, studentRole.getId())) : 0);
+
+        // 课程总数
+        vo.setCourseCount(courseMapper.selectCount(null));
+
+        // 本月新增用户
+        LocalDateTime monthStart = LocalDate.now().withDayOfMonth(1).atStartOfDay();
+        LambdaQueryWrapper<SysUser> newWrapper = new LambdaQueryWrapper<SysUser>()
+                .ge(SysUser::getCreateTime, monthStart);
+        if (adminRoleId != null) {
+            newWrapper.ne(SysUser::getRoleId, adminRoleId);
+        }
+        vo.setNewUsersThisMonth(sysUserMapper.selectCount(newWrapper));
+
+        // 今日活跃操作
+        vo.setTodayActiveOps(operationLogMapper.selectCount(new LambdaQueryWrapper<OperationLog>()
+                .apply("DATE(create_time) = CURDATE()")));
+
+        // 近7日活跃趋势
+        List<DashboardVO.DailyActive> trend = new ArrayList<>();
+        for (int i = 6; i >= 0; i--) {
+            LocalDate date = LocalDate.now().minusDays(i);
+            LocalDateTime start = date.atStartOfDay();
+            LocalDateTime end = date.plusDays(1).atStartOfDay();
+            long count = operationLogMapper.selectCount(new LambdaQueryWrapper<OperationLog>()
+                    .ge(OperationLog::getCreateTime, start)
+                    .lt(OperationLog::getCreateTime, end));
+            DashboardVO.DailyActive da = new DashboardVO.DailyActive();
+            da.setDate(date.toString());
+            da.setCount((int) count);
+            trend.add(da);
+        }
+        vo.setActiveTrend(trend);
+
+        // 最近10条操作记录
+        List<OperationLog> logs = operationLogMapper.selectPage(
+                new Page<>(1, 10),
+                new LambdaQueryWrapper<OperationLog>().orderByDesc(OperationLog::getCreateTime)
+        ).getRecords();
+        List<Map<String, Object>> recentOps = new ArrayList<>();
+        for (OperationLog log : logs) {
+            Map<String, Object> item = new HashMap<>();
+            item.put("operatorName", log.getOperatorName());
+            item.put("module", log.getModule());
+            item.put("action", log.getAction());
+            item.put("targetName", log.getTargetName());
+            item.put("createTime", log.getCreateTime());
+            recentOps.add(item);
+        }
+        vo.setRecentOperations(recentOps);
+
         return vo;
     }
 }

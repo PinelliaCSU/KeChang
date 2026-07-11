@@ -8,7 +8,7 @@ const routes = [
     name: 'Dashboard',
     redirect: () => {
       const userStore = useUserStore()
-      if (userStore.roleCode === 'ROLE_ADMIN') return '/admin/courses'
+      if (userStore.roleCode === 'ROLE_ADMIN') return '/admin/dashboard'
       if (userStore.roleCode === 'ROLE_TEACHER') return '/teacher/dashboard'
       if (userStore.roleCode === 'ROLE_STUDENT') return '/student/dashboard'
       return '/login'
@@ -72,14 +72,17 @@ const routes = [
   // ==================== 学生端 ====================
   {
     path: '/admin',
-    redirect: '/admin/courses',
+    redirect: '/admin/dashboard',
     component: () => import('@/views/teacher/TeacherLayout.vue'),
     meta: { role: 'ROLE_ADMIN' },
     children: [
+      { path: 'dashboard', name: 'AdminDashboard', component: () => import('@/views/admin/AdminDashboard.vue'), meta: { title: '管理仪表盘' } },
       { path: 'courses', name: 'AdminCourses', component: () => import('@/views/admin/AdminCourses.vue'), meta: { title: '课程总览' } },
       { path: 'grades', name: 'AdminGrades', component: () => import('@/views/admin/AdminGrades.vue'), meta: { title: '成绩概览' } },
       { path: 'surveys', name: 'AdminSurveys', component: () => import('@/views/admin/AdminSurveys.vue'), meta: { title: '问卷统计' } },
-      { path: 'operation-logs', name: 'AdminOperationLogs', component: () => import('@/views/admin/AdminOperationLogs.vue'), meta: { title: '操作日志' } }
+      { path: 'operation-logs', name: 'AdminOperationLogs', component: () => import('@/views/admin/AdminOperationLogs.vue'), meta: { title: '操作日志' } },
+      { path: 'users', name: 'AdminUsers', component: () => import('@/views/admin/AdminUsers.vue'), meta: { title: '账号管理' } },
+      { path: 'announcements', name: 'AdminAnnouncements', component: () => import('@/views/admin/AdminAnnouncements.vue'), meta: { title: '平台公告' } }
     ]
   },
 
@@ -125,7 +128,7 @@ router.beforeEach((to, from, next) => {
 
   const userStore = useUserStore()
   const roleHome = () => {
-    if (userStore.roleCode === 'ROLE_ADMIN') return '/admin/courses'
+    if (userStore.roleCode === 'ROLE_ADMIN') return '/admin/dashboard'
     if (userStore.roleCode === 'ROLE_TEACHER') return '/teacher/dashboard'
     if (userStore.roleCode === 'ROLE_STUDENT') return '/student/dashboard'
     return '/dashboard'

@@ -2,6 +2,7 @@ package com.kechang.controller;
 
 import com.kechang.common.Result;
 import com.kechang.service.DashboardService;
+import com.kechang.vo.AdminDashboardVO;
 import com.kechang.vo.DashboardVO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -31,5 +32,11 @@ public class DashboardController {
     @PreAuthorize("hasAuthority('ROLE_STUDENT')")
     public Result<DashboardVO> studentStats() {
         return Result.success(dashboardService.getStudentDashboard(getUserId()));
+    }
+
+    @GetMapping("/admin/stats")
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+    public Result<AdminDashboardVO> adminStats() {
+        return Result.success(dashboardService.getAdminDashboard());
     }
 }

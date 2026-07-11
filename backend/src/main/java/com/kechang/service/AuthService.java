@@ -245,8 +245,15 @@ public class AuthService {
      */
     private String generateStudentNo() {
         String year = String.valueOf(LocalDate.now().getYear());
-        Long count = studentProfileMapper.selectCount(null);
-        return year + String.format("%04d", (count + 1) % 10000);
+        String maxNo = studentProfileMapper.selectMaxStudentNo();
+        long nextSeq = 1;
+        if (maxNo != null && maxNo.startsWith(year)) {
+            try {
+                nextSeq = Long.parseLong(maxNo.substring(year.length())) + 1;
+            } catch (NumberFormatException ignored) {
+            }
+        }
+        return year + String.format("%04d", nextSeq % 10000);
     }
 
     private boolean hasText(String value) {

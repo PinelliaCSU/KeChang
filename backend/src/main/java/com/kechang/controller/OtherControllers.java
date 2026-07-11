@@ -501,10 +501,31 @@ class AnnouncementController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAuthority('ROLE_TEACHER')")
+    @PreAuthorize("hasAnyAuthority('ROLE_TEACHER','ROLE_ADMIN')")
     public Result<Void> delete(@PathVariable Long id) {
-        notifService.deleteAnnouncement(id, uid());
+        String role = role();
+        if ("ROLE_ADMIN".equals(role)) {
+            notifService.deletePlatformAnnouncement(id);
+        } else {
+            notifService.deleteAnnouncement(id, uid());
+        }
         return Result.success();
+    }
+
+    // ---------- 管理端公告 ----------
+    @PostMapping("/admin")
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+    public Result<Void> createAdmin(@Valid @RequestBody AnnouncementDTO dto) {
+        notifService.createPlatformAnnouncement(dto, uid());
+        return Result.success();
+    }
+
+    @GetMapping("/admin")
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+    public Result<PageResult<Map<String, Object>>> listAdmin(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        return Result.success(notifService.listAllAnnouncements(page, size));
     }
 
     @PostMapping("/{id}/confirm")

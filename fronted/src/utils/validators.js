@@ -24,10 +24,17 @@ export const password = (minLen = 6, message = '请设置密码', trigger = 'blu
   { min: minLen, message: `密码至少${minLen}位`, trigger }
 ]
 
-/** 手机号规则（非必填） */
+/** 手机号规则（非必填，空值不校验） */
 export const phone = (trigger = 'blur') => ({
-  pattern: /^1[3-9]\d{9}$/,
-  message: '请输入正确的手机号',
+  validator: (_rule, value, callback) => {
+    if (!value || value.trim() === '') {
+      callback()
+    } else if (!/^1[3-9]\d{9}$/.test(value)) {
+      callback(new Error('请输入正确的手机号'))
+    } else {
+      callback()
+    }
+  },
   trigger
 })
 

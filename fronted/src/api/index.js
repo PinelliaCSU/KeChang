@@ -166,7 +166,8 @@ export const qaApi = {
 /** 仪表盘 API */
 export const dashboardApi = {
   teacherStats: () => request.get('/dashboard/teacher/stats'),
-  studentStats: () => request.get('/dashboard/student/stats')
+  studentStats: () => request.get('/dashboard/student/stats'),
+  adminStats: () => request.get('/dashboard/admin/stats')
 }
 
 /** 评价 API */
@@ -232,13 +233,28 @@ export const announcementApi = {
   update: (id, data) => request.put(`/announcements/${id}`, data),
   delete: (id) => request.delete(`/announcements/${id}`),
   confirm: (id) => request.post(`/announcements/${id}/confirm`),
-  getConfirms: (id, params) => request.get(`/announcements/${id}/confirms`, { params })
+  getConfirms: (id, params) => request.get(`/announcements/${id}/confirms`, { params }),
+  // 管理端
+  adminList: (params) => request.get('/announcements/admin', { params }),
+  adminCreate: (data) => request.post('/announcements/admin', data)
 }
 
 /** 管理端操作日志 API */
 export const operationLogApi = {
   list: (params) => request.get('/admin/operation-logs', { params }),
   overview: () => request.get('/admin/operation-logs/overview')
+}
+
+/** 管理端用户管理 API */
+export const adminUserApi = {
+  list: (params) => request.get('/admin/users', { params }),
+  stats: () => request.get('/admin/users/stats'),
+  detail: (id) => request.get(`/admin/users/${id}`),
+  create: (data) => request.post('/admin/users', data),
+  update: (id, data) => request.put(`/admin/users/${id}`, data),
+  toggleStatus: (id) => request.put(`/admin/users/${id}/status`),
+  resetPassword: (id, data) => request.put(`/admin/users/${id}/password`, data),
+  delete: (id) => request.delete(`/admin/users/${id}`)
 }
 
 /** 文件上传 API */

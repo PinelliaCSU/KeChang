@@ -33,7 +33,7 @@ public class NotificationService {
     private final SysRoleMapper sysRoleMapper;
     private final StudentProfileMapper studentProfileMapper;
 
-    // ==================== 通用通知 ====================
+    // ==================== 通用通知（仅平台公告） ====================
     public PageResult<Map<String, Object>> list(Long userId, int page, int size) {
         List<NotificationUser> nus = notifUserMapper.selectList(
                 new LambdaQueryWrapper<NotificationUser>().eq(NotificationUser::getUserId, userId));
@@ -43,8 +43,14 @@ public class NotificationService {
         Map<Long, Integer> readMap = nus.stream()
                 .collect(Collectors.toMap(NotificationUser::getNotificationId, NotificationUser::getIsRead));
         List<Long> ids = nus.stream().map(NotificationUser::getNotificationId).toList();
+        // 仅返回平台公告，不包含作业/考试/实训等
         Page<Notification> p = notifMapper.selectPage(new Page<>(page, size),
-                new LambdaQueryWrapper<Notification>().in(Notification::getId, ids)
+                new LambdaQueryWrapper<Notification>()
+                        .in(Notification::getId, ids)
+                        .eq(Notification::getNotificationType, "公告")
+                        .and(w -> w.isNull(Notification::getCourseId)
+                                .or().eq(Notification::getCourseId, SCOPE_ALL_TEACHERS)
+                                .or().eq(Notification::getCourseId, SCOPE_ALL_STUDENTS))
                         .orderByDesc(Notification::getSendTime));
 
         List<Map<String, Object>> records = new ArrayList<>();
@@ -92,8 +98,9 @@ public class NotificationService {
     }
 
     public long unreadCount(Long userId) {
-        return notifUserMapper.selectCount(new LambdaQueryWrapper<NotificationUser>()
-                .eq(NotificationUser::getUserId, userId).eq(NotificationUser::getIsRead, 0));
+        // 仅统计管理端平台公告的未读数，不包含作业/考试/实训等通知
+        Long count = notifUserMapper.countUnreadAnnouncements(userId);
+        return count != null ? count : 0;
     }
 
     public void markRead(Long id, Long userId) {
@@ -514,5 +521,145 @@ public class NotificationService {
                 .eq(NotificationUser::getNotificationId, announcementId)
                 .eq(NotificationUser::getIsRead, 1));
         return count != null ? count.intValue() : 0;
+    }
+
+    // ==================== 管理端公告功能 ====================
+
+    /** courseId 特殊值：所有教师 */
+    private static final Long SCOPE_ALL_TEACHERS = -1L;
+    /** courseId 特殊值：所有学生 */
+    private static final Long SCOPE_ALL_STUDENTS = -2L;
+
+    /**
+     * 管理员创建平台公告（支持按范围发送：全平台/所有教师/所有学生）
+     */
+    @Transactional
+    public void createPlatformAnnouncement(AnnouncementDTO dto, Long senderId) {
+        Notification n = new Notification();
+        n.setTitle(dto.getTitle());
+        n.setContent(dto.getContent());
+        n.setSenderId(senderId);
+        n.setSendTime(LocalDateTime.now());
+        n.setNotificationType("公告");
+
+        String scope = dto.getScope() != null ? dto.getScope() : "all";
+        List<SysUser> targetUsers;
+        switch (scope) {
+            case "teachers":
+                n.setCourseId(SCOPE_ALL_TEACHERS);
+                targetUsers = findUsersByRoleCode("ROLE_TEACHER");
+                break;
+            case "students":
+                n.setCourseId(SCOPE_ALL_STUDENTS);
+                targetUsers = findUsersByRoleCode("ROLE_STUDENT");
+                break;
+            default: // "all"
+                n.setCourseId(null);
+                targetUsers = findUsersByRoleCodes("ROLE_TEACHER", "ROLE_STUDENT");
+                break;
+        }
+
+        notifMapper.insert(n);
+
+        for (SysUser u : targetUsers) {
+            NotificationUser nu = new NotificationUser();
+            nu.setNotificationId(n.getId());
+            nu.setUserId(u.getId());
+            nu.setIsRead(0);
+            notifUserMapper.insert(nu);
+        }
+    }
+
+    private List<SysUser> findUsersByRoleCode(String roleCode) {
+        SysRole role = sysRoleMapper.selectOne(
+                new LambdaQueryWrapper<SysRole>().eq(SysRole::getRoleCode, roleCode));
+        if (role == null) return List.of();
+        return sysUserMapper.selectList(
+                new LambdaQueryWrapper<SysUser>().eq(SysUser::getRoleId, role.getId())
+                        .eq(SysUser::getStatus, 0));
+    }
+
+    private List<SysUser> findUsersByRoleCodes(String... roleCodes) {
+        List<SysRole> roles = sysRoleMapper.selectList(
+                new LambdaQueryWrapper<SysRole>().in(SysRole::getRoleCode, List.of(roleCodes)));
+        if (roles.isEmpty()) return List.of();
+        List<Long> roleIds = roles.stream().map(SysRole::getId).toList();
+        return sysUserMapper.selectList(
+                new LambdaQueryWrapper<SysUser>().in(SysUser::getRoleId, roleIds)
+                        .eq(SysUser::getStatus, 0));
+    }
+
+    /**
+     * 管理员分页查看所有公告（含课程公告和平台公告）
+     */
+    public PageResult<Map<String, Object>> listAllAnnouncements(int page, int size) {
+        LambdaQueryWrapper<Notification> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(Notification::getNotificationType, "公告")
+                .orderByDesc(Notification::getSendTime);
+
+        Page<Notification> p = notifMapper.selectPage(new Page<>(page, size), wrapper);
+
+        List<Map<String, Object>> records = new ArrayList<>();
+        for (Notification n : p.getRecords()) {
+            Map<String, Object> item = new HashMap<>();
+            item.put("id", n.getId());
+            item.put("title", n.getTitle());
+            item.put("content", n.getContent());
+            item.put("courseId", n.getCourseId());
+            item.put("publisherId", n.getSenderId());
+            item.put("publishTime", n.getSendTime());
+            item.put("createTime", n.getCreateTime());
+
+            // 范围
+            if (SCOPE_ALL_TEACHERS.equals(n.getCourseId())) {
+                item.put("courseName", "");
+                item.put("scope", "所有教师");
+            } else if (SCOPE_ALL_STUDENTS.equals(n.getCourseId())) {
+                item.put("courseName", "");
+                item.put("scope", "所有学生");
+            } else if (n.getCourseId() != null) {
+                Course c = courseMapper.selectById(n.getCourseId());
+                item.put("courseName", c != null ? c.getCourseName() : "");
+                item.put("scope", c != null ? c.getCourseName() : "课程");
+            } else {
+                item.put("courseName", "");
+                item.put("scope", "全平台");
+            }
+
+            // 发布人
+            if (n.getSenderId() != null) {
+                SysUser u = sysUserMapper.selectById(n.getSenderId());
+                item.put("publisherName", u != null ? u.getNickname() : "");
+            } else {
+                item.put("publisherName", "");
+            }
+
+            // 确认人数
+            long confirmCount = notifUserMapper.selectCount(new LambdaQueryWrapper<NotificationUser>()
+                    .eq(NotificationUser::getNotificationId, n.getId())
+                    .eq(NotificationUser::getIsRead, 1));
+            item.put("confirmCount", (int) confirmCount);
+
+            records.add(item);
+        }
+        return PageResult.of(records, p.getTotal(), page, size);
+    }
+
+    /**
+     * 管理员删除任意公告
+     */
+    @Transactional
+    public void deletePlatformAnnouncement(Long id) {
+        Notification n = notifMapper.selectById(id);
+        if (n == null || !"公告".equals(n.getNotificationType())) {
+            throw BusinessException.notFound("公告不存在");
+        }
+        notifMapper.deleteById(id);
+
+        List<NotificationUser> nus = notifUserMapper.selectList(
+                new LambdaQueryWrapper<NotificationUser>().eq(NotificationUser::getNotificationId, id));
+        for (NotificationUser nu : nus) {
+            notifUserMapper.deleteById(nu.getId());
+        }
     }
 }

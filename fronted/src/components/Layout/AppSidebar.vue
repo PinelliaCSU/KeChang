@@ -127,6 +127,7 @@ const studentMenus = [
 ]
 
 const adminMenus = [
+  { path: '/admin/dashboard', title: '首页', icon: 'Odometer' },
   {
     path: 'admin-teach',
     title: '教学管理',
@@ -143,6 +144,15 @@ const adminMenus = [
     children: [
       { path: '/admin/surveys', title: '问卷统计' },
       { path: '/admin/operation-logs', title: '操作日志' }
+    ]
+  },
+  {
+    path: 'admin-system',
+    title: '系统管理',
+    icon: 'Setting',
+    children: [
+      { path: '/admin/users', title: '账号管理' },
+      { path: '/admin/announcements', title: '平台公告' }
     ]
   }
 ]
