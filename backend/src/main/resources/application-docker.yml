@@ -22,6 +22,19 @@ spring:
           max-active: 16
           max-idle: 8
           min-idle: 4
+
+kechang:
+  office:
+    soffice-path: ${SOFFICE_PATH:/usr/bin/soffice}
+
 # 阿里百炼（DashScope）AI 配置（Docker 环境通过环境变量注入）
 bailian:
   api-key: ${BAILIAN_API_KEY}
+  model: ${AI_MODEL:qwen-turbo}
+  endpoint: ${AI_ENDPOINT:https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions}
+  asr:
+    enabled: ${ASR_ENABLED:true}
+    endpoint: ${ASR_ENDPOINT:https://dashscope.aliyuncs.com/compatible-mode/v1/audio/transcriptions}
+    model: ${ASR_MODEL:whisper-large-v3}
+    ffmpeg-path: ${FFMPEG_PATH:ffmpeg}
+    ffmpeg-timeout: ${FFMPEG_TIMEOUT:300}

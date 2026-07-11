@@ -246,6 +246,9 @@ public class CourseController {
 
         // 从文件中提取文本（传入资源名，媒体文件会返回占位描述）
         String fileContent = fileProcessingService.extractText(target.getFileUrl(), target.getResourceName());
+        if (fileContent != null && fileContent.startsWith("[ASR ")) {
+            return Result.error(500, fileContent);
+        }
 
         // 调用 AI 生成总结（传入课程名作为上下文）
         String summary = bailianApiService.summarizeResource(

@@ -43,6 +43,7 @@ import java.util.concurrent.TimeUnit;
 public class FileProcessingService {
 
     private final ObjectMapper objectMapper;
+    private final AudioTranscriptionService audioTranscriptionService;
 
     @Value("${kechang.upload.path:./uploads}")
     private String uploadBasePath;
@@ -414,13 +415,11 @@ public class FileProcessingService {
                     extractPptxText(source);
                 case "txt", "md", "json", "xml", "csv", "log", "java", "js", "ts", "css", "html", "vue", "py", "c", "cpp", "h", "sql" ->
                     Files.readString(source);
-                // 视频 / 音频 / 图片 — 无法提取文本，返回元信息占位
+                // 视频 / 音频 — 先抽取音频并调用 ASR，得到转写文本后再交给 AI 总结
                 case "mp4", "webm", "ogg", "mov", "m4v", "avi", "mkv", "flv", "wmv" ->
-                    "[视频文件] 资源名称：「" + safeName + "」，格式：" + ext.toUpperCase()
-                    + "。视频内容无法自动提取文字，请结合课件标题和章节信息理解内容。";
+                    audioTranscriptionService.transcribeMedia(source, safeName, ext);
                 case "mp3", "wav", "m4a", "aac", "flac", "wma" ->
-                    "[音频文件] 资源名称：「" + safeName + "」，格式：" + ext.toUpperCase()
-                    + "。音频内容无法自动提取文字，建议配合讲义或笔记学习。";
+                    audioTranscriptionService.transcribeMedia(source, safeName, ext);
                 case "png", "jpg", "jpeg", "gif", "webp", "bmp", "svg" ->
                     "[图片文件] 资源名称：「" + safeName + "」，格式：" + ext.toUpperCase()
                     + "。图片内容无法自动提取文字，请结合上下文理解图表/示意图。";

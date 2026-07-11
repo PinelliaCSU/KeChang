@@ -32,4 +32,12 @@ mybatis-plus:
 
 # 阿里百炼（DashScope）AI 配置（开发环境）
 bailian:
-  api-key: ${BAILIAN_API_KEY:sk-09dd1907b09e4e168ec2bf1647951a83}
+  api-key: sk-09dd1907b09e4e168ec2bf1647951a83
+  model: ${AI_MODEL:qwen-turbo}
+  endpoint: ${AI_ENDPOINT:https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions}
+  asr:
+    enabled: ${ASR_ENABLED:true}
+    endpoint: ${ASR_ENDPOINT:https://dashscope.aliyuncs.com/compatible-mode/v1/audio/transcriptions}
+    model: ${ASR_MODEL:whisper-large-v3}
+    ffmpeg-path: D:/ffmpeg/ffmpeg-8.1.2-essentials_build/bin/ffmpeg.exe
+    ffmpeg-timeout: ${FFMPEG_TIMEOUT:300}

@@ -71,8 +71,15 @@ kechang:
 
 # 阿里百炼（DashScope）AI 配置
 bailian:
-  api-key: ${BAILIAN_API_KEY:your-bailian-api-key}
-  model: qwen-turbo
-  endpoint: https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions
+  api-key: ${AI_API_KEY:${BAILIAN_API_KEY:}}
+  model: ${AI_MODEL:qwen-turbo}
+  endpoint: ${AI_ENDPOINT:https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions}
   connect-timeout: 30
-  read-timeout: 60
+  read-timeout: 300
+  asr:
+    enabled: ${ASR_ENABLED:true}
+    # OpenAI-compatible 音频转写接口；如果你们使用其他 ASR 服务，改这里即可。
+    endpoint: ${ASR_ENDPOINT:https://dashscope.aliyuncs.com/compatible-mode/v1/audio/transcriptions}
+    model: ${ASR_MODEL:whisper-large-v3}
+    ffmpeg-path: ${FFMPEG_PATH:ffmpeg}
+    ffmpeg-timeout: ${FFMPEG_TIMEOUT:300}

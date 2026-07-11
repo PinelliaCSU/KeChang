@@ -8,6 +8,12 @@ RUN apk add --no-cache maven && mkdir -p /root/.m2 && cp settings.xml /root/.m2/
 
 FROM eclipse-temurin:17-jre-alpine
 WORKDIR /app
+RUN apk add --no-cache \
+    ffmpeg \
+    libreoffice \
+    font-noto-cjk \
+    font-noto \
+    ttf-dejavu
 COPY --from=build /app/target/*.jar app.jar
 EXPOSE 8080
 # JVM 性能参数: 堆内存 512m, 使用 G1GC 低延迟垃圾回收器
