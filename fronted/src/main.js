@@ -15,7 +15,7 @@ import {
   Collection, Connection, DataAnalysis, Document, DocumentCopy, Edit, Expand,
   Fold, Folder, FullScreen, Hide, Iphone, List, Loading, Location, Notebook,
   Odometer, PictureFilled, Plus, QuestionFilled, Reading, Refresh, School,
-  Search, Star, SwitchButton, Timer, Tools, TrendCharts, User, VideoCamera, View
+  Search, Setting, Star, SwitchButton, Timer, Tools, TrendCharts, User, VideoCamera, View
 } from '@element-plus/icons-vue'
 
 import App from './App.vue'
@@ -31,7 +31,7 @@ const icons = {
   Collection, Connection, DataAnalysis, Document, DocumentCopy, Edit, Expand,
   Fold, Folder, FullScreen, Hide, Iphone, List, Loading, Location, Notebook,
   Odometer, PictureFilled, Plus, QuestionFilled, Reading, Refresh, School,
-  Search, Star, SwitchButton, Timer, Tools, TrendCharts, User, VideoCamera, View
+  Search, Setting, Star, SwitchButton, Timer, Tools, TrendCharts, User, VideoCamera, View
 }
 for (const [key, component] of Object.entries(icons)) {
   app.component(key, component)
