@@ -58,6 +58,12 @@ export const examApi = {
   markAll: (recordId, data) => request.put(`/exams/records/${recordId}/mark-all`, data)
 }
 
+/** 在线编程代码执行 API */
+export const codeApi = {
+  run: (data) => request.post('/code/run', data),
+  judge: (data) => request.post('/code/judge', data)
+}
+
 /** 随堂测验 API */
 export const classQuizApi = {
   teacherList: (params) => request.get('/class-quizzes/teacher', { params }),

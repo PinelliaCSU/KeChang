@@ -81,7 +81,7 @@
             <el-select v-model="qTypeFilter" placeholder="题型" clearable style="width:120px" @change="loadQuestions">
               <el-option label="单选" value="SINGLE" /><el-option label="多选" value="MULTI" />
               <el-option label="判断" value="JUDGE" /><el-option label="填空" value="FILL" /><el-option label="简答"
-                value="ESSAY" />
+                value="ESSAY" /><el-option label="编程" value="CODE" />
             </el-select>
             <el-input v-model="qKeyword" placeholder="搜索题目" style="width:200px" clearable @change="loadQuestions" />
             <span class="selected-count">已选: {{ selectedQuestions.length }} 题 / 合计 {{ selectedTotalScore }} 分</span>
@@ -162,6 +162,7 @@
             <el-option label="判断题" value="JUDGE" />
             <el-option label="填空题" value="FILL" />
             <el-option label="简答题" value="ESSAY" />
+            <el-option label="编程题" value="CODE" />
           </el-select>
         </el-form-item>
       </el-form>
@@ -298,7 +299,7 @@ const aiAdjustedTotalScore = computed(() => {
 const detailDialogVisible = ref(false)
 const paperDetail = ref(null)
 
-const typeLabel = (t) => ({ SINGLE: '单选', MULTI: '多选', JUDGE: '判断', FILL: '填空', ESSAY: '简答' }[t] || t)
+const typeLabel = (t) => ({ SINGLE: '单选', MULTI: '多选', JUDGE: '判断', FILL: '填空', ESSAY: '简答', CODE: '编程' }[t] || t)
 
 const fetchPapers = async () => {
   loading.value = true

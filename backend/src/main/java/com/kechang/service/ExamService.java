@@ -8,6 +8,7 @@ import com.kechang.common.BusinessException;
 import com.kechang.common.PageResult;
 import com.kechang.dto.AiGenerateRequest;
 import com.kechang.dto.AiPaperResult;
+import com.kechang.dto.CodeRunResult;
 import com.kechang.dto.ExamSubmitDTO;
 import com.kechang.dto.PaperCreateDTO;
 import com.kechang.entity.*;
@@ -17,6 +18,7 @@ import com.kechang.vo.ExamRecordAnswerVO;
 import com.kechang.vo.ExamVO;
 import com.kechang.vo.QuestionVO;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -28,6 +30,7 @@ import java.util.stream.Collectors;
 /**
  * 试题考试服务
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ExamService {
@@ -47,6 +50,7 @@ public class ExamService {
     private final NotificationService notificationService;
     private final OperationLogService operationLogService;
     private final BailianApiService bailianApiService;
+    private final CodeExecutionService codeExecutionService;
 
     // ==================== 试题库 ====================
     public PageResult<Question> getQuestionList(int page, int size, String questionType,
@@ -221,6 +225,7 @@ public class ExamService {
                 qv.setScore(pq.getQuestionScore());
                 qv.setDifficulty(q.getDifficulty());
                 qv.setKnowledgePoint(q.getKnowledgePoint());
+                qv.setProgrammingConfig(q.getProgrammingConfig());
                 questions.add(qv);
             }
         }
@@ -377,11 +382,12 @@ public class ExamService {
         vo.setStatus(computeStatus(exam.getStartTime(), exam.getEndTime()));
         vo.setAllowRetry(exam.getAllowRetry());
         if (!isTeacher) {
-            // 学生端不返回答案
+            // 学生端不返回答案，并移除编程题隐藏测试用例
             if (vo.getQuestions() != null) {
                 vo.getQuestions().forEach(q -> {
                     q.setAnswer(null);
                     q.setAnalysis(null);
+                    q.setProgrammingConfig(stripHiddenTestCases(q.getProgrammingConfig()));
                 });
             }
         }
@@ -479,6 +485,39 @@ public class ExamService {
                         totalScore += qScore;
                     } else {
                         a.setScore(0.0);
+                    }
+                } else if (q != null && "CODE".equals(q.getQuestionType())) {
+                    // 编程题：调用 Docker 沙箱判题
+                    try {
+                        String language = "cpp"; // 从 programming_config 中获取
+                        if (q.getProgrammingConfig() != null) {
+                            CodeExecutionService.ProgrammingConfig pc
+                                    = OBJECT_MAPPER.readValue(q.getProgrammingConfig(),
+                                            CodeExecutionService.ProgrammingConfig.class);
+                            if (pc.getLanguage() != null) {
+                                language = pc.getLanguage();
+                            }
+                        }
+                        CodeRunResult result = codeExecutionService.judgeByQuestion(
+                                language, studentAnswer, q.getId());
+                        // 按通过用例比例计算得分
+                        double qScore = 0;
+                        ExamPaperQuestion pq = paperQuestionMapper.selectOne(new LambdaQueryWrapper<ExamPaperQuestion>()
+                                .eq(ExamPaperQuestion::getPaperId, exam.getPaperId())
+                                .eq(ExamPaperQuestion::getQuestionId, ans.getQuestionId()));
+                        double maxScore = pq != null ? pq.getQuestionScore() : (q.getScore() != null ? q.getScore() : 0);
+                        if (result.getTotalCases() > 0) {
+                            qScore = maxScore * result.getPassedCases() / result.getTotalCases();
+                            // 保留一位小数
+                            qScore = Math.round(qScore * 10.0) / 10.0;
+                        }
+                        a.setScore(qScore);
+                        a.setIsCorrect(result.getPassedCases() == result.getTotalCases() && result.getTotalCases() > 0 ? 1 : 0);
+                        totalScore += qScore;
+                    } catch (Exception e) {
+                        log.warn("编程题判题异常 questionId={}: {}", q.getId(), e.getMessage());
+                        a.setScore(0.0);
+                        a.setIsCorrect(0);
                     }
                 }
                 answerMapper.insert(a);
@@ -681,6 +720,25 @@ public class ExamService {
         courseStudentMapper.updateById(cs);
     }
 
+    /**
+     * 移除编程题配置中的隐藏测试用例（学生端安全处理）
+     */
+    private String stripHiddenTestCases(String programmingConfig) {
+        if (programmingConfig == null || programmingConfig.isBlank()) {
+            return null;
+        }
+        try {
+            com.fasterxml.jackson.databind.JsonNode root = OBJECT_MAPPER.readTree(programmingConfig);
+            if (root.has("hiddenTestCases")) {
+                ((com.fasterxml.jackson.databind.node.ObjectNode) root).remove("hiddenTestCases");
+            }
+            // 也移除 scoringMode 等不必要的字段（可选）
+            return OBJECT_MAPPER.writeValueAsString(root);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
     private boolean isAnswerCorrect(Question question, String studentAnswer) {
         if (question == null || question.getAnswer() == null) {
             return false;
@@ -771,7 +829,8 @@ public class ExamService {
             return new ArrayList<>();
         }
         try {
-            List<Object> raw = OBJECT_MAPPER.readValue(optionsJson, new TypeReference<List<Object>>() {});
+            List<Object> raw = OBJECT_MAPPER.readValue(optionsJson, new TypeReference<List<Object>>() {
+            });
             List<OptionItem> options = new ArrayList<>();
             for (int i = 0; i < raw.size(); i++) {
                 Object item = raw.get(i);
@@ -791,7 +850,9 @@ public class ExamService {
         }
     }
 
-    private record OptionItem(String label, String content) {}
+    private record OptionItem(String label, String content) {
+
+    }
 
     /**
      * 根据开始/结束时间自动计算考试状态
@@ -810,4 +871,3 @@ public class ExamService {
         }
     }
 }
-
