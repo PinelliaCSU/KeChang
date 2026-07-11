@@ -1,7 +1,7 @@
 <template>
   <div class="page-shell">
     <div class="page-title-bar">
-      <h2 class="page-title">知识库</h2>
+      <h2 class="page-title">反思</h2>
     </div>
 
     <div class="panel">

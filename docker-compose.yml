@@ -13,7 +13,7 @@ services:
     ports:
       - "3306:3306"
     volumes:
-      - ./database/kechang_data.sql:/docker-entrypoint-initdb.d/01-kechang.sql
+      - ./database:/docker-entrypoint-initdb.d
       - ./database/my.cnf:/etc/mysql/conf.d/my.cnf
       - mysql_data:/var/lib/mysql
     command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci --innodb-buffer-pool-size=512M --max-connections=200
@@ -53,6 +53,8 @@ services:
       ASR_MODEL: ${ASR_MODEL:-whisper-large-v3}
       FFMPEG_PATH: ${FFMPEG_PATH:-ffmpeg}
       SOFFICE_PATH: ${SOFFICE_PATH:-/usr/bin/soffice}
+      EMBEDDING_ENABLED: ${EMBEDDING_ENABLED:-true}
+      EMBEDDING_MODEL: ${EMBEDDING_MODEL:-text-embedding-v3}
     ports:
       - "8080:8080"
     volumes:

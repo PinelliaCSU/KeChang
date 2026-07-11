@@ -161,6 +161,98 @@ public class BailianApiService {
         return callChatApiInternal(systemPrompt, userPrompt, false);
     }
 
+    public String answerWithContext(String question, String context, String courseName) {
+        String systemPrompt = """
+                你是课畅教师中心的课程知识库助手。请只根据提供的课程知识片段回答问题。
+                如果知识片段不足以支持答案，要明确说明“知识库中暂未找到足够依据”，并给出学生下一步可以查看的资料方向。
+                回答要结构清晰、适合课程学习场景，必要时列出要点。
+                """;
+        String userPrompt = "课程：" + (courseName == null ? "未命名课程" : courseName)
+                + "\n\n学生问题：\n" + question
+                + "\n\n课程知识片段：\n" + context
+                + "\n\n请基于以上片段回答，并在末尾简短说明参考了哪些片段。";
+        String aiResponse = callChatApiText(systemPrompt, userPrompt);
+        return aiResponse != null && !aiResponse.isBlank() ? aiResponse.trim() : "AI 暂时没有生成回答，请稍后重试。";
+    }
+
+    public List<Double> embedText(String text) {
+        if (text == null || text.isBlank()) {
+            return List.of();
+        }
+        BailianConfig.Embedding embedding = config.getEmbedding();
+        if (embedding == null || !embedding.isEnabled() || config.getApiKey() == null || config.getApiKey().isBlank()) {
+            return fallbackEmbedding(text, embedding != null ? embedding.getFallbackDimension() : 256);
+        }
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.set("Authorization", "Bearer " + config.getApiKey());
+
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("model", embedding.getModel());
+        body.put("input", text.length() > 6000 ? text.substring(0, 6000) : text);
+
+        try {
+            ResponseEntity<Map> response = restTemplate.postForEntity(embedding.getEndpoint(), new HttpEntity<>(body, headers), Map.class);
+            if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
+                return fallbackEmbedding(text, embedding.getFallbackDimension());
+            }
+            Object data = response.getBody().get("data");
+            if (data instanceof List<?> list && !list.isEmpty() && list.get(0) instanceof Map<?, ?> first) {
+                Object vector = first.get("embedding");
+                if (vector instanceof List<?> values) {
+                    List<Double> result = new ArrayList<>();
+                    for (Object value : values) {
+                        if (value instanceof Number number) {
+                            result.add(number.doubleValue());
+                        }
+                    }
+                    if (!result.isEmpty()) {
+                        return normalizeVector(result);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.warn("Embedding API unavailable, fallback to local vector: {}", e.getMessage());
+        }
+        return fallbackEmbedding(text, embedding.getFallbackDimension());
+    }
+
+    private List<Double> fallbackEmbedding(String text, int dimension) {
+        int dim = Math.max(64, dimension);
+        double[] vector = new double[dim];
+        String normalized = text.toLowerCase(Locale.ROOT).replaceAll("\\s+", " ").trim();
+        for (int i = 0; i < normalized.length(); i++) {
+            int end = Math.min(normalized.length(), i + 3);
+            String token = normalized.substring(i, end);
+            int hash = token.hashCode();
+            int index = Math.floorMod(hash, dim);
+            vector[index] += hash >= 0 ? 1.0 : -1.0;
+        }
+        List<Double> result = new ArrayList<>(dim);
+        for (double value : vector) {
+            result.add(value);
+        }
+        return normalizeVector(result);
+    }
+
+    private List<Double> normalizeVector(List<Double> vector) {
+        double sum = 0.0;
+        for (Double value : vector) {
+            double v = value == null ? 0.0 : value;
+            sum += v * v;
+        }
+        double norm = Math.sqrt(sum);
+        if (norm == 0.0) {
+            return vector;
+        }
+        List<Double> normalized = new ArrayList<>(vector.size());
+        for (Double value : vector) {
+            normalized.add((value == null ? 0.0 : value) / norm);
+        }
+        return normalized;
+    }
+
     /**
      * 调用阿里百炼 Chat Completions API
      */

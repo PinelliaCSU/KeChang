@@ -92,7 +92,7 @@ const ENTRY_DEFS = {
         { id: 's-notes', label: '学习笔记', icon: 'Notebook', route: '/student/notes', color: '#5c7a8a' },
         { id: 's-trainings', label: '实训中心', icon: 'Tools', route: '/student/trainings', color: '#9c6644' },
         { id: 's-posts', label: '互动问答', icon: 'ChatDotRound', route: '/student/posts', color: '#7a9fb5' },
-        { id: 's-knowledge', label: '知识库', icon: 'Collection', route: '/student/knowledge', color: '#20c4cc' },
+        { id: 's-knowledge', label: '反思', icon: 'Collection', route: '/student/knowledge', color: '#20c4cc' },
         { id: 's-evaluations', label: '教学评价', icon: 'List', route: '/student/evaluations', color: '#c4956a' },
         { id: 's-surveys', label: '问卷调查', icon: 'Document', route: '/student/surveys', color: '#20c4cc' },
         { id: 's-messages', label: '私信', icon: 'ChatLineSquare', route: '/student/messages', color: '#20c4cc' }

@@ -239,6 +239,16 @@ export const knowledgeApi = {
 }
 
 /** 通知 API */
+export const courseKnowledgeApi = {
+  courses: () => request.get('/course-knowledge/courses'),
+  stats: (courseId) => request.get(`/course-knowledge/courses/${courseId}/stats`),
+  documents: (courseId) => request.get(`/course-knowledge/courses/${courseId}/documents`),
+  rebuild: (courseId) => request.post(`/course-knowledge/courses/${courseId}/rebuild`),
+  addManual: (data) => request.post('/course-knowledge/documents', data),
+  deleteDocument: (id) => request.delete(`/course-knowledge/documents/${id}`),
+  ask: (data) => request.post('/course-knowledge/ask', data)
+}
+
 export const notificationApi = {
   list: (params) => request.get('/notifications', { params }),
   detail: (id) => request.get(`/notifications/${id}`),

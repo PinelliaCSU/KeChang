@@ -101,6 +101,7 @@ const teacherMenus = [
     title: '资源管理',
     icon: 'Folder',
     children: [
+      { path: '/teacher/knowledge', title: '智能知识库' },
       { path: '/teacher/questions', title: '试题管理' },
       { path: '/teacher/papers', title: '试卷管理' }
     ]
@@ -141,7 +142,8 @@ const studentMenus = [
       { path: '/student/class-quizzes', title: '随堂测验' },
       { path: '/student/checkin', title: '课堂签到' },
       { path: '/student/trainings', title: '实训中心' },
-      { path: '/student/knowledge', title: '知识库' }
+      { path: '/student/course-knowledge', title: '智能知识库' },
+      { path: '/student/knowledge', title: '反思' }
     ]
   },
   {
@@ -173,6 +175,7 @@ const adminMenus = [
     icon: 'Reading',
     children: [
       { path: '/admin/courses', title: '课程总览' },
+      { path: '/admin/knowledge', title: '智能知识库' },
       { path: '/admin/grades', title: '成绩概览' }
     ]
   },

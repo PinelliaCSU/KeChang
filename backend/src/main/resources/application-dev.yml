@@ -41,3 +41,8 @@ bailian:
     model: ${ASR_MODEL:whisper-large-v3}
     ffmpeg-path: D:/ffmpeg/ffmpeg-8.1.2-essentials_build/bin/ffmpeg.exe
     ffmpeg-timeout: ${FFMPEG_TIMEOUT:300}
+  embedding:
+    enabled: ${EMBEDDING_ENABLED:true}
+    endpoint: ${EMBEDDING_ENDPOINT:https://dashscope.aliyuncs.com/compatible-mode/v1/embeddings}
+    model: ${EMBEDDING_MODEL:text-embedding-v3}
+    fallback-dimension: ${EMBEDDING_FALLBACK_DIMENSION:256}

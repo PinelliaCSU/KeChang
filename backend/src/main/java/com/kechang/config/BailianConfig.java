@@ -48,6 +48,11 @@ public class BailianConfig {
      */
     private Asr asr = new Asr();
 
+    /**
+     * 课程知识库 embedding 配置。
+     */
+    private Embedding embedding = new Embedding();
+
     @Bean
     public RestTemplate restTemplate(RestTemplateBuilder builder) {
         SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
@@ -83,5 +88,29 @@ public class BailianConfig {
          * ffmpeg 抽音频最长等待秒数。
          */
         private int ffmpegTimeout = 300;
+    }
+
+    @Data
+    public static class Embedding {
+
+        /**
+         * 是否启用远程 embedding。关闭或调用失败时会回退到本地 Hash 向量。
+         */
+        private boolean enabled = true;
+
+        /**
+         * OpenAI-compatible embedding 接口。
+         */
+        private String endpoint = "https://dashscope.aliyuncs.com/compatible-mode/v1/embeddings";
+
+        /**
+         * 百炼文本向量模型。若账号未开通，可改成实际可用模型。
+         */
+        private String model = "text-embedding-v3";
+
+        /**
+         * 本地向量维度。远程 embedding 会按接口返回维度存储。
+         */
+        private int fallbackDimension = 256;
     }
 }

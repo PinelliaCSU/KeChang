@@ -95,7 +95,7 @@ import { ref, reactive, computed, onMounted, onBeforeUnmount, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { examApi, codeApi } from '@/api'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import CodeEditor from '@/components/CodeEditor.vue'
+import CodeEditor from '@/components/Code/CodeEditor.vue'
 
 const route = useRoute(); const router = useRouter()
 const exam = ref(null)
