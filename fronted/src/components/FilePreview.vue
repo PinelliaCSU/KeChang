@@ -103,8 +103,8 @@
 </template>
 
 <script setup>
-import { computed, ref, watch } from 'vue'
-import { courseApi, uploadApi } from '@/api'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
+import { courseApi, uploadApi, videoAnnotationApi } from '@/api'
 import { useUserStore } from '@/stores/user'
 import { getFileExtension, getFileName, resolveFileUrl } from '@/utils/fileUrl'
 
@@ -127,6 +127,7 @@ const currentTime = ref(0)
 const duration = ref(0)
 const draftAnnotation = ref('')
 const annotations = ref([])
+let annotationSaveTimer = null
 
 // AI 总结相关状态
 const summaryVisible = ref(false)
