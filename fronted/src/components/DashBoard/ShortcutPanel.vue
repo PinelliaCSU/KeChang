@@ -95,7 +95,6 @@ const ENTRY_DEFS = {
         { id: 's-knowledge', label: '知识库', icon: 'Collection', route: '/student/knowledge', color: '#20c4cc' },
         { id: 's-evaluations', label: '教学评价', icon: 'List', route: '/student/evaluations', color: '#c4956a' },
         { id: 's-surveys', label: '问卷调查', icon: 'Document', route: '/student/surveys', color: '#20c4cc' },
-        { id: 's-announcements', label: '课程公告', icon: 'Bell', route: '/student/announcements', color: '#b08968' },
         { id: 's-messages', label: '私信', icon: 'ChatLineSquare', route: '/student/messages', color: '#20c4cc' }
     ],
     teacher: [
@@ -112,7 +111,6 @@ const ENTRY_DEFS = {
         { id: 't-surveys', label: '问卷管理', icon: 'Document', route: '/teacher/surveys', color: '#20c4cc' },
         { id: 't-evaluations', label: '教学评价', icon: 'List', route: '/teacher/evaluations', color: '#c4956a' },
         { id: 't-posts', label: '互动问答', icon: 'ChatDotRound', route: '/teacher/posts', color: '#7a9fb5' },
-        { id: 't-announcements', label: '公告管理', icon: 'Bell', route: '/teacher/announcements', color: '#b08968' },
         { id: 't-messages', label: '私信', icon: 'ChatLineSquare', route: '/teacher/messages', color: '#20c4cc' }
     ],
     admin: [
