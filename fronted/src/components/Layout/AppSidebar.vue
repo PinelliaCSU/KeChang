@@ -1,5 +1,6 @@
 <template>
-  <aside class="sidebar-wrapper" :class="{ collapsed }">
+  <aside class="sidebar-wrapper" :class="{ collapsed, resizing: isResizing }"
+    :style="{ width: collapsed ? '64px' : sidebarWidth + 'px' }">
     <el-menu :default-active="activeMenu" :default-openeds="openMenus" :collapse="collapsed" :router="true"
       background-color="transparent" text-color="#4b5563" active-text-color="#20c4cc" class="sidebar-menu">
       <template v-for="item in menuItems" :key="item.path">
@@ -29,11 +30,14 @@
         <Expand v-else />
       </el-icon>
     </button>
+
+    <!-- 拖拽调整宽度手柄 -->
+    <div v-if="!collapsed" class="sidebar-resize-handle" @mousedown.prevent="startResize"></div>
   </aside>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 
@@ -41,6 +45,42 @@ const route = useRoute()
 const userStore = useUserStore()
 const collapsed = ref(false)
 const activeMenu = computed(() => route.path)
+
+// 侧边栏拖拽调整宽度
+const SIDEBAR_MIN_WIDTH = 112
+const SIDEBAR_MAX_WIDTH = 400
+const sidebarWidth = ref(SIDEBAR_MIN_WIDTH)
+const isResizing = ref(false)
+
+function startResize(e) {
+  isResizing.value = true
+  document.addEventListener('mousemove', onMouseMove)
+  document.addEventListener('mouseup', stopResize)
+  // 防止拖动时选中文本
+  document.body.style.userSelect = 'none'
+  document.body.style.cursor = 'col-resize'
+}
+
+function onMouseMove(e) {
+  if (!isResizing.value) return
+  const newWidth = Math.min(SIDEBAR_MAX_WIDTH, Math.max(SIDEBAR_MIN_WIDTH, e.clientX))
+  sidebarWidth.value = newWidth
+}
+
+function stopResize() {
+  isResizing.value = false
+  document.removeEventListener('mousemove', onMouseMove)
+  document.removeEventListener('mouseup', stopResize)
+  document.body.style.userSelect = ''
+  document.body.style.cursor = ''
+}
+
+// 展开侧边栏时恢复为最小宽度
+watch(collapsed, (val) => {
+  if (!val) {
+    sidebarWidth.value = SIDEBAR_MIN_WIDTH
+  }
+})
 
 const teacherMenus = [
   { path: '/teacher/dashboard', title: '首页', icon: 'Odometer' },
@@ -173,7 +213,6 @@ const openMenus = computed(() => {
 
 <style scoped>
 .sidebar-wrapper {
-  width: 112px;
   min-height: calc(100vh - 56px);
   background: #fff;
   border-right: 1px solid #dcdfe6;
@@ -182,10 +221,16 @@ const openMenus = computed(() => {
   display: flex;
   flex-direction: column;
   box-shadow: none;
+  flex-shrink: 0;
+}
+
+.sidebar-wrapper.resizing {
+  transition: none;
+  user-select: none;
 }
 
 .sidebar-wrapper.collapsed {
-  width: 64px;
+  width: 64px !important;
 }
 
 .sidebar-menu {
@@ -196,7 +241,42 @@ const openMenus = computed(() => {
 }
 
 .sidebar-menu:not(.el-menu--collapse) {
-  width: 112px;
+  width: 100%;
+}
+
+/* 拖拽调整宽度手柄 */
+.sidebar-resize-handle {
+  position: absolute;
+  top: 0;
+  right: -4px;
+  width: 8px;
+  height: 100%;
+  cursor: col-resize;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background var(--bio-dur-normal) var(--bio-ease-out);
+}
+
+.sidebar-resize-handle::after {
+  content: '';
+  width: 2px;
+  height: 32px;
+  border-radius: 1px;
+  background: #dcdfe6;
+  transition: background var(--bio-dur-normal) var(--bio-ease-out), height var(--bio-dur-normal) var(--bio-ease-out);
+}
+
+.sidebar-resize-handle:hover::after,
+.sidebar-resize-handle:active::after {
+  background: #20c4cc;
+  height: 48px;
+}
+
+.sidebar-wrapper.resizing .sidebar-resize-handle::after {
+  background: #20c4cc;
+  height: 48px;
 }
 
 .sidebar-menu :deep(.el-menu),
