@@ -2,6 +2,8 @@ package com.kechang.controller.exam;
 
 import com.kechang.common.PageResult;
 import com.kechang.common.Result;
+import com.kechang.dto.AiGenerateRequest;
+import com.kechang.dto.AiPaperResult;
 import com.kechang.dto.ExamSubmitDTO;
 import com.kechang.dto.PaperCreateDTO;
 import com.kechang.entity.Exam;
@@ -19,7 +21,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
@@ -95,10 +96,8 @@ public class ExamController {
 
     @PostMapping("/api/papers/ai-generate")
     @PreAuthorize("hasAuthority('ROLE_TEACHER')")
-    public Result<Map<String, Object>> aiGenerate(@RequestParam(required = false) String knowledgePoints,
-            @RequestParam(required = false) String difficulty,
-            @RequestParam(required = false) String types) {
-        return Result.success(examService.aiGeneratePaper(knowledgePoints, difficulty, types));
+    public Result<AiPaperResult> aiGenerate(@RequestBody AiGenerateRequest req) {
+        return Result.success(examService.aiGeneratePaper(req));
     }
 
     @GetMapping("/api/papers/{id}")

@@ -4,6 +4,8 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.kechang.common.BusinessException;
 import com.kechang.common.PageResult;
+import com.kechang.dto.AiGenerateRequest;
+import com.kechang.dto.AiPaperResult;
 import com.kechang.dto.ExamSubmitDTO;
 import com.kechang.dto.PaperCreateDTO;
 import com.kechang.entity.*;
@@ -40,6 +42,7 @@ public class ExamService {
     private final GradeService gradeService;
     private final NotificationService notificationService;
     private final OperationLogService operationLogService;
+    private final BailianApiService bailianApiService;
 
     // ==================== 试题库 ====================
     public PageResult<Question> getQuestionList(int page, int size, String questionType,
@@ -134,16 +137,54 @@ public class ExamService {
     }
 
     /**
-     * AI 智能组卷（模拟）
+     * AI 智能组卷 — 调用阿里百炼 API 从题库中选题
      */
-    public Map<String, Object> aiGeneratePaper(String knowledgePoints, String difficulty, String types) {
-        // 模拟 AI 组卷：根据条件查询题库，随机选取
-        List<Question> all = questionMapper.selectList(new LambdaQueryWrapper<Question>()
-                .like(StringUtils.hasText(knowledgePoints), Question::getKnowledgePoint, knowledgePoints));
-        Map<String, Object> result = new HashMap<>();
-        result.put("totalQuestions", all.size());
-        result.put("message", "AI 组卷功能基于知识库检索，共匹配 " + all.size() + " 道题目，建议选择其中合适题目手动组卷");
-        result.put("suggestedQuestions", all.stream().limit(20).collect(Collectors.toList()));
+    public AiPaperResult aiGeneratePaper(AiGenerateRequest req) {
+        // 课程 ID 必填
+        if (req.getCourseId() == null) {
+            throw BusinessException.badRequest("请选择所属课程");
+        }
+
+        // 查询候选题目
+        LambdaQueryWrapper<Question> w = new LambdaQueryWrapper<>();
+        w.eq(Question::getCourseId, req.getCourseId());
+        if (StringUtils.hasText(req.getKnowledgePoints())) {
+            w.like(Question::getKnowledgePoint, req.getKnowledgePoints());
+        }
+        if (req.getDifficulty() != null) {
+            w.eq(Question::getDifficulty, req.getDifficulty());
+        }
+        if (!req.getTypeList().isEmpty()) {
+            w.in(Question::getQuestionType, req.getTypeList());
+        }
+
+        List<Question> candidates = questionMapper.selectList(w);
+        if (candidates.isEmpty()) {
+            throw BusinessException.badRequest("题库中没有符合条件的题目，请调整筛选条件");
+        }
+
+        // 如果候选题目少于期望题数，给出提示但仍继续
+        int expected = req.getQuestionCount() != null ? req.getQuestionCount() : 10;
+        if (candidates.size() < expected) {
+            // 候选不足，使用全部候选题目
+            expected = candidates.size();
+        }
+
+        // 调用 AI 选题
+        AiPaperResult result = bailianApiService.generatePaper(
+                candidates,
+                req.getKnowledgePoints(),
+                req.getDifficulty(),
+                req.getTypeList(),
+                expected,
+                req.getTotalScore()
+        );
+
+        // 如果用户指定了试卷名称则使用，否则用 AI 生成的
+        if (StringUtils.hasText(req.getPaperName())) {
+            result.setPaperName(req.getPaperName());
+        }
+
         return result;
     }
 

@@ -29,3 +29,7 @@ spring:
 mybatis-plus:
   configuration:
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+
+# 阿里百炼（DashScope）AI 配置（开发环境）
+bailian:
+  api-key: ${BAILIAN_API_KEY:sk-09dd1907b09e4e168ec2bf1647951a83}

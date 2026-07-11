@@ -68,3 +68,11 @@ kechang:
     # 安装 LibreOffice 后建议显式配置，Word 转 PDF 才能保留表格、图片和复杂格式
     # Windows 示例："C:/Program Files/LibreOffice/program/soffice.exe"
     soffice-path:
+
+# 阿里百炼（DashScope）AI 配置
+bailian:
+  api-key: ${BAILIAN_API_KEY:your-bailian-api-key}
+  model: qwen-turbo
+  endpoint: https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions
+  connect-timeout: 30
+  read-timeout: 60
