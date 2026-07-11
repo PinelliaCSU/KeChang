@@ -34,4 +34,9 @@ public class Question {
 
     @TableLogic
     private Integer isDeleted;
+
+    /**
+     * 编程题配置（JSON）：仅 questionType = CODE 时使用
+     */
+    private String programmingConfig;
 }

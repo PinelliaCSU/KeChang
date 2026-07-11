@@ -18,6 +18,7 @@
           <el-tab-pane label="判断题" name="JUDGE" />
           <el-tab-pane label="填空题" name="FILL" />
           <el-tab-pane label="简答题" name="ESSAY" />
+          <el-tab-pane label="编程题" name="CODE" />
         </el-tabs>
         <div class="filter-right">
           <el-select v-model="courseFilter" placeholder="所属课程" clearable style="width:180px" @change="fetchQuestions">
@@ -72,6 +73,7 @@
             <el-radio value="JUDGE">判断题</el-radio>
             <el-radio value="FILL">填空题</el-radio>
             <el-radio value="ESSAY">简答题</el-radio>
+            <el-radio value="CODE">编程题</el-radio>
           </el-radio-group>
         </el-form-item>
         <el-form-item label="所属课程">
@@ -128,6 +130,67 @@
             <el-form-item label="知识点"><el-input v-model="form.knowledgePoint" placeholder="如：Java基础" /></el-form-item>
           </el-col>
         </el-row>
+
+        <!-- 编程题专属配置 -->
+        <template v-if="form.questionType === 'CODE'">
+          <el-divider content-position="left">编程配置</el-divider>
+          <el-row :gutter="16">
+            <el-col :span="12">
+              <el-form-item label="编程语言" required>
+                <el-select v-model="progConfig.language" style="width:100%">
+                  <el-option label="C" value="c" />
+                  <el-option label="C++" value="cpp" />
+                  <el-option label="Python" value="python" />
+                  <el-option label="SQL" value="sql" />
+                </el-select>
+              </el-form-item>
+            </el-col>
+            <el-col :span="6">
+              <el-form-item label="时间限制(s)">
+                <el-input-number v-model="progConfig.timeLimit" :min="1" :max="30" style="width:100%" />
+              </el-form-item>
+            </el-col>
+            <el-col :span="6">
+              <el-form-item label="内存限制(MB)">
+                <el-input-number v-model="progConfig.memoryLimit" :min="32" :max="1024" :step="32" style="width:100%" />
+              </el-form-item>
+            </el-col>
+          </el-row>
+          <el-form-item label="模板代码">
+            <el-input v-model="progConfig.templateCode" type="textarea" :rows="4" placeholder="可选，为学生提供起始代码模板" />
+          </el-form-item>
+          <el-form-item label="评分方式">
+            <el-radio-group v-model="progConfig.scoringMode">
+              <el-radio value="perCase">按通过用例比例得分</el-radio>
+              <el-radio value="allOrNothing">全部通过才得分</el-radio>
+            </el-radio-group>
+          </el-form-item>
+
+          <!-- 测试用例管理 -->
+          <el-form-item label="测试用例">
+            <div class="testcase-list">
+              <div v-for="(tc, idx) in progConfig.testCases" :key="idx" class="testcase-item">
+                <div class="tc-header">
+                  <span class="tc-title">用例 {{ idx + 1 }}</span>
+                  <el-switch v-model="tc.visible" active-text="可见" inactive-text="隐藏" size="small" :active-value="true"
+                    :inactive-value="false" />
+                  <el-button size="small" type="danger" circle @click="removeTestCase(idx)">✕</el-button>
+                </div>
+                <el-row :gutter="8">
+                  <el-col :span="12">
+                    <el-input v-model="tc.input" type="textarea" :rows="2" placeholder="输入（stdin）" />
+                  </el-col>
+                  <el-col :span="12">
+                    <el-input v-model="tc.expectedOutput" type="textarea" :rows="2" placeholder="预期输出" />
+                  </el-col>
+                </el-row>
+              </div>
+              <el-button size="small" type="primary" plain @click="addTestCase" style="margin-top:8px">
+                + 添加测试用例
+              </el-button>
+            </div>
+          </el-form-item>
+        </template>
       </el-form>
       <template #footer>
         <el-button @click="dialogVisible = false">取消</el-button>
@@ -162,8 +225,22 @@ const optionList = ref(['', '', '', ''])
 const correctSingle = ref(0)
 const correctMulti = ref([])
 
+// 编程题配置
+const progConfig = reactive({
+  language: 'cpp',
+  templateCode: '',
+  timeLimit: 5,
+  memoryLimit: 256,
+  scoringMode: 'perCase',
+  testCases: []
+})
+const addTestCase = () => {
+  progConfig.testCases.push({ input: '', expectedOutput: '', visible: true })
+}
+const removeTestCase = (idx) => progConfig.testCases.splice(idx, 1)
+
 const typeTag = (t) => ({ SINGLE: 'primary', MULTI: 'success', JUDGE: 'warning', FILL: 'info', ESSAY: 'danger' }[t] || 'info')
-const typeLabel = (t) => ({ SINGLE: '单选', MULTI: '多选', JUDGE: '判断', FILL: '填空', ESSAY: '简答' }[t] || t)
+const typeLabel = (t) => ({ SINGLE: '单选', MULTI: '多选', JUDGE: '判断', FILL: '填空', ESSAY: '简答', CODE: '编程' }[t] || t)
 
 const fetchQuestions = async () => {
   loading.value = true
@@ -195,6 +272,8 @@ const resetForm = () => {
   form.analysis = ''; form.score = 5; form.difficulty = 3; form.knowledgePoint = ''
   optionList.value = ['', '', '', '']
   correctSingle.value = 0; correctMulti.value = []
+  progConfig.language = 'cpp'; progConfig.templateCode = ''; progConfig.timeLimit = 5
+  progConfig.memoryLimit = 256; progConfig.scoringMode = 'perCase'; progConfig.testCases = []
 }
 
 const openCreate = () => {
@@ -216,6 +295,19 @@ const openEdit = (row) => {
     } else {
       correctMulti.value = parseMultiAnswer(row.answer).map(answerToOptionIndex).filter(i => i >= 0)
     }
+  } else if (row.questionType === 'CODE') {
+    // 恢复编程题配置
+    try {
+      const cfg = JSON.parse(row.programmingConfig || '{}')
+      progConfig.language = cfg.language || 'cpp'
+      progConfig.templateCode = cfg.templateCode || ''
+      progConfig.timeLimit = cfg.timeLimit || 5
+      progConfig.memoryLimit = cfg.memoryLimit || 256
+      progConfig.scoringMode = cfg.scoringMode || 'perCase'
+      progConfig.testCases = (cfg.testCases || []).concat(cfg.hiddenTestCases || []).map(tc => ({
+        ...tc, visible: cfg.testCases?.includes(tc) || false
+      }))
+    } catch { progConfig.testCases = [] }
   }
   dialogVisible.value = true
 }
@@ -268,15 +360,39 @@ const handleSubmit = async () => {
     if (compactIndexes.length === 0) { ElMessage.warning('请选择已填写的正确答案'); return }
     answer = compactIndexes.map(optionLabel).join(',')
   }
-  if (!answer && form.questionType !== 'ESSAY') { ElMessage.warning('请设置正确答案'); return }
+  if (!answer && form.questionType !== 'ESSAY' && form.questionType !== 'CODE') { ElMessage.warning('请设置正确答案'); return }
+  // 编程题校验
+  if (form.questionType === 'CODE') {
+    if (!progConfig.language) { ElMessage.warning('请选择编程语言'); return }
+    if (progConfig.testCases.length === 0) { ElMessage.warning('请至少添加1个测试用例'); return }
+    if (progConfig.testCases.some(tc => !tc.input && !tc.expectedOutput)) {
+      ElMessage.warning('请完善所有测试用例的输入和预期输出'); return
+    }
+  }
 
   submitting.value = true
   try {
+    // 构建编程配置
+    let programmingConfig = null
+    if (form.questionType === 'CODE') {
+      const visibleCases = progConfig.testCases.filter(tc => tc.visible)
+      const hiddenCases = progConfig.testCases.filter(tc => !tc.visible)
+      programmingConfig = JSON.stringify({
+        language: progConfig.language,
+        templateCode: progConfig.templateCode,
+        timeLimit: progConfig.timeLimit,
+        memoryLimit: progConfig.memoryLimit,
+        scoringMode: progConfig.scoringMode,
+        testCases: visibleCases.map(tc => ({ input: tc.input, expectedOutput: tc.expectedOutput })),
+        hiddenTestCases: hiddenCases.map(tc => ({ input: tc.input, expectedOutput: tc.expectedOutput }))
+      })
+    }
     const data = {
       questionType: form.questionType, courseId: form.courseId, content: form.content,
       options: (form.questionType === 'SINGLE' || form.questionType === 'MULTI') ? JSON.stringify(optionList.value.filter(o => o.trim())) : null,
       answer: answer, analysis: form.analysis, score: form.score,
-      difficulty: form.difficulty, knowledgePoint: form.knowledgePoint
+      difficulty: form.difficulty, knowledgePoint: form.knowledgePoint,
+      programmingConfig: programmingConfig
     }
     if (isEdit.value) {
       await examApi.updateQuestion(editId.value, data)
@@ -408,5 +524,32 @@ onMounted(() => { fetchCourses(); fetchQuestions() })
 
 :deep(.kechang-table .el-table__body tr.el-table__row:hover td) {
   background-color: rgba(32, 196, 204, 0.08) !important;
+}
+
+.testcase-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+.testcase-item {
+  background: #f9fafb;
+  border-radius: 8px;
+  padding: 12px;
+  border: 1px solid #e5e7eb;
+}
+
+.tc-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.tc-title {
+  font-weight: 600;
+  font-size: 13px;
+  color: #374151;
 }
 </style>

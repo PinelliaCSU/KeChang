@@ -48,6 +48,9 @@ services:
       SPRING_REDIS_PASSWORD: redis123
     ports:
       - "8080:8080"
+    volumes:
+      # 挂载 Docker socket，允许后端创建沙箱容器执行学生代码
+      - /var/run/docker.sock:/var/run/docker.sock
     networks:
       - kechang-net
 

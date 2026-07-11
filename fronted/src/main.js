@@ -5,9 +5,12 @@ import 'element-plus/dist/index.css'
 import './styles/element-override.css'
 import zhCn from 'element-plus/dist/locale/zh-cn.mjs'
 
+// Monaco Editor Worker 配置（必须在任何 Monaco 使用前加载）
+import './utils/monacoSetup'
+
 // 按需导入实际使用的图标（替代全局注册 ~200+ 图标，减少 ~300KB 打包体积）
 import {
-  ArrowDown, ArrowLeft, ArrowRight, Bell, Calendar, ChatDotRound, ChatLineSquare,
+  ArrowDown, ArrowLeft, ArrowRight, Bell, Calendar, CaretRight, ChatDotRound, ChatLineSquare,
   Checked, CircleCheck, CircleCheckFilled, CircleCloseFilled, Clock, Close,
   Collection, Connection, DataAnalysis, Delete, Document, DocumentCopy, Edit, Expand,
   Fold, Folder, FullScreen, Hide, Iphone, List, Loading, Location, Notebook,
@@ -23,7 +26,7 @@ const app = createApp(App)
 
 // 按需注册实际使用的图标
 const icons = {
-  ArrowDown, ArrowLeft, ArrowRight, Bell, Calendar, ChatDotRound, ChatLineSquare,
+  ArrowDown, ArrowLeft, ArrowRight, Bell, Calendar, CaretRight, ChatDotRound, ChatLineSquare,
   Checked, CircleCheck, CircleCheckFilled, CircleCloseFilled, Clock, Close,
   Collection, Connection, DataAnalysis, Delete, Document, DocumentCopy, Edit, Expand,
   Fold, Folder, FullScreen, Hide, Iphone, List, Loading, Location, Notebook,

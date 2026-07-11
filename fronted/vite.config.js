@@ -51,6 +51,7 @@ export default defineConfig(({ mode }) => {
           manualChunks: {
             'element-plus': ['element-plus'],
             'echarts': ['echarts'],
+            'monaco-editor': ['monaco-editor'],
             'vue-vendor': ['vue', 'vue-router', 'pinia']
           }
         }

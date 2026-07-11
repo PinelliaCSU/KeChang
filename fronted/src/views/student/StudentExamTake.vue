@@ -27,7 +27,8 @@
             <span><span class="dot current-dot"></span> 当前</span>
             <span><span class="dot marked-dot"></span> 标记</span>
           </div>
-          <el-button type="danger" style="width:100%;margin-top:16px" :loading="submitting" @click="confirmSubmit">交卷</el-button>
+          <el-button type="danger" style="width:100%;margin-top:16px" :loading="submitting"
+            @click="confirmSubmit">交卷</el-button>
         </div>
       </div>
 
@@ -59,6 +60,20 @@
               <template v-else-if="currentQuestion.questionType === 'FILL'">
                 <el-input v-model="answers[currentQuestion.id]" placeholder="请输入答案" size="large" />
               </template>
+              <template v-else-if="currentQuestion.questionType === 'CODE'">
+                <div class="code-area">
+                  <CodeEditor v-model="answers[currentQuestion.id]" :language="getCodeLanguage(currentQuestion)"
+                    :template-code="getCodeTemplate(currentQuestion)" :show-run-button="true" :show-results="true"
+                    :run-results="runResults" :running="running" @run="handleCodeRun" />
+                  <div v-if="getCodeTestCases(currentQuestion).length" class="sample-cases">
+                    <h4 class="sample-cases-title">样例测试用例</h4>
+                    <div v-for="(tc, idx) in getCodeTestCases(currentQuestion)" :key="idx" class="sample-case">
+                      <div><b>输入：</b><code>{{ tc.input }}</code></div>
+                      <div><b>预期输出：</b><code>{{ tc.expectedOutput }}</code></div>
+                    </div>
+                  </div>
+                </div>
+              </template>
               <template v-else>
                 <el-input v-model="answers[currentQuestion.id]" type="textarea" :rows="5" placeholder="请输入作答内容" />
               </template>
@@ -78,8 +93,9 @@
 <script setup>
 import { ref, reactive, computed, onMounted, onBeforeUnmount, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { examApi } from '@/api'
+import { examApi, codeApi } from '@/api'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import CodeEditor from '@/components/CodeEditor.vue'
 
 const route = useRoute(); const router = useRouter()
 const exam = ref(null)
@@ -91,6 +107,8 @@ const currentIndex = ref(0)
 const remaining = ref(0)
 const cheatCount = ref(0)
 const submitting = ref(false)
+const running = ref(false)
+const runResults = ref([])
 let timer = null
 
 const currentQuestion = computed(() => questions.value[currentIndex.value] || null)
@@ -120,6 +138,11 @@ onBeforeUnmount(() => {
   document.removeEventListener('visibilitychange', handleVisibilityChange)
 })
 
+// 切换题目时清空上一次的运行结果
+watch(currentIndex, () => {
+  runResults.value = []
+})
+
 function handleVisibilityChange() {
   if (document.hidden) cheatCount.value++
 }
@@ -135,6 +158,11 @@ function initializeAnswerState() {
   questions.value.forEach(q => {
     if (q.questionType === 'MULTI' && !Array.isArray(multiAnswers[q.id])) {
       multiAnswers[q.id] = []
+    } else if (q.questionType === 'CODE') {
+      // 编程题预填模板代码
+      if (!answers[q.id]) {
+        answers[q.id] = getCodeTemplate(q)
+      }
     } else if (!answers[q.id]) {
       answers[q.id] = ''
     }
@@ -175,8 +203,37 @@ function isQuestionAnswered(question) {
 }
 
 function typeLabel(type) {
-  const map = { SINGLE: '单选题', MULTI: '多选题', JUDGE: '判断题', FILL: '填空题', ESSAY: '简答题' }
+  const map = { SINGLE: '单选题', MULTI: '多选题', JUDGE: '判断题', FILL: '填空题', ESSAY: '简答题', CODE: '编程题' }
   return map[type] || type
+}
+
+function getCodeLanguage(question) {
+  try { const cfg = JSON.parse(question.programmingConfig || '{}'); return cfg.language || 'cpp' } catch { return 'cpp' }
+}
+
+function getCodeTemplate(question) {
+  try { const cfg = JSON.parse(question.programmingConfig || '{}'); return cfg.templateCode || '' } catch { return '' }
+}
+
+function getCodeTestCases(question) {
+  try { const cfg = JSON.parse(question.programmingConfig || '{}'); return cfg.testCases || [] } catch { return [] }
+}
+
+async function handleCodeRun({ code, language }) {
+  if (running.value) return
+  running.value = true
+  runResults.value = []
+  try {
+    const testCases = getCodeTestCases(currentQuestion.value).map(tc => ({
+      input: tc.input || '', expectedOutput: tc.expectedOutput || ''
+    }))
+    const res = await codeApi.run({ language, sourceCode: code, testCases })
+    if (res.data.code === 200) {
+      runResults.value = (res.data.data.caseResults || []).map(r => ({ ...r, passed: r.passed }))
+    }
+  } catch (e) {
+    ElMessage.error('代码运行失败')
+  } finally { running.value = false }
 }
 
 function toggleMark(qid) {
@@ -391,5 +448,54 @@ async function submitExam() {
   padding-top: 20px;
   border-top: 1px solid #f0f0f0;
   justify-content: center;
+}
+
+.sample-cases {
+  margin-top: 16px;
+  padding: 12px 16px;
+  background: #f9fafb;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+}
+
+.sample-cases-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+  margin: 0 0 10px 0;
+}
+
+.sample-case {
+  padding: 8px 0;
+  border-bottom: 1px dashed #e5e7eb;
+  font-size: 13px;
+  line-height: 1.8;
+}
+
+.sample-case:last-child {
+  border-bottom: none;
+}
+
+.sample-case code {
+  background: #f3f4f6;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-family: 'Cascadia Code', 'Consolas', monospace;
+  font-size: 12px;
+}
+
+.code-area {
+  max-height: calc(100vh - 340px);
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.code-area::-webkit-scrollbar {
+  width: 6px;
+}
+
+.code-area::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 3px;
 }
 </style>
