@@ -13,9 +13,10 @@ services:
     ports:
       - "3306:3306"
     volumes:
-      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./database/kechang_data.sql:/docker-entrypoint-initdb.d/01-kechang.sql
+      - ./database/my.cnf:/etc/mysql/conf.d/my.cnf
       - mysql_data:/var/lib/mysql
-    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci --innodb-buffer-pool-size=512M --max-connections=200
     networks:
       - kechang-net
 
@@ -40,7 +41,7 @@ services:
       - redis
     environment:
       SPRING_PROFILES_ACTIVE: docker
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/kechang?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/kechang?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai&rewriteBatchedStatements=true&cachePrepStmts=true&useServerPrepStmts=true&useSSL=false&allowPublicKeyRetrieval=true
       SPRING_DATASOURCE_USERNAME: kechang
       SPRING_DATASOURCE_PASSWORD: kechang123
       SPRING_REDIS_HOST: redis

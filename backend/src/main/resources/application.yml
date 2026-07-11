@@ -2,6 +2,16 @@
 
 server:
   port: 8080
+  # GZIP 压缩：减少 JSON 响应体积 60%+
+  compression:
+    enabled: true
+    min-response-size: 1024
+    mime-types: application/json,application/xml,text/html,text/plain,application/javascript
+  tomcat:
+    threads:
+      max: 200
+      min-spare: 10
+    accept-count: 100
 
 spring:
   application:
@@ -33,7 +43,8 @@ mybatis-plus:
       logic-not-delete-value: 0
   configuration:
     map-underscore-to-camel-case: true
-    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    # SQL 日志仅在 dev 环境启用，生产环境关闭以提升性能
+    # log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
 
 # JWT 配置
 jwt:

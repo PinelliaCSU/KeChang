@@ -49,7 +49,7 @@
                             <el-tag :type="statusTagType(courseStatus)">{{ courseStatus }}</el-tag>
                         </el-descriptions-item>
                         <el-descriptions-item label="课程简介" :span="2">{{ course.description || '暂无课程简介'
-                            }}</el-descriptions-item>
+                        }}</el-descriptions-item>
                     </el-descriptions>
                 </el-tab-pane>
 
@@ -70,7 +70,7 @@
                             <div class="student-tags">
                                 <el-tag v-if="s.major" size="small" effect="plain">{{ s.major }}</el-tag>
                                 <el-tag v-if="s.className" size="small" type="info" effect="plain">{{ s.className
-                                    }}</el-tag>
+                                }}</el-tag>
                                 <el-tag v-if="s.grade" size="small" type="warning" effect="plain">{{ s.grade }}</el-tag>
                             </div>
                         </div>
@@ -279,8 +279,11 @@ const fetchCourse = async () => {
 
 /** 检测当前学生是否已加入该课程 */
 const checkEnrolled = async () => {
+    // 优先使用课程详情中的 enrolled 字段
+    if (course.value.enrolled !== undefined) return
     try {
-        const res = await courseApi.list({ page: 1, size: 999 })
+        // 仅获取最近一页（size=20），已加入的课程通常排在最前
+        const res = await courseApi.list({ page: 1, size: 20 })
         if (res.data.code === 200) {
             const data = res.data.data
             const list = Array.isArray(data?.records)
