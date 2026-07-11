@@ -181,7 +181,7 @@
         <!-- 资源预览弹窗 -->
         <el-dialog v-model="previewVisible" title="资源预览" width="80%" top="5vh" destroy-on-close>
             <FilePreview v-if="previewResource" :url="previewResource.fileUrl" :name="previewResource.resourceName"
-                :type="previewResource.resourceType" />
+                :type="previewResource.resourceType" :resource-id="previewResource.id" :course-id="courseId()" />
         </el-dialog>
     </div>
 </template>
@@ -279,8 +279,11 @@ const fetchCourse = async () => {
 
 /** 检测当前学生是否已加入该课程 */
 const checkEnrolled = async () => {
+    // 优先使用课程详情中的 enrolled 字段
+    if (course.value.enrolled !== undefined) return
     try {
-        const res = await courseApi.list({ page: 1, size: 999 })
+        // 仅获取最近一页（size=20），已加入的课程通常排在最前
+        const res = await courseApi.list({ page: 1, size: 20 })
         if (res.data.code === 200) {
             const data = res.data.data
             const list = Array.isArray(data?.records)

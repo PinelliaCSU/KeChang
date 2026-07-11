@@ -125,13 +125,13 @@
 
     <el-dialog v-model="previewVisible" title="资源预览" width="80%" top="5vh" destroy-on-close>
       <FilePreview v-if="previewResource" :url="previewResource.fileUrl" :name="previewResource.resourceName"
-        :type="previewResource.resourceType" />
+        :type="previewResource.resourceType" :resource-id="previewResource.id" :course-id="courseId()" />
     </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { assignmentApi, courseApi, knowledgeApi, announcementApi } from '@/api'
 import { ElMessage } from 'element-plus'
@@ -173,8 +173,27 @@ const fetchCourseData = async () => {
   }
 }
 
-const resourcesByChapter = (chapterId) => resources.value.filter(resource => resource.chapterId === chapterId)
-const assignmentsByChapter = (chapterId) => assignments.value.filter(assignment => assignment.chapterId === chapterId)
+// 使用 computed 按章节分组为 Map，O(1) 查找替代每次渲染时 O(n) filter
+const resourcesByChapterMap = computed(() => {
+  const map = new Map()
+  resources.value.forEach(r => {
+    const arr = map.get(r.chapterId) || []
+    arr.push(r)
+    map.set(r.chapterId, arr)
+  })
+  return map
+})
+const assignmentsByChapterMap = computed(() => {
+  const map = new Map()
+  assignments.value.forEach(a => {
+    const arr = map.get(a.chapterId) || []
+    arr.push(a)
+    map.set(a.chapterId, arr)
+  })
+  return map
+})
+const resourcesByChapter = (chapterId) => resourcesByChapterMap.value.get(chapterId) || []
+const assignmentsByChapter = (chapterId) => assignmentsByChapterMap.value.get(chapterId) || []
 const formatDate = (value) => value ? String(value).replace('T', ' ').slice(0, 16) : '--'
 
 const formatTime = (t) => {

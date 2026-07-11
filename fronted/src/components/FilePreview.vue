@@ -9,33 +9,41 @@
         </div>
       </div>
       <div class="toolbar-actions">
+        <el-button v-if="courseId && resourceId" size="small" type="warning" plain :loading="summaryLoading"
+          @click="toggleSummary">
+          {{ summaryVisible ? '收起总结' : 'AI 总结' }}
+        </el-button>
         <el-button size="small" @click="openNewWindow">新窗口</el-button>
         <el-button v-if="hasPreviewCopy" size="small" @click="openOriginal">原文件</el-button>
         <el-button size="small" type="primary" plain @click="downloadFile">下载</el-button>
       </div>
     </div>
 
+    <!-- AI 总结面板 -->
+    <div v-if="summaryVisible" class="summary-panel">
+      <div class="summary-header">
+        <span class="summary-title">🤖 AI 课件总结</span>
+        <el-button size="small" text @click="summaryVisible = false">✕</el-button>
+      </div>
+      <div class="summary-body" v-loading="summaryLoading">
+        <div v-if="summaryError" class="summary-error">{{ summaryError }}</div>
+        <div v-else-if="summaryText" class="summary-content" v-html="renderedSummary"></div>
+        <div v-else-if="!summaryLoading" class="summary-empty">
+          点击「AI 总结」按钮，让 AI 帮你快速梳理课件要点。
+        </div>
+      </div>
+    </div>
+
     <div class="preview-body" v-loading="loading">
-      <img
-        v-if="previewType === 'image'"
-        class="image-preview"
-        :src="resolvedPreviewUrl"
-        :alt="fileName"
-        @load="loading = false"
-        @error="loading = false"
-      />
-      <iframe v-else-if="previewType === 'pdf'" class="frame-preview" :src="resolvedPreviewUrl" @load="loading = false"></iframe>
+      <img v-if="previewType === 'image'" class="image-preview" :src="resolvedPreviewUrl" :alt="fileName"
+        @load="loading = false" @error="loading = false" />
+      <iframe v-else-if="previewType === 'pdf'" class="frame-preview" :src="resolvedPreviewUrl"
+        @load="loading = false"></iframe>
 
       <div v-else-if="previewType === 'video'" class="video-workspace">
         <div class="video-stage">
-          <video
-            ref="videoRef"
-            class="media-preview"
-            :src="resolvedPreviewUrl"
-            controls
-            @loadeddata="onVideoLoaded"
-            @timeupdate="onVideoTimeUpdate"
-          ></video>
+          <video ref="videoRef" class="media-preview" :src="resolvedPreviewUrl" controls @loadeddata="onVideoLoaded"
+            @timeupdate="onVideoTimeUpdate"></video>
           <div class="video-meta">
             <span>当前 {{ formatTime(currentTime) }}</span>
             <span v-if="duration">总时长 {{ formatTime(duration) }}</span>
@@ -55,15 +63,8 @@
             <button type="button" class="time-chip active" @click="seekTo(currentTime)">
               {{ formatTime(currentTime) }}
             </button>
-            <el-input
-              v-model="draftAnnotation"
-              type="textarea"
-              :rows="3"
-              maxlength="240"
-              show-word-limit
-              placeholder="写下这个时间点的想法、问题或重点"
-              @keydown.ctrl.enter.prevent="addAnnotation"
-            />
+            <el-input v-model="draftAnnotation" type="textarea" :rows="3" maxlength="240" show-word-limit
+              placeholder="写下这个时间点的想法、问题或重点" @keydown.ctrl.enter.prevent="addAnnotation" />
             <el-button type="primary" :disabled="!draftAnnotation.trim()" @click="addAnnotation">
               添加批注
             </el-button>
@@ -85,7 +86,8 @@
         </aside>
       </div>
 
-      <audio v-else-if="previewType === 'audio'" class="audio-preview" :src="resolvedPreviewUrl" controls @loadeddata="loading = false"></audio>
+      <audio v-else-if="previewType === 'audio'" class="audio-preview" :src="resolvedPreviewUrl" controls
+        @loadeddata="loading = false"></audio>
       <pre v-else-if="previewType === 'text'" class="text-preview">{{ textContent }}</pre>
       <div v-else class="fallback-preview">
         <div class="fallback-icon">{{ typeLabel }}</div>
@@ -101,15 +103,17 @@
 </template>
 
 <script setup>
-import { computed, ref, watch } from 'vue'
-import { uploadApi } from '@/api'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
+import { courseApi, uploadApi, videoAnnotationApi } from '@/api'
 import { useUserStore } from '@/stores/user'
 import { getFileExtension, getFileName, resolveFileUrl } from '@/utils/fileUrl'
 
 const props = defineProps({
   url: { type: String, default: '' },
   name: { type: String, default: '' },
-  type: { type: String, default: '' }
+  type: { type: String, default: '' },
+  resourceId: { type: [Number, String], default: null },
+  courseId: { type: [Number, String], default: null }
 })
 
 const userStore = useUserStore()
@@ -123,6 +127,14 @@ const currentTime = ref(0)
 const duration = ref(0)
 const draftAnnotation = ref('')
 const annotations = ref([])
+let annotationSaveTimer = null
+
+// AI 总结相关状态
+const summaryVisible = ref(false)
+const summaryLoading = ref(false)
+const summaryText = ref('')
+const summaryError = ref('')
+const summaryFetched = ref(false)
 
 const resolvedOriginalUrl = computed(() => resolveFileUrl(props.url))
 const effectivePreviewUrl = computed(() => previewUrl.value || props.url)
@@ -131,9 +143,10 @@ const hasPreviewCopy = computed(() => previewUrl.value && previewUrl.value !== p
 const fileName = computed(() => props.name || getFileName(props.url))
 const extension = computed(() => getFileExtension(fileName.value || props.url))
 const previewExtension = computed(() => getFileExtension(effectivePreviewUrl.value || fileName.value))
+const annotationFileKey = computed(() => props.url || fileName.value || resolvedPreviewUrl.value)
 const annotationKey = computed(() => {
   const userKey = userStore.userId || userStore.username || 'guest'
-  return `kechang_video_annotations:${userKey}:${props.url || resolvedPreviewUrl.value || fileName.value}`
+  return `kechang_video_annotations:${userKey}:${annotationFileKey.value}`
 })
 
 const previewType = computed(() => {
@@ -202,19 +215,54 @@ const loadText = async () => {
   }
 }
 
-const loadAnnotations = () => {
-  annotations.value = []
-  if (previewType.value !== 'video') return
+const readLocalAnnotations = () => {
   try {
     const raw = localStorage.getItem(annotationKey.value)
-    annotations.value = raw ? JSON.parse(raw) : []
+    return raw ? JSON.parse(raw) : []
   } catch {
-    annotations.value = []
+    return []
+  }
+}
+
+const loadAnnotations = async () => {
+  annotations.value = []
+  if (previewType.value !== 'video' || !annotationFileKey.value) return
+  try {
+    const res = await videoAnnotationApi.list(annotationFileKey.value)
+    if (res.data.code === 200) {
+      const serverAnnotations = Array.isArray(res.data.data) ? res.data.data : []
+      const localAnnotations = readLocalAnnotations()
+      annotations.value = serverAnnotations.length ? serverAnnotations : localAnnotations
+      localStorage.setItem(annotationKey.value, JSON.stringify(annotations.value))
+      if (!serverAnnotations.length && localAnnotations.length) {
+        await syncAnnotationsToServer(localAnnotations)
+      }
+      return
+    }
+  } catch {
+    // Keep preview usable if the API is temporarily unavailable.
+  }
+  annotations.value = readLocalAnnotations()
+}
+
+const syncAnnotationsToServer = async (payload) => {
+  if (!annotationFileKey.value) return
+  try {
+    await videoAnnotationApi.save(annotationFileKey.value, payload)
+  } catch {
+    // Local cache is already written; the next successful save will resync.
   }
 }
 
 const saveAnnotations = () => {
-  localStorage.setItem(annotationKey.value, JSON.stringify(sortedAnnotations.value))
+  if (previewType.value !== 'video' || !annotationFileKey.value) return
+  const payload = sortedAnnotations.value
+  localStorage.setItem(annotationKey.value, JSON.stringify(payload))
+  if (annotationSaveTimer) window.clearTimeout(annotationSaveTimer)
+  annotationSaveTimer = window.setTimeout(async () => {
+    await syncAnnotationsToServer(payload)
+    annotationSaveTimer = null
+  }, 250)
 }
 
 watch(() => [props.url, fileName.value], loadPreview, { immediate: true })
@@ -259,11 +307,78 @@ const removeAnnotation = (id) => {
   saveAnnotations()
 }
 
+// ==================== AI 总结 ====================
+
+/** 将 AI 返回的 Markdown 文本渲染为简单 HTML */
+const renderedSummary = computed(() => {
+  if (!summaryText.value) return ''
+  let html = summaryText.value
+  // 转义 HTML
+  html = html.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  // 还原加粗 **text**
+  html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+  // 还原标题 ### text
+  html = html.replace(/^### (.+)$/gm, '<h4 class="sm-h4">$1</h4>')
+  html = html.replace(/^## (.+)$/gm, '<h3 class="sm-h3">$1</h3>')
+  html = html.replace(/^# (.+)$/gm, '<h2 class="sm-h2">$1</h2>')
+  // 还原列表项 - item 或 * item
+  html = html.replace(/^[\-\*] (.+)$/gm, '<li>$1</li>')
+  // 还原有序列表 1. item
+  html = html.replace(/^\d+\. (.+)$/gm, '<li>$1</li>')
+  // 换行
+  html = html.replace(/\n\n/g, '</p><p>')
+  html = html.replace(/\n/g, '<br>')
+  // 包裹段落
+  html = '<p>' + html + '</p>'
+  // 修复连续 li 包裹在 ul 中
+  html = html.replace(/((?:<li>.*?<\/li>\s*)+)/g, '<ul>$1</ul>')
+  // 清理空段落
+  html = html.replace(/<p>\s*<\/p>/g, '')
+  html = html.replace(/<p><ul>/g, '<ul>')
+  html = html.replace(/<\/ul><\/p>/g, '</ul>')
+  html = html.replace(/<p><h([234])/g, '<h$1')
+  html = html.replace(/<\/h([234])><\/p>/g, '</h$1>')
+  return html
+})
+
+/** 切换 AI 总结面板 */
+const toggleSummary = async () => {
+  if (summaryVisible.value) {
+    summaryVisible.value = false
+    return
+  }
+  summaryVisible.value = true
+  if (summaryFetched.value) return
+  await fetchSummary()
+}
+
+/** 请求 AI 总结 */
+const fetchSummary = async () => {
+  summaryLoading.value = true
+  summaryError.value = ''
+  try {
+    const res = await courseApi.summarizeResource(props.courseId, props.resourceId)
+    if (res.data.code === 200) {
+      summaryText.value = res.data.data?.summary || ''
+      if (!summaryText.value) {
+        summaryError.value = 'AI 未能生成总结，请稍后重试。'
+      }
+    } else {
+      summaryError.value = res.data.message || '获取 AI 总结失败'
+    }
+  } catch (e) {
+    summaryError.value = 'AI 总结请求失败，请检查网络后重试。'
+  } finally {
+    summaryLoading.value = false
+    summaryFetched.value = true
+  }
+}
+
 const seekTo = async (time) => {
   if (!videoRef.value) return
   videoRef.value.currentTime = Math.max(0, Number(time || 0))
   currentTime.value = videoRef.value.currentTime
-  await videoRef.value.play().catch(() => {})
+  await videoRef.value.play().catch(() => { })
 }
 
 const formatTime = (seconds) => {
@@ -299,6 +414,13 @@ const downloadFile = () => {
   link.rel = 'noopener noreferrer'
   link.click()
 }
+
+onBeforeUnmount(() => {
+  if (annotationSaveTimer) {
+    window.clearTimeout(annotationSaveTimer)
+    syncAnnotationsToServer(sortedAnnotations.value)
+  }
+})
 </script>
 
 <style scoped>
@@ -362,6 +484,91 @@ const downloadFile = () => {
   display: flex;
   flex: 0 0 auto;
   gap: 8px;
+}
+
+/* AI 总结面板 */
+.summary-panel {
+  border-bottom: 1px solid var(--bio-border, #dcdfe6);
+  background: linear-gradient(135deg, #fffbeb 0%, #fefce8 100%);
+}
+
+.summary-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: #fef3c7;
+  border-bottom: 1px solid #fde68a;
+}
+
+.summary-title {
+  font-weight: 700;
+  font-size: 15px;
+  color: #92400e;
+}
+
+.summary-body {
+  padding: 16px 20px;
+  min-height: 60px;
+  max-height: 360px;
+  overflow-y: auto;
+}
+
+.summary-content {
+  font-size: 14px;
+  line-height: 1.75;
+  color: #1f2937;
+}
+
+.summary-content :deep(h2),
+.summary-content :deep(h3),
+.summary-content :deep(h4) {
+  margin: 12px 0 6px;
+  color: #1f2937;
+}
+
+.summary-content :deep(h2) {
+  font-size: 17px;
+}
+
+.summary-content :deep(h3) {
+  font-size: 15px;
+}
+
+.summary-content :deep(h4) {
+  font-size: 14px;
+}
+
+.summary-content :deep(ul) {
+  margin: 6px 0;
+  padding-left: 20px;
+}
+
+.summary-content :deep(li) {
+  margin-bottom: 4px;
+  list-style: disc;
+}
+
+.summary-content :deep(strong) {
+  color: #b45309;
+}
+
+.summary-content :deep(p) {
+  margin: 6px 0;
+}
+
+.summary-error {
+  color: #dc2626;
+  font-size: 14px;
+  text-align: center;
+  padding: 12px 0;
+}
+
+.summary-empty {
+  color: #9ca3af;
+  font-size: 14px;
+  text-align: center;
+  padding: 18px 0;
 }
 
 .preview-body {
@@ -578,6 +785,7 @@ const downloadFile = () => {
 }
 
 @media (max-width: 980px) {
+
   .preview-toolbar,
   .annotation-head {
     align-items: stretch;

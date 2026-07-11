@@ -145,7 +145,8 @@
           <div class="score-row" v-if="ans.questionType === 'ESSAY' || ans.questionType === 'FILL'">
             <span>得分：</span>
             <el-input-number v-model="scoreMap[ans.questionId]" :min="0" :max="ans.questionScore" size="small"
-              style="width:100px" />
+              class="subjective-score-input" data-keyboard-nav-ignore-enter="true" style="width:100px"
+              @keydown.enter.stop="markAndFocusNext(ans.questionId, ans.recordId, $event)" />
             <el-button size="small" type="primary" @click="doMark(ans.questionId, ans.recordId)"
               style="margin-left:8px">确认评分</el-button>
           </div>
@@ -157,6 +158,8 @@
       <el-empty v-else description="暂无答题记录" />
       <template #footer>
         <el-button @click="markDialogVisible = false">关闭</el-button>
+        <el-button type="primary" :loading="markingAll" :disabled="subjectiveAnswers.length === 0"
+          @click="saveAllMarks">提交整卷评分</el-button>
         <el-button type="success" plain :disabled="!hasNextRecord" @click="openNextRecord">批阅下一个</el-button>
       </template>
     </el-dialog>
@@ -164,7 +167,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, computed } from 'vue'
+import { ref, reactive, onMounted, computed, nextTick } from 'vue'
 import { examApi, courseApi } from '@/api'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { computeStatus, statusTagType } from '@/utils/status'
@@ -189,9 +192,18 @@ const markDialogVisible = ref(false)
 const recordAnswers = ref([])
 const scoreMap = reactive({})
 const currentRecord = ref(null)
+const markingAll = ref(false)
 const currentExamName = ref('')
 const currentRecordIndex = computed(() => records.value.findIndex(item => item.id === currentRecord.value?.id))
 const hasNextRecord = computed(() => currentRecordIndex.value >= 0 && currentRecordIndex.value < records.value.length - 1)
+const subjectiveAnswers = computed(() => recordAnswers.value.filter(item => item.questionType === 'ESSAY' || item.questionType === 'FILL'))
+
+const focusFirstSubjectiveScore = async () => {
+  await nextTick()
+  const input = document.querySelector('.el-dialog .subjective-score-input input')
+  input?.focus()
+  input?.select?.()
+}
 
 const statusType = (s) => ({ '未开始': 'info', '进行中': 'success', '已结束': 'warning' }[s] || 'info')
 const typeLabel = (t) => ({ SINGLE: '单选', MULTI: '多选', JUDGE: '判断', FILL: '填空', ESSAY: '简答' }[t] || t)
@@ -288,12 +300,34 @@ const viewRecords = async (row) => {
   currentExamId.value = row.id
   currentExamName.value = row.examName || '考试'
   recordDialogVisible.value = true
+  await refreshRecordList()
+}
+
+const refreshRecordList = async () => {
+  if (!currentExamId.value) return
   recLoading.value = true
   try {
-    const res = await examApi.getRecords(row.id)
-    if (res.data.code === 200) records.value = res.data.data
+    const res = await examApi.getRecords(currentExamId.value)
+    if (res.data.code === 200) {
+      records.value = res.data.data || []
+      if (currentRecord.value?.id) {
+        const latest = records.value.find(item => item.id === currentRecord.value.id)
+        if (latest) currentRecord.value = latest
+      }
+    }
   } catch (e) { /* ignore */ }
   finally { recLoading.value = false }
+}
+
+const refreshCurrentRecordDetail = async () => {
+  if (!currentRecord.value?.id) return
+  try {
+    const res = await examApi.getRecordDetail(currentRecord.value.id)
+    if (res.data.code === 200) {
+      recordAnswers.value = res.data.data || []
+      recordAnswers.value.forEach(a => { scoreMap[a.questionId] = a.score || 0 })
+    }
+  } catch (e) { /* ignore */ }
 }
 
 const viewRecordDetail = async (row) => {
@@ -305,18 +339,49 @@ const viewRecordDetail = async (row) => {
     if (res.data.code === 200) {
       recordAnswers.value = res.data.data || []
       recordAnswers.value.forEach(a => { scoreMap[a.questionId] = a.score || 0 })
+      await focusFirstSubjectiveScore()
     }
   } catch (e) { /* ignore */ }
   finally { recLoading.value = false }
+}
+
+const markAndFocusNext = async (questionId, recordId, event) => {
+  await doMark(questionId, recordId)
+  await nextTick()
+  const inputs = [...document.querySelectorAll('.el-dialog .subjective-score-input input')]
+  const index = inputs.findIndex(input => input === event?.target)
+  const next = inputs[index + 1]
+  next?.focus()
+  next?.select?.()
 }
 
 const doMark = async (questionId, recordId) => {
   try {
     await examApi.mark(recordId, { questionId, score: scoreMap[questionId] || 0 })
     ElMessage.success('评分成功')
-    const current = records.value.find(item => item.id === recordId)
-    if (current) current.totalScore = null
+    await refreshRecordList()
+    await refreshCurrentRecordDetail()
   } catch (e) { /* ignore */ }
+}
+
+const saveAllMarks = async () => {
+  if (!currentRecord.value?.id || subjectiveAnswers.value.length === 0) return
+  const scores = {}
+  subjectiveAnswers.value.forEach(item => {
+    scores[item.questionId] = scoreMap[item.questionId] || 0
+  })
+  markingAll.value = true
+  try {
+    const res = await examApi.markAll(currentRecord.value.id, scores)
+    if (res.data.code === 200) {
+      ElMessage.success('整卷评分已提交')
+      await refreshRecordList()
+      await refreshCurrentRecordDetail()
+    } else {
+      ElMessage.error(res.data.message || '提交评分失败')
+    }
+  } catch (e) { /* ignore */ }
+  finally { markingAll.value = false }
 }
 
 const openNextRecord = () => {

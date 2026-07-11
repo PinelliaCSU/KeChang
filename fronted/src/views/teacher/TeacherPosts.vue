@@ -30,15 +30,26 @@
         <div class="post-item" v-for="p in posts" :key="p.id" @click="viewPost(p)">
           <div class="post-main">
             <div class="post-title">
-              <el-tag size="small" :type="p.postType === '提问' ? 'warning' : 'info'" style="margin-right:8px">{{ p.postType || '提问' }}</el-tag>
+              <el-tag size="small" :type="p.postType === '提问' ? 'warning' : 'info'" style="margin-right:8px">{{
+                p.postType || '提问' }}</el-tag>
               {{ p.title }}
             </div>
             <div class="post-meta">
-              <span>👤 {{ p.createByName || '匿名' }}</span>
-              <span v-if="p.courseName">📚 {{ p.courseName }}</span>
-              <span>👁 {{ p.viewCount || 0 }}</span>
-              <span>💬 {{ p.replyCount || 0 }}</span>
-              <span>🕐 {{ p.createTime }}</span>
+              <span><el-icon>
+                  <User />
+                </el-icon> {{ p.createByName || '匿名' }}</span>
+              <span v-if="p.courseName"><el-icon>
+                  <Collection />
+                </el-icon> {{ p.courseName }}</span>
+              <span><el-icon>
+                  <View />
+                </el-icon> {{ p.viewCount || 0 }}</span>
+              <span><el-icon>
+                  <ChatDotSquare />
+                </el-icon> {{ p.replyCount || 0 }}</span>
+              <span><el-icon>
+                  <Clock />
+                </el-icon> {{ p.createTime }}</span>
             </div>
           </div>
           <div class="post-badge" v-if="p.replyCount === 0">
@@ -85,16 +96,27 @@
       <div v-if="currentPost" class="post-detail">
         <!-- 头部信息 -->
         <div class="detail-header">
-          <el-tag size="small" :type="currentPost.postType === '提问' ? 'warning' : 'info'">{{ currentPost.postType || '提问' }}</el-tag>
-          <span v-if="currentPost.courseName" style="font-size:13px;color:#7a9fb5">📚 {{ currentPost.courseName }}</span>
-          <el-button v-if="canDeletePost" size="small" type="danger" plain @click="doDeletePost" style="margin-left:auto">删除帖子</el-button>
+          <el-tag size="small" :type="currentPost.postType === '提问' ? 'warning' : 'info'">{{ currentPost.postType ||
+            '提问'
+            }}</el-tag>
+          <span v-if="currentPost.courseName" style="font-size:13px;color:#7a9fb5"><el-icon>
+              <Collection />
+            </el-icon> {{ currentPost.courseName }}</span>
+          <el-button v-if="canDeletePost" size="small" type="danger" plain @click="doDeletePost"
+            style="margin-left:auto">删除帖子</el-button>
         </div>
 
         <div class="post-content" v-html="currentPost.content || '暂无内容'"></div>
         <div class="post-info">
-          <span>👤 {{ currentPost.createByName || '匿名' }}</span>
-          <span>🕐 {{ currentPost.createTime }}</span>
-          <span>👁 {{ currentPost.viewCount || 0 }}</span>
+          <span><el-icon>
+              <User />
+            </el-icon> {{ currentPost.createByName || '匿名' }}</span>
+          <span><el-icon>
+              <Clock />
+            </el-icon> {{ currentPost.createTime }}</span>
+          <span><el-icon>
+              <View />
+            </el-icon> {{ currentPost.viewCount || 0 }}</span>
         </div>
 
         <el-divider>回答 ({{ answerTotal }})</el-divider>
@@ -104,18 +126,28 @@
           <div v-for="a in answers" :key="a.id" class="answer-item" :class="{ accepted: a.isAccepted === 1 }">
             <div class="answer-content">{{ a.content }}</div>
             <div class="answer-footer">
-              <span>👤 {{ a.createByName || '匿名' }}</span>
-              <span>🕐 {{ a.createTime }}</span>
-              <el-tag v-if="a.isAccepted === 1" type="success" size="small">✅ 已采纳</el-tag>
+              <span><el-icon>
+                  <User />
+                </el-icon> {{ a.createByName || '匿名' }}</span>
+              <span><el-icon>
+                  <Clock />
+                </el-icon> {{ a.createTime }}</span>
+              <el-tag v-if="a.isAccepted === 1" type="success" size="small"><el-icon>
+                  <CircleCheck />
+                </el-icon> 已采纳</el-tag>
               <el-button v-else size="small" type="success" @click="doAccept(a.id)">采纳</el-button>
-              <el-button v-if="canDeleteAnswer(a)" size="small" type="danger" plain @click="doDeleteAnswer(a.id)">删除</el-button>
+              <el-button v-if="canDeleteAnswer(a)" size="small" type="danger" plain
+                @click="doDeleteAnswer(a.id)">删除</el-button>
             </div>
 
             <!-- 评论区域 -->
             <div class="comment-section">
               <el-button link type="primary" size="small" @click="toggleComments(a)">
                 评论 ({{ a._commentCount || 0 }})
-                <el-icon><ArrowDown v-if="a._showComments" /><ArrowRight v-else /></el-icon>
+                <el-icon>
+                  <ArrowDown v-if="a._showComments" />
+                  <ArrowRight v-else />
+                </el-icon>
               </el-button>
               <div v-if="a._showComments" class="comment-box">
                 <div v-if="a._comments && a._comments.length > 0" class="comment-list">
@@ -127,7 +159,8 @@
                 </div>
                 <div v-else class="comment-empty">暂无评论</div>
                 <div class="comment-input-row">
-                  <el-input v-model="a._commentText" size="small" placeholder="添加评论..." @keyup.enter="doAddComment(a)" />
+                  <el-input v-model="a._commentText" size="small" placeholder="添加评论..."
+                    @keyup.enter="doAddComment(a)" />
                   <el-button size="small" type="primary" @click="doAddComment(a)">评论</el-button>
                 </div>
               </div>
@@ -144,7 +177,7 @@
         <div class="reply-box">
           <el-input v-model="answerContent" type="textarea" :rows="3" placeholder="输入你的回答..." />
           <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:8px">
-            <el-button type="warning" @click="doAiAnswer">🤖 AI 智能回复</el-button>
+            <el-button plain type="primary" @click="doAiAnswer">智能辅助</el-button>
             <el-button type="primary" :loading="answering" @click="doAnswer">发表回答</el-button>
           </div>
         </div>
@@ -159,7 +192,7 @@ import { ref, computed, onMounted } from 'vue'
 import { qaApi, courseApi } from '@/api'
 import { useUserStore } from '@/stores/user'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { ArrowDown, ArrowRight } from '@element-plus/icons-vue'
+import { ArrowDown, ArrowRight, User, Clock, View, ChatDotSquare, Collection, CircleCheck } from '@element-plus/icons-vue'
 
 const userStore = useUserStore()
 
@@ -336,38 +369,179 @@ onMounted(() => { fetchCourses(); fetchPosts() })
 </script>
 
 <style scoped>
-.page-shell { display: flex; flex-direction: column; gap: 20px; }
-.page-title-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
-.page-title { font-size: 20px; font-weight: 600; color: #303133; margin: 0; }
-.panel { background: #fff; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); padding: 24px; }
-.search-bar { display: flex; gap: 12px; margin-bottom: 12px; }
+.page-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
 
-.post-list { display: flex; flex-direction: column; }
-.post-item { display: flex; justify-content: space-between; align-items: center; padding: 16px 0; border-bottom: 1px solid #ebeef5; cursor: pointer; transition: background 0.2s; }
-.post-item:hover { background: #f5f7fa; margin: 0 -24px; padding: 16px 24px; }
-.post-main { flex: 1; min-width: 0; }
-.post-title { font-size: 15px; font-weight: 600; color: #303133; margin-bottom: 6px; display: flex; align-items: center; }
-.post-meta { display: flex; gap: 16px; font-size: 12px; color: #909399; flex-wrap: wrap; }
+.page-title-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.page-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #303133;
+  margin: 0;
+}
+
+.panel {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  padding: 24px;
+}
+
+.search-bar {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.post-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.post-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 0;
+  border-bottom: 1px solid #ebeef5;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.post-item:hover {
+  background: #f5f7fa;
+  margin: 0 -24px;
+  padding: 16px 24px;
+}
+
+.post-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.post-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #303133;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+}
+
+.post-meta {
+  display: flex;
+  gap: 16px;
+  font-size: 12px;
+  color: #909399;
+  flex-wrap: wrap;
+}
 
 /* 详情 */
-.detail-header { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
-.post-content { padding: 16px; background: #f5f7fa; border-radius: 8px; margin-bottom: 12px; line-height: 1.6; }
-.post-info { display: flex; gap: 16px; font-size: 13px; color: #909399; margin-bottom: 8px; }
+.detail-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
 
-.answer-item { padding: 12px; margin-bottom: 8px; background: #fafafa; border-radius: 8px; border-left: 3px solid #e4e7ed; }
-.answer-item.accepted { border-left-color: var(--bio-primary); background: var(--bio-primary-soft); }
-.answer-content { line-height: 1.5; margin-bottom: 8px; }
-.answer-footer { display: flex; align-items: center; gap: 10px; font-size: 12px; color: #909399; flex-wrap: wrap; }
+.post-content {
+  padding: 16px;
+  background: #f5f7fa;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  line-height: 1.6;
+}
+
+.post-info {
+  display: flex;
+  gap: 16px;
+  font-size: 13px;
+  color: #909399;
+  margin-bottom: 8px;
+}
+
+.answer-item {
+  padding: 12px;
+  margin-bottom: 8px;
+  background: #fafafa;
+  border-radius: 8px;
+  border-left: 3px solid #e4e7ed;
+}
+
+.answer-item.accepted {
+  border-left-color: var(--bio-primary);
+  background: var(--bio-primary-soft);
+}
+
+.answer-content {
+  line-height: 1.5;
+  margin-bottom: 8px;
+}
+
+.answer-footer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  color: #909399;
+  flex-wrap: wrap;
+}
 
 /* 评论 */
-.comment-section { margin-top: 8px; padding-top: 8px; border-top: 1px dashed #ebeef5; }
-.comment-box { margin-top: 8px; }
-.comment-list { margin-bottom: 8px; }
-.comment-item { padding: 4px 0; font-size: 13px; color: #606266; line-height: 1.5; }
-.comment-author { color: #7a9fb5; font-weight: 500; }
-.comment-time { font-size: 11px; color: #c0c4cc; margin-left: 8px; }
-.comment-empty { font-size: 12px; color: #c0c4cc; padding: 8px 0; }
-.comment-input-row { display: flex; gap: 8px; margin-top: 8px; }
+.comment-section {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed #ebeef5;
+}
 
-.reply-box { margin-top: 16px; }
+.comment-box {
+  margin-top: 8px;
+}
+
+.comment-list {
+  margin-bottom: 8px;
+}
+
+.comment-item {
+  padding: 4px 0;
+  font-size: 13px;
+  color: #606266;
+  line-height: 1.5;
+}
+
+.comment-author {
+  color: #7a9fb5;
+  font-weight: 500;
+}
+
+.comment-time {
+  font-size: 11px;
+  color: #c0c4cc;
+  margin-left: 8px;
+}
+
+.comment-empty {
+  font-size: 12px;
+  color: #c0c4cc;
+  padding: 8px 0;
+}
+
+.comment-input-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.reply-box {
+  margin-top: 16px;
+}
 </style>

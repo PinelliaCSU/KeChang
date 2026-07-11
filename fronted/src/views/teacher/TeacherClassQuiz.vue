@@ -58,8 +58,10 @@
                 <el-tag size="small" :type="typeTag(q.questionType)">{{ typeLabel(q.questionType) }}</el-tag>
                 <span>{{ q.score || 0 }} 分</span>
                 <span>难度 {{ q.difficulty || '-' }}</span>
+                <span v-if="isQuestionSelected(q.id)" class="selected-order">第 {{ selectedOrder(q.id) }} 题</span>
               </div>
               <p>{{ q.content }}</p>
+              <div v-if="isQuestionSelected(q.id)" class="selected-mark">已选</div>
             </div>
             <el-empty v-if="!questionLoading && questions.length === 0" description="暂无题目" :image-size="80" />
           </div>
@@ -251,6 +253,9 @@ const toggleQuestion = (question) => {
   }
 }
 
+const isQuestionSelected = (questionId) => selectedQuestionIds.value.includes(questionId)
+const selectedOrder = (questionId) => selectedQuestionIds.value.indexOf(questionId) + 1
+
 const startQuiz = async () => {
   if (!form.courseId || selectedQuestionIds.value.length === 0) {
     ElMessage.warning('请选择课程和至少一道题目')
@@ -365,12 +370,15 @@ onBeforeUnmount(() => clearInterval(pollTimer))
 .panel-title span { color: var(--bio-ink-muted); font-size: 12px; }
 .panel-title.compact { align-items: center; margin-bottom: 12px; }
 .form-row { display: grid; grid-template-columns: 1fr 130px; gap: 12px; }
-.question-list { max-height: 390px; overflow: auto; display: flex; flex-direction: column; gap: 10px; padding-right: 4px; }
-.question-card { border: 1px solid var(--bio-border); border-radius: 8px; padding: 12px; cursor: pointer; transition: .18s; background: #fff; }
+.question-list { max-height: 520px; overflow: auto; display: flex; flex-direction: column; gap: 10px; padding-right: 4px; }
+.question-card { border: 1px solid var(--bio-border); border-radius: 8px; padding: 12px; cursor: pointer; transition: .18s; background: #fff; position: relative; overflow: visible; }
 .question-card:hover { border-color: var(--bio-primary); background: var(--bio-primary-soft); }
-.question-card.selected { border-color: var(--bio-primary); background: var(--bio-primary-soft); box-shadow: inset 4px 0 0 var(--bio-primary); }
-.question-card p { margin: 8px 0 0; color: var(--bio-ink); line-height: 1.55; }
-.question-meta { display: flex; align-items: center; gap: 8px; color: var(--bio-ink-muted); font-size: 12px; }
+.question-card.selected { border-color: #6b8e4e; background: linear-gradient(135deg, rgba(107, 142, 78, .16), rgba(163, 177, 138, .08)); box-shadow: inset 4px 0 0 #6b8e4e, 0 8px 18px rgba(107, 142, 78, .12); }
+.question-card.selected::after { content: ''; position: absolute; right: 8px; top: 8px; width: 42px; height: 42px; border-radius: 50%; background: rgba(107, 142, 78, .12); pointer-events: none; }
+.question-card p { margin: 8px 0 0; color: var(--bio-ink); line-height: 1.6; white-space: normal; overflow-wrap: anywhere; word-break: break-word; padding-right: 4px; }
+.question-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding-right: 58px; color: var(--bio-ink-muted); font-size: 12px; }
+.selected-order { color: #3f6b30; font-weight: 700; background: rgba(107, 142, 78, .13); padding: 2px 7px; border-radius: 999px; }
+.selected-mark { position: absolute; right: 12px; top: 12px; color: #3f6b30; font-weight: 700; font-size: 12px; background: #f1f7ea; border: 1px solid rgba(107, 142, 78, .28); border-radius: 999px; padding: 3px 9px; z-index: 1; }
 .quiz-list { display: flex; flex-direction: column; gap: 8px; max-height: 260px; overflow: auto; }
 .quiz-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px; border-radius: 8px; background: #f7f8fa; border: 1px solid transparent; cursor: pointer; }
 .quiz-row.active { border-color: var(--bio-primary); background: var(--bio-primary-soft); }

@@ -2,6 +2,8 @@ package com.kechang.controller.exam;
 
 import com.kechang.common.PageResult;
 import com.kechang.common.Result;
+import com.kechang.dto.AiGenerateRequest;
+import com.kechang.dto.AiPaperResult;
 import com.kechang.dto.ExamSubmitDTO;
 import com.kechang.dto.PaperCreateDTO;
 import com.kechang.entity.Exam;
@@ -95,10 +97,8 @@ public class ExamController {
 
     @PostMapping("/api/papers/ai-generate")
     @PreAuthorize("hasAuthority('ROLE_TEACHER')")
-    public Result<Map<String, Object>> aiGenerate(@RequestParam(required = false) String knowledgePoints,
-            @RequestParam(required = false) String difficulty,
-            @RequestParam(required = false) String types) {
-        return Result.success(examService.aiGeneratePaper(knowledgePoints, difficulty, types));
+    public Result<AiPaperResult> aiGenerate(@RequestBody AiGenerateRequest req) {
+        return Result.success(examService.aiGeneratePaper(req));
     }
 
     @GetMapping("/api/papers/{id}")
@@ -178,6 +178,14 @@ public class ExamController {
             @RequestParam Long questionId,
             @RequestParam Double score) {
         examService.markSubjective(recordId, questionId, score, getUserId());
+        return Result.success();
+    }
+
+    @PutMapping("/api/exams/records/{recordId}/mark-all")
+    @PreAuthorize("hasAuthority('ROLE_TEACHER')")
+    public Result<Void> markSubjectiveBatch(@PathVariable Long recordId,
+            @RequestBody Map<String, Double> scores) {
+        examService.markSubjectiveBatch(recordId, scores, getUserId());
         return Result.success();
     }
 }

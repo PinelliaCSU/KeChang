@@ -6,7 +6,9 @@ import com.kechang.dto.ChapterDTO;
 import com.kechang.dto.CourseDTO;
 import com.kechang.entity.CourseResource;
 import com.kechang.entity.StudentProfile;
+import com.kechang.service.BailianApiService;
 import com.kechang.service.CourseService;
+import com.kechang.service.FileProcessingService;
 import com.kechang.vo.CourseVO;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +25,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -34,6 +37,8 @@ import java.util.UUID;
 public class CourseController {
 
     private final CourseService courseService;
+    private final BailianApiService bailianApiService;
+    private final FileProcessingService fileProcessingService;
 
     /**
      * 课程列表
@@ -222,6 +227,34 @@ public class CourseController {
         Long userId = (Long) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         courseService.deleteResource(courseId, resourceId, userId);
         return Result.success();
+    }
+
+    /**
+     * AI 课件总结 — 对课程资源内容进行智能摘要
+     */
+    @PostMapping("/{courseId}/resources/{resourceId}/summarize")
+    public Result<Map<String, String>> summarizeResource(@PathVariable Long courseId, @PathVariable Long resourceId) {
+        // 获取课程信息（用于提供上下文）
+        CourseVO course = courseService.getCourseDetail(courseId, currentUserId(), currentRole());
+
+        // 获取资源信息
+        List<CourseResource> resources = courseService.getResources(courseId, null, currentUserId(), currentRole());
+        CourseResource target = resources.stream()
+                .filter(r -> r.getId().equals(resourceId))
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("资源不存在或无权访问"));
+
+        // 从文件中提取文本（传入资源名，媒体文件会返回占位描述）
+        String fileContent = fileProcessingService.extractText(target.getFileUrl(), target.getResourceName());
+
+        // 调用 AI 生成总结（传入课程名作为上下文）
+        String summary = bailianApiService.summarizeResource(
+                target.getResourceName(), fileContent, course.getCourseName());
+
+        return Result.success(Map.of(
+                "summary", summary,
+                "resourceName", target.getResourceName()
+        ));
     }
 
     private String getResourceType(String filename) {

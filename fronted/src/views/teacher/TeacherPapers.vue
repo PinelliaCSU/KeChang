@@ -3,7 +3,7 @@
     <div class="page-title-bar">
       <h2 class="page-title">试卷管理</h2>
       <div class="page-actions">
-        <el-button type="success" @click="openAiDialog">🤖 AI 智能组卷</el-button>
+        <el-button type="success" @click="openAiDialog">AI 智能组卷</el-button>
         <el-button type="primary" @click="openCreateDialog">+ 手动组卷</el-button>
       </div>
     </div>
@@ -109,21 +109,121 @@
     </el-dialog>
 
     <!-- AI 组卷弹窗 -->
-    <el-dialog v-model="aiDialogVisible" title="AI 智能组卷" width="500px">
-      <el-form label-width="100px">
-        <el-form-item label="知识点范围"><el-input v-model="aiForm.knowledgePoints"
-            placeholder="如：Java基础,面向对象" /></el-form-item>
-        <el-form-item label="难度等级">
-          <el-select v-model="aiForm.difficulty" style="width:100%">
-            <el-option label="综合" value="" /><el-option label="容易" value="1" /><el-option label="中等"
-              value="3" /><el-option label="困难" value="5" />
+    <el-dialog v-model="aiDialogVisible" title="AI 智能组卷" width="550px" destroy-on-close>
+      <el-form :model="aiForm" label-width="100px">
+        <el-form-item label="所属课程" required>
+          <el-select v-model="aiForm.courseId" placeholder="请选择课程" style="width:100%">
+            <el-option v-for="c in courseList" :key="c.id" :label="c.courseName" :value="c.id" />
           </el-select>
         </el-form-item>
-        <el-form-item label="题型范围"><el-input v-model="aiForm.types" placeholder="如：SINGLE,MULTI,JUDGE" /></el-form-item>
+        <el-form-item label="试卷名称">
+          <el-input v-model="aiForm.paperName" placeholder="留空由 AI 自动生成" />
+        </el-form-item>
+        <el-row :gutter="12">
+          <el-col :span="12">
+            <el-form-item label="题目数量">
+              <el-input-number v-model="aiForm.questionCount" :min="3" :max="50" style="width:100%" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="目标总分">
+              <el-input-number v-model="aiForm.totalScore" :min="10" :max="500" style="width:100%" />
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row :gutter="12">
+          <el-col :span="12">
+            <el-form-item label="考试时长">
+              <el-input-number v-model="aiForm.duration" :min="10" :max="300" style="width:100%" />
+              <template #extra><span style="font-size:11px;color:#909399">分钟</span></template>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="及格分">
+              <el-input-number v-model="aiForm.passScore" :min="1" :max="500" style="width:100%" />
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-form-item label="知识点范围">
+          <el-input v-model="aiForm.knowledgePoints" placeholder="如：Java基础,面向对象" />
+        </el-form-item>
+        <el-form-item label="难度等级">
+          <el-select v-model="aiForm.difficulty" style="width:100%">
+            <el-option label="综合（各难度搭配）" :value="null" />
+            <el-option label="容易" :value="1" />
+            <el-option label="中等" :value="3" />
+            <el-option label="困难" :value="5" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="题型范围">
+          <el-select v-model="aiForm.types" multiple placeholder="不选则包含全部题型" style="width:100%">
+            <el-option label="单选题" value="SINGLE" />
+            <el-option label="多选题" value="MULTI" />
+            <el-option label="判断题" value="JUDGE" />
+            <el-option label="填空题" value="FILL" />
+            <el-option label="简答题" value="ESSAY" />
+          </el-select>
+        </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="aiDialogVisible = false">取消</el-button>
-        <el-button type="primary" :loading="aiGenerating" @click="handleAiGenerate">开始生成</el-button>
+        <el-button type="primary" :loading="aiGenerating" @click="handleAiGenerate">
+          {{ aiGenerating ? 'AI 正在选题中...' : '生成预览' }}
+        </el-button>
+      </template>
+    </el-dialog>
+
+    <!-- AI 组卷预览弹窗 -->
+    <el-dialog v-model="aiPreviewVisible" title="AI 组卷预览" width="850px" destroy-on-close>
+      <div v-if="aiPreviewData">
+        <el-descriptions :column="2" border style="margin-bottom:16px">
+          <el-descriptions-item label="试卷名称">{{ aiPreviewData.paperName }}</el-descriptions-item>
+          <el-descriptions-item label="选题总分">
+            <el-tag type="warning">{{ aiPreviewData.totalScore }} 分</el-tag>
+          </el-descriptions-item>
+          <el-descriptions-item label="候选题目数">{{ aiPreviewData.candidateCount }} 题</el-descriptions-item>
+          <el-descriptions-item label="选中题目数">{{ aiPreviewData.suggestedQuestions?.length || 0 }}
+            题</el-descriptions-item>
+        </el-descriptions>
+        <el-alert v-if="aiPreviewData.summary" :title="aiPreviewData.summary" type="info" :closable="false"
+          style="margin-bottom:12px" />
+        <div style="margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">
+          <span style="font-weight:600">选题明细（可调整分值和移除）</span>
+          <span style="color:#909399;font-size:13px">合计：{{ aiAdjustedTotalScore }} 分</span>
+        </div>
+        <el-table :data="aiPreviewData.suggestedQuestions || []" max-height="400" stripe class="kechang-table"
+          style="width:100%">
+          <el-table-column label="序号" width="50">
+            <template #default="{ $index }">{{ $index + 1 }}</template>
+          </el-table-column>
+          <el-table-column label="题型" width="65">
+            <template #default="{ row }"><el-tag size="small">{{ typeLabel(row.questionType) }}</el-tag></template>
+          </el-table-column>
+          <el-table-column prop="content" label="题目内容" min-width="200" show-overflow-tooltip />
+          <el-table-column prop="knowledgePoint" label="知识点" width="100" />
+          <el-table-column label="难度" width="65">
+            <template #default="{ row }">
+              <el-tag :type="row.difficulty <= 2 ? 'success' : row.difficulty <= 3 ? 'warning' : 'danger'" size="small">
+                {{ row.difficulty }}星
+              </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column label="分值" width="90">
+            <template #default="{ row }">
+              <el-input-number v-model="aiScoreAdjust[row.questionId]" :min="1" :max="100" size="small"
+                style="width:80px" />
+            </template>
+          </el-table-column>
+          <el-table-column label="操作" width="65">
+            <template #default="{ row }">
+              <el-button size="small" type="danger" text @click="removeAiQuestion(row.questionId)">移除</el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+      </div>
+      <template #footer>
+        <el-button @click="aiPreviewVisible = false">返回调整</el-button>
+        <el-button type="primary" :loading="aiCreating" @click="handleConfirmAiPaper">确认创建试卷</el-button>
       </template>
     </el-dialog>
 
@@ -178,7 +278,21 @@ const qTableRef = ref(null)
 // AI
 const aiDialogVisible = ref(false)
 const aiGenerating = ref(false)
-const aiForm = reactive({ knowledgePoints: '', difficulty: '', types: '' })
+const aiForm = reactive({
+  courseId: null, paperName: '', knowledgePoints: '',
+  difficulty: null, types: [], questionCount: 10,
+  totalScore: 100, duration: 90, passScore: 60
+})
+
+// AI 预览
+const aiPreviewVisible = ref(false)
+const aiPreviewData = ref(null)
+const aiCreating = ref(false)
+const aiScoreAdjust = reactive({})
+const aiAdjustedTotalScore = computed(() => {
+  if (!aiPreviewData.value?.suggestedQuestions) return 0
+  return aiPreviewData.value.suggestedQuestions.reduce((s, q) => s + (aiScoreAdjust[q.questionId] || q.questionScore || 0), 0)
+})
 
 // 详情
 const detailDialogVisible = ref(false)
@@ -191,7 +305,12 @@ const fetchPapers = async () => {
   try {
     const res = await examApi.listPapers({ page: page.value, size: pageSize.value, courseId: courseFilter.value || undefined })
     if (res.data.code === 200) {
-      papers.value = res.data.data.records
+      // 将 courseId 映射为 courseName，以便表格显示"所属课程"
+      const courseMap = Object.fromEntries(courseList.value.map(c => [c.id, c.courseName]))
+      papers.value = (res.data.data.records || []).map(p => ({
+        ...p,
+        courseName: courseMap[p.courseId] || '未知课程'
+      }))
       total.value = res.data.data.total
     }
   } catch (e) { /* ignore */ }
@@ -275,21 +394,98 @@ const handleCreatePaper = async () => {
   finally { submitting.value = false }
 }
 
-const openAiDialog = () => { aiForm.knowledgePoints = ''; aiForm.difficulty = ''; aiForm.types = ''; aiDialogVisible.value = true }
+const openAiDialog = () => {
+  aiForm.courseId = null; aiForm.paperName = ''; aiForm.knowledgePoints = ''
+  aiForm.difficulty = null; aiForm.types = []; aiForm.questionCount = 10
+  aiForm.totalScore = 100; aiForm.duration = 90; aiForm.passScore = 60
+  aiPreviewData.value = null
+  Object.keys(aiScoreAdjust).forEach(k => delete aiScoreAdjust[k])
+  aiDialogVisible.value = true
+}
 
 const handleAiGenerate = async () => {
+  if (!aiForm.courseId) { ElMessage.warning('请选择所属课程'); return }
+  if (aiForm.questionCount < 3) { ElMessage.warning('题目数量至少为 3'); return }
   aiGenerating.value = true
   try {
-    await examApi.aiGenerate({
+    const data = {
+      courseId: aiForm.courseId,
+      paperName: aiForm.paperName || undefined,
       knowledgePoints: aiForm.knowledgePoints || undefined,
-      difficulty: aiForm.difficulty || undefined,
-      types: aiForm.types || undefined
-    })
-    ElMessage.success('AI 组卷成功，请刷新列表查看')
-    aiDialogVisible.value = false
-    fetchPapers()
-  } catch (e) { /* ignore */ }
+      difficulty: aiForm.difficulty,
+      types: aiForm.types.length > 0 ? aiForm.types.join(',') : undefined,
+      questionCount: aiForm.questionCount,
+      totalScore: aiForm.totalScore,
+      duration: aiForm.duration,
+      passScore: aiForm.passScore
+    }
+    const res = await examApi.aiGenerate(data)
+    if (res.data.code === 200) {
+      aiPreviewData.value = res.data.data
+      // 初始化分值调整映射
+      Object.keys(aiScoreAdjust).forEach(k => delete aiScoreAdjust[k])
+        ; (res.data.data.suggestedQuestions || []).forEach(q => {
+          aiScoreAdjust[q.questionId] = q.questionScore
+        })
+      aiDialogVisible.value = false
+      aiPreviewVisible.value = true
+      ElMessage.success('AI 选题完成，请预览确认')
+    } else {
+      ElMessage.error(res.data.message || 'AI 组卷失败')
+    }
+  } catch (e) {
+    ElMessage.error('AI 组卷请求失败，请检查网络或 API 配置')
+  }
   finally { aiGenerating.value = false }
+}
+
+const removeAiQuestion = (questionId) => {
+  if (!aiPreviewData.value?.suggestedQuestions) return
+  aiPreviewData.value.suggestedQuestions = aiPreviewData.value.suggestedQuestions.filter(q => q.questionId !== questionId)
+  delete aiScoreAdjust[questionId]
+}
+
+const handleConfirmAiPaper = async () => {
+  const questions = aiPreviewData.value?.suggestedQuestions || []
+  if (questions.length === 0) { ElMessage.warning('请至少保留一道题目'); return }
+
+  // 使用 AI 建议的试卷参数（用户在对话框设置的参数）
+  const paperName = aiPreviewData.value.paperName || 'AI 组卷'
+  const totalScore = aiAdjustedTotalScore.value
+  const duration = aiForm.duration || 90
+  const passScore = aiForm.passScore || 60
+
+  if (passScore > totalScore) {
+    ElMessage.warning(`及格分(${passScore})不能大于总分(${totalScore})`)
+    return
+  }
+
+  aiCreating.value = true
+  try {
+    const data = {
+      paperName,
+      courseId: aiForm.courseId,
+      totalScore,
+      duration,
+      passScore,
+      questions: questions.map((q, i) => ({
+        questionId: q.questionId,
+        questionScore: aiScoreAdjust[q.questionId] || q.questionScore || 5,
+        sortOrder: i + 1
+      }))
+    }
+    const res = await examApi.createPaper(data)
+    if (res.data.code === 200) {
+      ElMessage.success('AI 组卷创建成功')
+      aiPreviewVisible.value = false
+      fetchPapers()
+    } else {
+      ElMessage.error(res.data.message || '创建失败')
+    }
+  } catch (e) {
+    ElMessage.error('创建试卷失败')
+  }
+  finally { aiCreating.value = false }
 }
 
 const viewPaper = async (row) => {
@@ -311,7 +507,7 @@ const handleDelete = async (id) => {
   } catch (e) { /* ignore */ }
 }
 
-onMounted(() => { fetchCourses(); fetchPapers() })
+onMounted(async () => { await fetchCourses(); fetchPapers() })
 </script>
 
 <style scoped>

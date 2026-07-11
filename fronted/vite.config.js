@@ -43,6 +43,18 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true
         }
       }
+    },
+    build: {
+      // 代码分割：将大型第三方库分离为独立 chunk，提升缓存命中率
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            'element-plus': ['element-plus'],
+            'echarts': ['echarts'],
+            'vue-vendor': ['vue', 'vue-router', 'pinia']
+          }
+        }
+      }
     }
   }
 })

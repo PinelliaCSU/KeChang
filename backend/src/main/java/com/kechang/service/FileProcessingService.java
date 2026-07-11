@@ -331,7 +331,8 @@ public class FileProcessingService {
             return List.of();
         }
         try {
-            return objectMapper.readValue(marksJson, new TypeReference<List<FeedbackMark>>() {});
+            return objectMapper.readValue(marksJson, new TypeReference<List<FeedbackMark>>() {
+            });
         } catch (IOException e) {
             return List.of();
         }
@@ -355,14 +356,18 @@ public class FileProcessingService {
     }
 
     private String extension(String name) {
-        if (name == null) return "";
+        if (name == null) {
+            return "";
+        }
         String clean = name.split("\\?")[0].toLowerCase(Locale.ROOT);
         int index = clean.lastIndexOf('.');
         return index >= 0 ? clean.substring(index + 1) : "";
     }
 
     private String stripExtension(String name) {
-        if (!StringUtils.hasText(name)) return "file";
+        if (!StringUtils.hasText(name)) {
+            return "file";
+        }
         int index = name.lastIndexOf('.');
         return index >= 0 ? name.substring(0, index) : name;
     }
@@ -380,8 +385,107 @@ public class FileProcessingService {
         return StringUtils.hasText(a) && StringUtils.hasText(b) && a.equals(b);
     }
 
+    // ==================== 文本提取（用于 AI 总结） ====================
+    /**
+     * 从上传的文件中提取文本内容，用于 AI 总结。 对于无法提取文本的媒体文件（视频/音频/图片），返回包含元信息的占位文本， 以便 AI
+     * 仍可据此生成学习建议。
+     *
+     * @param fileUrl 文件相对路径（如 /uploads/courses/1/xxx.pdf）
+     * @param resourceName 资源名称（用于占位文本）
+     * @return 提取的文本内容，最多约 10000 字
+     */
+    public String extractText(String fileUrl, String resourceName) {
+        if (!StringUtils.hasText(fileUrl)) {
+            return "";
+        }
+        String safeName = StringUtils.hasText(resourceName) ? resourceName : fileUrl;
+        try {
+            Path source = resolveUploadPath(fileUrl);
+            if (!Files.exists(source)) {
+                return "[文件不存在] 资源「" + safeName + "」对应的文件未找到，无法分析内容。";
+            }
+            String ext = extension(fileUrl);
+            String text = switch (ext) {
+                case "pdf" ->
+                    extractPdfText(source);
+                case "docx" ->
+                    extractDocxText(source);
+                case "pptx" ->
+                    extractPptxText(source);
+                case "txt", "md", "json", "xml", "csv", "log", "java", "js", "ts", "css", "html", "vue", "py", "c", "cpp", "h", "sql" ->
+                    Files.readString(source);
+                // 视频 / 音频 / 图片 — 无法提取文本，返回元信息占位
+                case "mp4", "webm", "ogg", "mov", "m4v", "avi", "mkv", "flv", "wmv" ->
+                    "[视频文件] 资源名称：「" + safeName + "」，格式：" + ext.toUpperCase()
+                    + "。视频内容无法自动提取文字，请结合课件标题和章节信息理解内容。";
+                case "mp3", "wav", "m4a", "aac", "flac", "wma" ->
+                    "[音频文件] 资源名称：「" + safeName + "」，格式：" + ext.toUpperCase()
+                    + "。音频内容无法自动提取文字，建议配合讲义或笔记学习。";
+                case "png", "jpg", "jpeg", "gif", "webp", "bmp", "svg" ->
+                    "[图片文件] 资源名称：「" + safeName + "」，格式：" + ext.toUpperCase()
+                    + "。图片内容无法自动提取文字，请结合上下文理解图表/示意图。";
+                default ->
+                    "[不可读文件] 资源名称：「" + safeName + "」，格式："
+                    + (ext.isEmpty() ? "未知" : ext.toUpperCase())
+                    + "。该文件类型暂不支持内容提取，请直接查看原文件。";
+            };
+            if (text == null || text.isBlank()) {
+                return "";
+            }
+            // 限制最大 10000 字符
+            int maxLen = 10000;
+            return text.length() > maxLen ? text.substring(0, maxLen) : text;
+        } catch (Exception e) {
+            return "[读取失败] 资源「" + safeName + "」的文件读取失败：" + e.getMessage();
+        }
+    }
+
+    private String extractPdfText(Path pdfPath) {
+        try (PDDocument document = PDDocument.load(pdfPath.toFile())) {
+            org.apache.pdfbox.text.PDFTextStripper stripper = new org.apache.pdfbox.text.PDFTextStripper();
+            stripper.setSortByPosition(true);
+            String text = stripper.getText(document);
+            if (text != null && text.length() > 12000) {
+                text = text.substring(0, 12000);
+            }
+            return text != null ? text : "";
+        } catch (IOException e) {
+            return "";
+        }
+    }
+
+    private String extractDocxText(Path source) {
+        try {
+            List<String> lines = readWordLines(source);
+            return String.join("\n", lines);
+        } catch (Exception e) {
+            return "";
+        }
+    }
+
+    private String extractPptxText(Path source) {
+        try {
+            StringBuilder sb = new StringBuilder();
+            try (InputStream in = Files.newInputStream(source); org.apache.poi.xslf.usermodel.XMLSlideShow ppt = new org.apache.poi.xslf.usermodel.XMLSlideShow(in)) {
+                for (var slide : ppt.getSlides()) {
+                    for (var shape : slide.getShapes()) {
+                        if (shape instanceof org.apache.poi.xslf.usermodel.XSLFTextShape textShape) {
+                            sb.append(textShape.getText()).append("\n");
+                        }
+                    }
+                    sb.append("\n---\n");
+                }
+            }
+            return sb.toString();
+        } catch (Exception e) {
+            return "";
+        }
+    }
+
     private List<String> wrapLine(String line, int size) {
-        if (!StringUtils.hasText(line)) return List.of("");
+        if (!StringUtils.hasText(line)) {
+            return List.of("");
+        }
         List<String> result = new ArrayList<>();
         String text = line.trim();
         for (int i = 0; i < text.length(); i += size) {
@@ -397,6 +501,7 @@ public class FileProcessingService {
 
     @Data
     public static class FeedbackMark {
+
         private String id;
         private String type;
         private String text;

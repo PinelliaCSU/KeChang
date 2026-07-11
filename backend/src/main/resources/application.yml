@@ -2,6 +2,16 @@
 
 server:
   port: 8080
+  # GZIP 压缩：减少 JSON 响应体积 60%+
+  compression:
+    enabled: true
+    min-response-size: 1024
+    mime-types: application/json,application/xml,text/html,text/plain,application/javascript
+  tomcat:
+    threads:
+      max: 200
+      min-spare: 10
+    accept-count: 100
 
 spring:
   application:
@@ -33,7 +43,8 @@ mybatis-plus:
       logic-not-delete-value: 0
   configuration:
     map-underscore-to-camel-case: true
-    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    # SQL 日志仅在 dev 环境启用，生产环境关闭以提升性能
+    # log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
 
 # JWT 配置
 jwt:
@@ -57,3 +68,11 @@ kechang:
     # 安装 LibreOffice 后建议显式配置，Word 转 PDF 才能保留表格、图片和复杂格式
     # Windows 示例："C:/Program Files/LibreOffice/program/soffice.exe"
     soffice-path:
+
+# 阿里百炼（DashScope）AI 配置
+bailian:
+  api-key: ${BAILIAN_API_KEY:your-bailian-api-key}
+  model: qwen-turbo
+  endpoint: https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions
+  connect-timeout: 30
+  read-timeout: 60

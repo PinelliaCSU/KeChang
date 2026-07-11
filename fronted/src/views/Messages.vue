@@ -79,7 +79,11 @@
               <span class="chat-partner-course" v-if="activePartner.courseName">{{ activePartner.courseName }}</span>
             </div>
             <el-tooltip content="清空聊天记录" placement="top">
-              <el-button icon="Delete" size="small" circle class="clear-btn" @click="handleClearChat" />
+              <el-button size="small" circle class="clear-btn" @click="handleClearChat">
+                <el-icon>
+                  <Delete />
+                </el-icon>
+              </el-button>
             </el-tooltip>
           </div>
 

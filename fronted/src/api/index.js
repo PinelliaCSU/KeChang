@@ -25,6 +25,7 @@ export const courseApi = {
   getStudents: (id, params) => request.get(`/courses/${id}/students`, { params }),
   getResources: (id, params) => request.get(`/courses/${id}/resources`, { params }),
   markResourceViewed: (courseId, resourceId) => request.post(`/courses/${courseId}/resources/${resourceId}/view`),
+  summarizeResource: (courseId, resourceId) => request.post(`/courses/${courseId}/resources/${resourceId}/summarize`),
   enroll: (id) => request.post(`/courses/${id}/enroll`),
   unenroll: (id) => request.delete(`/courses/${id}/enroll`),
   removeStudent: (courseId, studentId) => request.delete(`/courses/${courseId}/students/${studentId}`)
@@ -40,7 +41,7 @@ export const examApi = {
   // 试卷
   listPapers: (params) => request.get('/papers', { params }),
   createPaper: (data) => request.post('/papers', data),
-  aiGenerate: (params) => request.post('/papers/ai-generate', null, { params }),
+  aiGenerate: (data) => request.post('/papers/ai-generate', data),
   getPaper: (id) => request.get(`/papers/${id}`),
   deletePaper: (id) => request.delete(`/papers/${id}`),
   // 考试
@@ -53,7 +54,8 @@ export const examApi = {
   submitExam: (id, data) => request.post(`/exams/${id}/submit`, data),
   getRecords: (id) => request.get(`/exams/${id}/records`),
   getRecordDetail: (recordId) => request.get(`/exams/records/${recordId}`),
-  mark: (recordId, params) => request.put(`/exams/records/${recordId}/mark`, null, { params })
+  mark: (recordId, params) => request.put(`/exams/records/${recordId}/mark`, null, { params }),
+  markAll: (recordId, data) => request.put(`/exams/records/${recordId}/mark-all`, data)
 }
 
 /** 随堂测验 API */
@@ -262,6 +264,11 @@ export const uploadApi = {
   uploadFile: (formData) => request.post('/upload/file', formData),
   preview: (params) => request.get('/upload/preview', { params }),
   pdfPages: (params) => request.get('/upload/pdf-pages', { params })
+}
+
+export const videoAnnotationApi = {
+  list: (fileKey) => request.get('/video-annotations', { params: { fileKey } }),
+  save: (fileKey, data) => request.put('/video-annotations', data, { params: { fileKey } })
 }
 
 /** 私信 API */
