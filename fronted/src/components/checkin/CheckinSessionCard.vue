@@ -169,7 +169,7 @@ const statusLabel = (s) => ({ SUCCESS: '正常', LATE: '迟到', ABSENT: '缺勤
 
 .card-course {
     font-size: 13px;
-    color: var(--bio-ink-muted, #7a8278);
+    color: var(--bio-ink-muted);
     margin: 0 0 10px;
 }
 
@@ -177,7 +177,7 @@ const statusLabel = (s) => ({ SUCCESS: '正常', LATE: '迟到', ABSENT: '缺勤
     display: flex;
     gap: 16px;
     font-size: 12px;
-    color: var(--bio-ink-muted, #7a8278);
+    color: var(--bio-ink-muted);
 }
 
 .card-meta span {
@@ -211,7 +211,7 @@ const statusLabel = (s) => ({ SUCCESS: '正常', LATE: '迟到', ABSENT: '缺勤
     display: flex;
     justify-content: space-between;
     font-size: 12px;
-    color: var(--bio-ink-muted, #7a8278);
+    color: var(--bio-ink-muted);
     margin-top: 4px;
 }
 

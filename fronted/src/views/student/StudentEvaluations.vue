@@ -276,7 +276,7 @@ onMounted(() => { fetchEvaluations() })
 
 .eval-item-num {
   font-weight: 600;
-  color: #409eff;
+  color: var(--bio-primary);
   min-width: 20px;
 }
 

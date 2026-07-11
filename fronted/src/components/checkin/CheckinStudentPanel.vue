@@ -251,7 +251,7 @@ onUnmounted(() => { if (timer) clearInterval(timer) })
 
 .code-section label {
     font-size: 14px;
-    color: var(--bio-ink-muted, #7a8278);
+    color: var(--bio-ink-muted);
 }
 
 .code-input-row {
@@ -302,13 +302,13 @@ onUnmounted(() => { if (timer) clearInterval(timer) })
 
 .qr-hint {
     font-size: 14px;
-    color: var(--bio-ink-muted, #7a8278);
+    color: var(--bio-ink-muted);
     margin: 0;
 }
 
 .qr-hint-sub {
     font-size: 12px;
-    color: var(--bio-ink-muted, #7a8278);
+    color: var(--bio-ink-muted);
     opacity: .7;
     margin: 0;
 }
@@ -341,7 +341,7 @@ onUnmounted(() => { if (timer) clearInterval(timer) })
     flex-direction: column;
     align-items: center;
     gap: 8px;
-    color: var(--bio-ink-muted, #7a8278);
+    color: var(--bio-ink-muted);
 }
 
 .loc-status.located {

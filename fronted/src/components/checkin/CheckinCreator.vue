@@ -213,11 +213,11 @@ defineExpose({ open })
     gap: 16px;
     padding: 14px 20px;
     border-radius: var(--bio-radius-md, 14px);
-    border: 2px solid #e8ecdf;
+    border: 2px solid var(--bio-border);
     cursor: pointer;
     transition: all .15s ease;
     font-size: 14px;
-    color: var(--bio-ink-muted, #7a8278);
+    color: var(--bio-ink-muted);
 }
 
 .type-card:hover {
@@ -244,7 +244,7 @@ defineExpose({ open })
 
 .loc-coords {
     font-size: 12px;
-    color: var(--bio-ink-muted, #7a8278);
+    color: var(--bio-ink-muted);
     font-family: monospace;
 }
 </style>

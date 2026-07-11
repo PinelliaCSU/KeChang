@@ -561,8 +561,8 @@ onUnmounted(() => {
 }
 
 .contact-item.active {
-  background: rgba(163, 177, 138, 0.12);
-  border-left: 3px solid #606c38;
+  background: rgba(32, 196, 204, 0.12);
+  border-left: 3px solid var(--bio-primary);
 }
 
 .contact-info {
@@ -702,7 +702,7 @@ onUnmounted(() => {
 }
 
 .message-bubble.sent .bubble-content {
-  background: var(--bio-moss, #606c38);
+  background: var(--bio-primary);
   color: #fff;
   border-bottom-right-radius: 4px;
 }

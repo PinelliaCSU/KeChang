@@ -36,7 +36,7 @@
           <div class="card-actions">
             <el-button size="small" type="primary"
               @click="router.push(`/teacher/courses/${course.id}`)">课程详情</el-button>
-            <el-button size="small" @click="router.push(`/teacher/courses/${course.id}/edit`)">编辑</el-button>
+            <el-button size="small" @click="openEditDialog(course)">编辑</el-button>
             <el-button size="small" type="danger" @click="deleteCourse(course)">删除</el-button>
           </div>
         </div>
@@ -48,48 +48,19 @@
         layout="prev, pager, next" style="margin-top:20px;justify-content:center" @current-change="fetchCourses" />
     </div>
 
-    <el-dialog v-model="dialogVisible" :title="editingId ? '编辑课程' : '创建课程'" width="520px">
-      <el-form :model="courseForm" label-width="90px">
-        <el-form-item label="课程名称" required>
-          <el-input v-model="courseForm.courseName" placeholder="请输入课程名称" />
-        </el-form-item>
-        <el-form-item label="课程简介">
-          <el-input v-model="courseForm.description" type="textarea" :rows="3" placeholder="请输入课程简介" />
-        </el-form-item>
-        <el-form-item label="封面地址">
-          <el-input v-model="courseForm.coverImg" placeholder="可选，图片 URL" />
-        </el-form-item>
-        <el-form-item label="开始日期" required>
-          <el-date-picker v-model="courseForm.startDate" type="date" value-format="YYYY-MM-DD" style="width:100%" />
-        </el-form-item>
-        <el-form-item label="结束日期" required>
-          <el-date-picker v-model="courseForm.endDate" type="date" value-format="YYYY-MM-DD" style="width:100%" />
-        </el-form-item>
-        <el-form-item label="课程状态">
-          <el-select v-model="courseForm.status" style="width:100%">
-            <el-option label="进行中" value="进行中" />
-            <el-option label="已结束" value="已结束" />
-          </el-select>
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" :loading="saving" @click="saveCourse">
-          {{ editingId ? '保存修改' : '确定创建' }}
-        </el-button>
-      </template>
-    </el-dialog>
+    <CourseEditDialog v-model="dialogVisible" :course="editingCourse" @saved="fetchCourses" />
   </div>
 </template>
 
 <script setup>
-import { reactive, ref, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { courseApi } from '@/api'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { computeStatus, statusTagType } from '@/utils/status'
 import { resolveFileUrl } from '@/utils/fileUrl'
 import CourseCoverPattern from '@/components/CourseCoverPattern.vue'
+import CourseEditDialog from '@/components/CourseEditDialog.vue'
 
 const router = useRouter()
 const courses = ref([])
@@ -99,19 +70,7 @@ const total = ref(0)
 const keyword = ref('')
 const statusFilter = ref('')
 const dialogVisible = ref(false)
-const saving = ref(false)
-const editingId = ref(null)
-
-const defaultForm = () => ({
-  courseName: '',
-  coverImg: '',
-  description: '',
-  startDate: '',
-  endDate: '',
-  status: '进行中'
-})
-
-const courseForm = reactive(defaultForm())
+const editingCourse = ref(null)
 
 const gradientPalette = [
   '#f5f7fa',
@@ -122,8 +81,6 @@ const gradientPalette = [
 ]
 
 const getCoverGradient = (id) => gradientPalette[((id || 1) - 1) % gradientPalette.length]
-
-const resetForm = () => Object.assign(courseForm, defaultForm())
 
 const fetchCourses = async () => {
   try {
@@ -143,49 +100,13 @@ const fetchCourses = async () => {
 }
 
 const openCreateDialog = () => {
-  editingId.value = null
-  resetForm()
+  editingCourse.value = null
   dialogVisible.value = true
 }
 
 const openEditDialog = (course) => {
-  editingId.value = course.id
-  Object.assign(courseForm, {
-    courseName: course.courseName || '',
-    coverImg: course.coverImg || '',
-    description: course.description || '',
-    startDate: course.startDate || '',
-    endDate: course.endDate || '',
-    status: course.status || '进行中'
-  })
+  editingCourse.value = { ...course }
   dialogVisible.value = true
-}
-
-const saveCourse = async () => {
-  if (!courseForm.courseName.trim()) {
-    ElMessage.warning('请输入课程名称')
-    return
-  }
-  if (!courseForm.startDate || !courseForm.endDate) {
-    ElMessage.warning('请选择课程起止日期')
-    return
-  }
-  saving.value = true
-  try {
-    if (editingId.value) {
-      await courseApi.update(editingId.value, courseForm)
-      ElMessage.success('课程已更新')
-    } else {
-      await courseApi.create(courseForm)
-      ElMessage.success('课程创建成功')
-    }
-    dialogVisible.value = false
-    fetchCourses()
-  } catch (e) {
-    ElMessage.error(e.response?.data?.message || '保存课程失败')
-  } finally {
-    saving.value = false
-  }
 }
 
 const deleteCourse = async (course) => {

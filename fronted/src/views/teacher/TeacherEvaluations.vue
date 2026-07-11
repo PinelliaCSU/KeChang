@@ -380,7 +380,7 @@ onMounted(() => { fetchCourses(); fetchEvaluations() })
 
 .student-index {
   font-weight: 600;
-  color: #409eff;
+  color: var(--bio-primary);
   min-width: 20px;
 }
 
@@ -465,10 +465,10 @@ onMounted(() => { fetchCourses(); fetchEvaluations() })
 }
 
 :deep(.kechang-table.el-table--striped .el-table__body tr.el-table__row--striped td.el-table__cell) {
-  background-color: rgba(163, 177, 138, 0.06);
+  background-color: rgba(32, 196, 204, 0.06);
 }
 
 :deep(.kechang-table .el-table__body tr.el-table__row:hover td) {
-  background-color: rgba(163, 177, 138, 0.08) !important;
+  background-color: rgba(32, 196, 204, 0.08) !important;
 }
 </style>

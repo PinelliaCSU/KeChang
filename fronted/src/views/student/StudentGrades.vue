@@ -117,7 +117,7 @@ onMounted(fetchGrades)
 .summary-card,
 .panel {
   background: #fff;
-  border: 1px solid rgba(163, 177, 138, 0.1);
+  border: 1px solid rgba(32, 196, 204, 0.1);
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
@@ -148,11 +148,11 @@ onMounted(fetchGrades)
 }
 
 .score-good {
-  color: #67c23a;
+  color: var(--bio-primary);
 }
 
 .score-pass {
-  color: #409eff;
+  color: var(--bio-primary-dark);
 }
 
 .score-fail {
@@ -188,10 +188,10 @@ onMounted(fetchGrades)
 }
 
 :deep(.kechang-table.el-table--striped .el-table__body tr.el-table__row--striped td.el-table__cell) {
-  background-color: rgba(163, 177, 138, 0.06);
+  background-color: rgba(32, 196, 204, 0.06);
 }
 
 :deep(.kechang-table .el-table__body tr.el-table__row:hover td) {
-  background-color: rgba(163, 177, 138, 0.08) !important;
+  background-color: rgba(32, 196, 204, 0.08) !important;
 }
 </style>

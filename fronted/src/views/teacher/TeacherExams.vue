@@ -138,9 +138,9 @@
             选项: {{ JSON.parse(ans.options || '[]').join(' | ') }}
           </div>
           <div class="answer-row">
-            <span>学生答案：<b :style="{ color: ans.isCorrect === 1 ? '#67c23a' : '#f56c6c' }">{{ ans.studentAnswer || '未作答'
+            <span>学生答案：<b :style="{ color: ans.isCorrect === 1 ? 'var(--bio-primary)' : '#f56c6c' }">{{ ans.studentAnswer || '未作答'
                 }}</b></span>
-            <span style="margin-left:20px">参考答案：<b style="color:#409eff">{{ ans.correctAnswer || '' }}</b></span>
+            <span style="margin-left:20px">参考答案：<b style="color:var(--bio-primary)">{{ ans.correctAnswer || '' }}</b></span>
           </div>
           <div class="score-row" v-if="ans.questionType === 'ESSAY' || ans.questionType === 'FILL'">
             <span>得分：</span>
@@ -454,10 +454,10 @@ onMounted(() => { fetchCourses(); fetchExams() })
 }
 
 :deep(.kechang-table.el-table--striped .el-table__body tr.el-table__row--striped td.el-table__cell) {
-  background-color: rgba(163, 177, 138, 0.06);
+  background-color: rgba(32, 196, 204, 0.06);
 }
 
 :deep(.kechang-table .el-table__body tr.el-table__row:hover td) {
-  background-color: rgba(163, 177, 138, 0.08) !important;
+  background-color: rgba(32, 196, 204, 0.08) !important;
 }
 </style>

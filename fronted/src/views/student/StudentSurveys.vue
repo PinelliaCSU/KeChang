@@ -277,7 +277,7 @@ onMounted(() => { fetchSurveys() })
     margin-bottom: 12px;
     background: #f9fafb;
     border-radius: 8px;
-    border-left: 3px solid #409eff;
+    border-left: 3px solid var(--bio-primary);
 }
 
 .fill-q-header {
@@ -290,7 +290,7 @@ onMounted(() => { fetchSurveys() })
 
 .fill-q-num {
     font-weight: 700;
-    color: #409eff;
+    color: var(--bio-primary);
     font-size: 15px;
 }
 

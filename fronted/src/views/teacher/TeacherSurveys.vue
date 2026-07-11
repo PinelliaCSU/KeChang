@@ -367,7 +367,7 @@ onMounted(() => { fetchCourses(); fetchSurveys() })
 
 .q-num {
   font-weight: 600;
-  color: #409eff;
+  color: var(--bio-primary);
 }
 
 .stats-content {
@@ -427,7 +427,7 @@ onMounted(() => { fetchCourses(); fetchSurveys() })
 
 .option-bar-fill {
   height: 100%;
-  background: linear-gradient(90deg, #409eff, #67c23a);
+  background: linear-gradient(90deg, var(--bio-primary), var(--bio-primary-dark));
   border-radius: 4px;
   transition: width 0.4s ease;
   min-width: 2px;
@@ -476,10 +476,10 @@ onMounted(() => { fetchCourses(); fetchSurveys() })
 }
 
 :deep(.kechang-table.el-table--striped .el-table__body tr.el-table__row--striped td.el-table__cell) {
-  background-color: rgba(163, 177, 138, 0.06);
+  background-color: rgba(32, 196, 204, 0.06);
 }
 
 :deep(.kechang-table .el-table__body tr.el-table__row:hover td) {
-  background-color: rgba(163, 177, 138, 0.08) !important;
+  background-color: rgba(32, 196, 204, 0.08) !important;
 }
 </style>

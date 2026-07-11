@@ -280,20 +280,20 @@ onBeforeUnmount(() => {
 <style scoped>
 .quiz-page { display: flex; flex-direction: column; gap: 18px; }
 .page-head { display: flex; align-items: center; justify-content: space-between; }
-.eyebrow { margin: 0 0 4px; color: #7c8a63; font-size: 13px; font-weight: 600; }
+.eyebrow { margin: 0 0 4px; color: var(--bio-primary); font-size: 13px; font-weight: 600; }
 .page-head h2 { margin: 0; color: var(--bio-ink); font-size: 25px; }
 .layout { display: grid; grid-template-columns: 330px minmax(0, 1fr); gap: 18px; align-items: start; }
-.panel { background: #fff; border: 1px solid #edf0e8; border-radius: 8px; box-shadow: 0 10px 28px rgba(42, 54, 34, .06); padding: 18px; }
+.panel { background: #fff; border: 1px solid var(--bio-border); border-radius: 8px; box-shadow: none; padding: 18px; }
 .panel-title { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
-.panel-title h3 { margin: 0; color: #2d3327; font-size: 17px; }
-.panel-title span { color: #8a927f; font-size: 12px; }
+.panel-title h3 { margin: 0; color: var(--bio-ink); font-size: 17px; }
+.panel-title span { color: var(--bio-ink-muted); font-size: 12px; }
 .quiz-list { display: flex; flex-direction: column; gap: 12px; }
-.quiz-card { border: 1px solid #e8ecdf; border-radius: 8px; background: #fbfcf8; padding: 14px; cursor: pointer; transition: .18s; }
+.quiz-card { border: 1px solid var(--bio-border); border-radius: 8px; background: #fff; padding: 14px; cursor: pointer; transition: .18s; }
 .quiz-card:hover, .quiz-card.active { border-color: var(--bio-primary); background: var(--bio-primary-soft); }
 .quiz-card.submitted { background: #fff; }
 .quiz-card-top { display: flex; align-items: center; justify-content: space-between; color: var(--bio-ink-muted); margin-bottom: 10px; }
 .quiz-card strong { color: var(--bio-ink); display: block; line-height: 1.5; }
-.quiz-card p { color: #8a927f; margin: 6px 0 0; font-size: 13px; }
+.quiz-card p { color: var(--bio-ink-muted); margin: 6px 0 0; font-size: 13px; }
 .answer-panel { min-height: 560px; }
 .answer-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 18px; }
 .answer-head h3 { margin: 0; color: var(--bio-ink); font-size: 23px; }
@@ -306,17 +306,17 @@ onBeforeUnmount(() => {
 .option-group { display: flex; flex-direction: column; gap: 14px; align-items: flex-start; }
 .option-item { font-size: 15px; white-space: normal; line-height: 1.6; }
 .submit-bar { display: flex; justify-content: flex-end; align-items: center; gap: 12px; margin: 18px 0; }
-.submitted-text { flex: 1; color: #606266; background: #f6faf2; border: 1px solid #e3ecd8; border-radius: 8px; padding: 12px; }
-.stats-box { border-top: 1px solid #edf0e8; padding-top: 16px; }
+.submitted-text { flex: 1; color: var(--bio-ink-soft); background: #f7f8fa; border: 1px solid var(--bio-border); border-radius: 8px; padding: 12px; }
+.stats-box { border-top: 1px solid var(--bio-border); padding-top: 16px; }
 .question-stats-list { display: flex; flex-direction: column; gap: 14px; }
-.question-stat-card { border: 1px solid #edf0e8; border-radius: 8px; padding: 14px; background: #fbfcf8; }
+.question-stat-card { border: 1px solid var(--bio-border); border-radius: 8px; padding: 14px; background: #fff; }
 .question-stat-title { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
-.question-stat-title strong { color: #2d3327; line-height: 1.5; }
+.question-stat-title strong { color: var(--bio-ink); line-height: 1.5; }
 .question-stat-title span { color: var(--bio-ink-muted); white-space: nowrap; font-size: 14px; }
 .bar-list { display: flex; flex-direction: column; gap: 12px; }
 .bar-row { display: grid; grid-template-columns: 180px minmax(0, 1fr) 70px; gap: 12px; align-items: center; }
-.bar-label { color: #303133; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.bar-track { height: 16px; border-radius: 999px; background: #eef1e8; overflow: hidden; }
+.bar-label { color: var(--bio-ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bar-track { height: 16px; border-radius: 999px; background: #e9eef3; overflow: hidden; }
 .bar-fill { height: 100%; border-radius: inherit; background: var(--bio-primary); transition: width .25s; }
 .bar-value { text-align: right; color: #606266; font-size: 13px; }
 .empty-panel { min-height: 360px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--bio-ink-muted); text-align: center; }

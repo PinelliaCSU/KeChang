@@ -391,7 +391,7 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: 16px;
-  border: 1px solid rgba(163, 177, 138, 0.08);
+  border: 1px solid rgba(32, 196, 204, 0.08);
   transition: box-shadow var(--bio-dur-slow) var(--bio-ease-out);
 }
 
@@ -458,7 +458,7 @@ onUnmounted(() => {
   border-radius: 14px;
   box-shadow: var(--bio-shadow-sm);
   padding: 24px;
-  border: 1px solid rgba(163, 177, 138, 0.08);
+  border: 1px solid rgba(32, 196, 204, 0.08);
 }
 
 .section-title {

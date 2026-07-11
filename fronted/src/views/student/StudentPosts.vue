@@ -333,7 +333,7 @@ onMounted(() => { fetchCourses(); fetchPosts() })
 .post-item { display: flex; align-items: flex-start; gap: 14px; padding: 16px 0; border-bottom: 1px solid #f0f0f0; cursor: pointer; transition: background 0.15s; }
 .post-item:last-child { border-bottom: none; }
 .post-item:hover { background: #fafbfc; margin: 0 -24px; padding: 16px 24px; border-radius: 8px; }
-.post-avatar { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #20c997, #0d9488); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 600; flex-shrink: 0; }
+.post-avatar { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, var(--bio-primary), var(--bio-primary-dark)); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 600; flex-shrink: 0; }
 .post-body { flex: 1; min-width: 0; }
 .post-title { font-size: 15px; font-weight: 600; color: #303133; margin: 0 0 6px 0; display: flex; align-items: center; }
 .post-preview { font-size: 13px; color: #909399; line-height: 1.5; margin: 0 0 8px 0; }
@@ -347,7 +347,7 @@ onMounted(() => { fetchCourses(); fetchPosts() })
 .post-info { display: flex; gap: 16px; font-size: 13px; color: #909399; margin-bottom: 8px; }
 
 .answer-item { padding: 12px; margin-bottom: 8px; background: #fafafa; border-radius: 8px; border-left: 3px solid #e4e7ed; }
-.answer-item.accepted { border-left-color: #67c23a; background: #f0f9eb; }
+.answer-item.accepted { border-left-color: var(--bio-primary); background: var(--bio-primary-soft); }
 .answer-content { line-height: 1.5; margin-bottom: 8px; }
 .answer-footer { display: flex; align-items: center; gap: 10px; font-size: 12px; color: #909399; flex-wrap: wrap; }
 

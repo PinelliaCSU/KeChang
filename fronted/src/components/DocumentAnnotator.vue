@@ -199,8 +199,8 @@ const downloadOriginal = () => {
   flex: 0 0 auto;
   padding: 4px 8px;
   border-radius: 6px;
-  background: #ecf5ff;
-  color: #409eff;
+  background: var(--bio-primary-soft);
+  color: var(--bio-primary);
   font-size: 12px;
   font-weight: 700;
 }
@@ -313,8 +313,8 @@ const downloadOriginal = () => {
 }
 
 .mark-text .mark-symbol {
-  background: #ecf5ff;
-  color: #409eff;
+  background: var(--bio-primary-soft);
+  color: var(--bio-primary);
 }
 
 .mark-text-input {

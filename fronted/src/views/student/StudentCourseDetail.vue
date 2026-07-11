@@ -441,7 +441,7 @@ onMounted(loadAll)
 }
 
 .enrolled-badge {
-    color: #67c23a;
+    color: var(--bio-primary);
     font-weight: 500;
 }
 
@@ -511,8 +511,8 @@ onMounted(loadAll)
 }
 
 .item-kind {
-    color: #409eff;
-    background: #ecf5ff;
+    color: var(--bio-primary);
+    background: var(--bio-primary-soft);
     border-radius: 4px;
     padding: 3px 8px;
     text-align: center;
@@ -557,7 +557,7 @@ onMounted(loadAll)
     width: 42px;
     height: 42px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #409eff, #20bfc8);
+    background: linear-gradient(135deg, var(--bio-primary), var(--bio-primary-dark));
     color: #fff;
     display: flex;
     align-items: center;
@@ -653,7 +653,7 @@ onMounted(loadAll)
 }
 
 .announcement-item-dot.unread {
-    background: #67c23a;
+    background: var(--bio-primary);
 }
 
 .announcement-item-title {

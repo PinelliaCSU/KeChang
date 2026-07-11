@@ -136,8 +136,8 @@ onMounted(() => { fetchDetail() })
 }
 
 .notif-type {
-    background: #f0f9eb;
-    color: #67c23a;
+    background: var(--bio-primary-soft);
+    color: var(--bio-primary);
     padding: 2px 8px;
     border-radius: 4px;
     font-size: 12px;

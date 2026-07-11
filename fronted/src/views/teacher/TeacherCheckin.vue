@@ -302,7 +302,7 @@ onUnmounted(() => { stopPolling() })
     font-size: 12px;
     text-transform: uppercase;
     letter-spacing: 2px;
-    color: var(--bio-ink-muted, #7a8278);
+    color: var(--bio-primary);
     margin: 0 0 4px;
 }
 
@@ -346,7 +346,7 @@ onUnmounted(() => { stopPolling() })
 }
 
 .code-panel {
-    background: #f8faf5;
+    background: #f7f8fa;
     border-radius: var(--bio-radius-md, 14px);
     padding: 20px;
     display: flex;
@@ -384,7 +384,7 @@ onUnmounted(() => { stopPolling() })
 }
 
 .cs-item.total {
-    color: var(--bio-ink-muted, #7a8278);
+    color: var(--bio-ink-muted);
 }
 
 .cs-sep {

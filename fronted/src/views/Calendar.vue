@@ -181,7 +181,7 @@ onMounted(() => { fetchEvents() })
 }
 
 .calendar-day.is-today .day-num {
-    background: #20c997;
+    background: var(--bio-primary);
     color: #fff;
     border-radius: 50%;
     width: 24px;
@@ -216,7 +216,7 @@ onMounted(() => { fetchEvents() })
 }
 
 .dot-assignment {
-    background: #409eff;
+    background: var(--bio-primary);
 }
 
 .dot-exam {
@@ -224,7 +224,7 @@ onMounted(() => { fetchEvents() })
 }
 
 .dot-training {
-    background: #67c23a;
+    background: var(--bio-primary);
 }
 
 .panel-title {
@@ -263,7 +263,7 @@ onMounted(() => { fetchEvents() })
 }
 
 .tag-assignment {
-    background: #409eff;
+    background: var(--bio-primary);
 }
 
 .tag-exam {
@@ -271,7 +271,7 @@ onMounted(() => { fetchEvents() })
 }
 
 .tag-training {
-    background: #67c23a;
+    background: var(--bio-primary);
 }
 
 .event-name {

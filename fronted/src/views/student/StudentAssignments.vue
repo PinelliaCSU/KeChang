@@ -379,7 +379,7 @@ onMounted(fetchAssignments)
 }
 
 .link-text {
-  color: #409eff;
+  color: var(--bio-primary);
   cursor: pointer;
   font-weight: 500;
 }
@@ -465,8 +465,8 @@ onMounted(fetchAssignments)
   justify-content: space-between;
   padding: 14px;
   border-radius: 8px;
-  background: #f0f9eb;
-  color: #67c23a;
+  background: var(--bio-primary-soft);
+  color: var(--bio-primary);
 }
 
 .score-card strong {
@@ -569,11 +569,11 @@ onMounted(fetchAssignments)
 }
 
 :deep(.kechang-table.el-table--striped .el-table__body tr.el-table__row--striped td.el-table__cell) {
-  background-color: rgba(163, 177, 138, 0.06);
+  background-color: rgba(32, 196, 204, 0.06);
 }
 
 :deep(.kechang-table .el-table__body tr.el-table__row:hover td) {
-  background-color: rgba(163, 177, 138, 0.08) !important;
+  background-color: rgba(32, 196, 204, 0.08) !important;
 }
 
 .assign-name-cell {
@@ -590,7 +590,7 @@ onMounted(fetchAssignments)
 }
 
 .assign-title:hover {
-  color: #409eff;
+  color: var(--bio-primary);
 }
 
 .assign-tag {
@@ -611,16 +611,15 @@ onMounted(fetchAssignments)
 }
 
 .course-icon {
-  color: #409EFF;
-  background: #409EFF;
+  color: #fff;
+  background: var(--bio-primary);
   border-radius: 50%;
   padding: 4px;
-  color: white;
   font-size: 14px;
 }
 
 .course-text {
-  color: #409EFF;
+  color: var(--bio-primary);
   font-size: 13px;
 }
 
@@ -636,7 +635,7 @@ onMounted(fetchAssignments)
 }
 
 .my-score {
-  color: #409EFF;
+  color: var(--bio-primary);
   font-weight: 700;
   font-size: 15px;
 }

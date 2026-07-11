@@ -221,7 +221,7 @@ const roleHome = () => {
 
 /* ---------- 品牌面板 ---------- */
 .brand-panel {
-  background: linear-gradient(135deg, #4a5c38, #5a6e42, #7f8c52);
+  background: #3b465f;
   background-size: 200% 200%;
   animation: bg-breathe 8s ease-in-out infinite;
   color: #fff;
@@ -443,7 +443,7 @@ const roleHome = () => {
 }
 
 .switch-text a {
-  color: #409eff;
+  color: var(--bio-primary);
   text-decoration: none;
   font-weight: 600;
   transition: color 0.2s;

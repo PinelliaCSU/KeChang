@@ -355,7 +355,7 @@ onMounted(() => { fetchCourses(); fetchPosts() })
 .post-info { display: flex; gap: 16px; font-size: 13px; color: #909399; margin-bottom: 8px; }
 
 .answer-item { padding: 12px; margin-bottom: 8px; background: #fafafa; border-radius: 8px; border-left: 3px solid #e4e7ed; }
-.answer-item.accepted { border-left-color: #67c23a; background: #f0f9eb; }
+.answer-item.accepted { border-left-color: var(--bio-primary); background: var(--bio-primary-soft); }
 .answer-content { line-height: 1.5; margin-bottom: 8px; }
 .answer-footer { display: flex; align-items: center; gap: 10px; font-size: 12px; color: #909399; flex-wrap: wrap; }
 

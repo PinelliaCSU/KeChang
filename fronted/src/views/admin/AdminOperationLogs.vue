@@ -119,7 +119,7 @@ onMounted(() => {
 .stat-row { display: flex; gap: 16px; }
 .stat-card { flex: 1; background: #fff; border-radius: 8px; padding: 20px 24px; box-shadow: 0 4px 12px rgba(0,0,0,.05); border: 1px solid #ebeef5; }
 .stat-num { color: #303133; font-size: 28px; font-weight: 700; }
-.stat-num.success { color: #67c23a; }
+.stat-num.success { color: var(--bio-primary); }
 .stat-label { color: #606266; font-size: 13px; margin-top: 6px; }
 .search-bar { display: flex; gap: 12px; }
 .pager { display: flex; justify-content: center; margin-top: 18px; }

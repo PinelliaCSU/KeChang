@@ -128,7 +128,7 @@ onMounted(() => { fetchSessions() })
     justify-content: space-between;
     align-items: center;
     padding-bottom: 12px;
-    border-bottom: 1px solid #e8ecdf;
+    border-bottom: 1px solid var(--bio-border);
     margin-bottom: 8px;
 }
 
@@ -142,7 +142,7 @@ onMounted(() => { fetchSessions() })
 .entry-loading {
     text-align: center;
     padding: 24px;
-    color: var(--bio-ink-muted, #7a8278);
+    color: var(--bio-ink-muted);
 }
 
 .entry-empty {
@@ -152,7 +152,7 @@ onMounted(() => { fetchSessions() })
 
 .entry-empty p {
     font-size: 13px;
-    color: var(--bio-ink-muted, #7a8278);
+    color: var(--bio-ink-muted);
     margin: 0;
 }
 
@@ -176,8 +176,8 @@ onMounted(() => { fetchSessions() })
 }
 
 .entry-item:hover {
-    background: #f8faf5;
-    border-color: #e8ecdf;
+    background: #f7f8fa;
+    border-color: var(--bio-border);
 }
 
 .entry-item.urgent {
@@ -197,7 +197,7 @@ onMounted(() => { fetchSessions() })
 
 .entry-course {
     font-size: 12px;
-    color: var(--bio-ink-muted, #7a8278);
+    color: var(--bio-ink-muted);
 }
 
 .entry-title {
@@ -229,7 +229,7 @@ onMounted(() => { fetchSessions() })
 
 .entry-footer {
     padding-top: 10px;
-    border-top: 1px solid #e8ecdf;
+    border-top: 1px solid var(--bio-border);
     margin-top: 8px;
     text-align: center;
 }

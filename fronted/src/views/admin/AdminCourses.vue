@@ -149,7 +149,7 @@ onMounted(fetchCourses)
 }
 
 .stat-num.success {
-  color: #67c23a;
+  color: var(--bio-primary);
 }
 
 .stat-num.muted {

@@ -132,7 +132,7 @@ const handleSave = async () => {
 }
 
 .edit-avatar {
-    background: linear-gradient(135deg, #20c997, #0d9488);
+    background: linear-gradient(135deg, var(--bio-primary), var(--bio-primary-dark));
     color: #fff;
     font-size: 24px;
     font-weight: 600;

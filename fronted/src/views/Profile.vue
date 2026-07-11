@@ -335,7 +335,7 @@ onMounted(() => { loadFullProfile(); loadStats() })
 }
 
 .display-avatar {
-    background: linear-gradient(135deg, #20c997, #0d9488);
+    background: linear-gradient(135deg, var(--bio-primary), var(--bio-primary-dark));
     color: #fff;
     font-size: 28px;
     font-weight: 600;
@@ -376,7 +376,7 @@ onMounted(() => { loadFullProfile(); loadStats() })
     display: block;
     font-size: 30px;
     font-weight: 700;
-    color: #20c997;
+    color: var(--bio-primary);
     line-height: 1.3;
 }
 

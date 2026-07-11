@@ -159,7 +159,7 @@ onMounted(() => { fetchOverview() })
 }
 
 .stat-card.active {
-    border: 2px solid #67c23a;
+    border: 2px solid var(--bio-primary);
 }
 
 .stat-value {
@@ -231,7 +231,7 @@ onMounted(() => { fetchOverview() })
 
 .option-bar-fill {
     height: 100%;
-    background: linear-gradient(90deg, #409eff, #67c23a);
+    background: linear-gradient(90deg, var(--bio-primary), var(--bio-primary-dark));
     border-radius: 4px;
     transition: width 0.4s ease;
     min-width: 2px;

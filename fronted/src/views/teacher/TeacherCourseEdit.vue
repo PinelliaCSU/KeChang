@@ -255,8 +255,8 @@ onMounted(fetchCourse)
 }
 
 .cover-placeholder:hover {
-    border-color: #409eff;
-    color: #409eff;
+    border-color: var(--bio-primary);
+    color: var(--bio-primary);
 }
 
 .cover-hint {

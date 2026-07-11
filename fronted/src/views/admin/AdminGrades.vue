@@ -51,7 +51,7 @@ import DataPanel from '@/components/DataPanel.vue'
 const overview = ref({})
 const distribution = ref([])
 const loading = ref(false)
-const colors = ['#67c23a', '#409eff', '#e6a23c', '#909399', '#f56c6c']
+const colors = ['#20c4cc', '#12aab2', '#e6a23c', '#909399', '#f56c6c']
 
 const formatScore = (value) => value == null ? '--' : Number(value).toFixed(1)
 const formatRate = (value) => value == null ? '--' : `${value}%`
@@ -115,7 +115,7 @@ onMounted(fetchOverview)
 
 .stat-card {
   background: #fff;
-  border: 1px solid rgba(163, 177, 138, 0.1);
+  border: 1px solid rgba(32, 196, 204, 0.1);
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
   padding: 18px 22px;

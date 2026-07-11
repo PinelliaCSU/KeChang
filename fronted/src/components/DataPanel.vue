@@ -42,7 +42,7 @@ defineProps({
     background: var(--bio-paper, #fefefc);
     border-radius: var(--bio-radius-md, 14px);
     box-shadow: var(--bio-shadow-sm, 0 2px 8px rgba(44, 54, 48, 0.06));
-    border: 1px solid rgba(163, 177, 138, 0.12);
+    border: 1px solid rgba(32, 196, 204, 0.12);
     width: 100%;
     margin: 0 auto;
     overflow: hidden;
@@ -74,7 +74,7 @@ defineProps({
 .data-panel__desc {
     margin: 4px 0 0;
     font-size: 13px;
-    color: var(--bio-ink-muted, #7a8278);
+    color: var(--bio-ink-muted);
     line-height: 1.5;
 }
 

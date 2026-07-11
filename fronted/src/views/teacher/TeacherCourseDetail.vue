@@ -6,7 +6,7 @@
         <p class="page-subtitle">{{ course.teacherName || '当前教师' }} · {{ course.studentCount || 0 }} 人选课</p>
       </div>
       <div class="title-actions">
-        <el-button type="primary" @click="router.push(`/teacher/courses/${courseId()}/edit`)">编辑课程</el-button>
+        <el-button type="primary" @click="openCourseEditDialog">编辑课程</el-button>
         <el-button @click="router.back()">返回</el-button>
       </div>
     </div>
@@ -30,7 +30,7 @@
             <el-descriptions-item label="课程简介" :span="2">{{ course.description || '暂无课程简介' }}</el-descriptions-item>
           </el-descriptions>
           <div class="info-actions">
-            <el-button type="primary" @click="router.push(`/teacher/courses/${courseId()}/edit`)">编辑课程信息</el-button>
+            <el-button type="primary" @click="openCourseEditDialog">编辑课程信息</el-button>
           </div>
         </el-tab-pane>
 
@@ -189,6 +189,8 @@
       <FilePreview v-if="previewResource" :url="previewResource.fileUrl" :name="previewResource.resourceName"
         :type="previewResource.resourceType" />
     </el-dialog>
+
+    <CourseEditDialog v-model="courseDialogVisible" :course="course" @saved="fetchCourse" />
   </div>
 </template>
 
@@ -198,6 +200,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { assignmentApi, courseApi, gradeApi } from '@/api'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import FilePreview from '@/components/FilePreview.vue'
+import CourseEditDialog from '@/components/CourseEditDialog.vue'
 import { computeStatus, statusTagType } from '@/utils/status'
 import { resolveFileUrl } from '@/utils/fileUrl'
 
@@ -211,6 +214,7 @@ const resources = ref([])
 const assignments = ref([])
 const openChapterNames = ref([])
 const chapterDialogVisible = ref(false)
+const courseDialogVisible = ref(false)
 const savingChapter = ref(false)
 const uploading = ref(false)
 const editingChapterId = ref(null)
@@ -223,6 +227,10 @@ const courseStats = ref(null)
 
 const chapterForm = reactive({ chapterName: '', sortOrder: 1, description: '' })
 const courseId = () => route.params.id
+
+const openCourseEditDialog = () => {
+  courseDialogVisible.value = true
+}
 
 const fetchCourse = async () => {
   const res = await courseApi.detail(courseId())

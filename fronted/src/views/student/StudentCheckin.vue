@@ -150,7 +150,7 @@ onMounted(() => {
     font-size: 12px;
     text-transform: uppercase;
     letter-spacing: 2px;
-    color: var(--bio-ink-muted, #7a8278);
+    color: var(--bio-primary);
     margin: 0 0 4px;
 }
 

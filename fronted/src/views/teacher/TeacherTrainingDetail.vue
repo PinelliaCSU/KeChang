@@ -722,7 +722,7 @@ onMounted(() => {
 
 /* ---------- 弹窗内文件列表 ---------- */
 .file-list { display: flex; flex-direction: column; gap: 6px; }
-.file-item { display: flex; align-items: center; gap: 10px; padding: 6px 10px; background: #f0f9eb; border-radius: 6px; font-size: 13px; }
+.file-item { display: flex; align-items: center; gap: 10px; padding: 6px 10px; background: var(--bio-primary-soft); border-radius: 6px; font-size: 13px; }
 .file-name { flex: 1; color: #303133; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .file-size { color: #909399; white-space: nowrap; font-size: 12px; }
 

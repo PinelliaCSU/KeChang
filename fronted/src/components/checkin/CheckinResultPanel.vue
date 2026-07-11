@@ -24,7 +24,7 @@
         <div class="rate-section" v-if="stats.totalStudents">
             <div class="rate-ring-wrap">
                 <svg viewBox="0 0 120 120" class="rate-ring">
-                    <circle cx="60" cy="60" r="52" fill="none" stroke="#e8ecdf" stroke-width="8" />
+                    <circle cx="60" cy="60" r="52" fill="none" stroke="#e9eef3" stroke-width="8" />
                     <circle cx="60" cy="60" r="52" fill="none" stroke="#20c4cc" stroke-width="8" stroke-linecap="round"
                         :stroke-dasharray="rateCircumference" :stroke-dashoffset="rateOffset"
                         transform="rotate(-90 60 60)" />
@@ -124,7 +124,7 @@ const formatTime = (t) => {
 
 .stat-label {
     font-size: 12px;
-    color: var(--bio-ink-muted, #7a8278);
+    color: var(--bio-ink-muted);
 }
 
 .stat-card.success .stat-num {
@@ -176,7 +176,7 @@ const formatTime = (t) => {
 
 .rate-sub {
     font-size: 11px;
-    color: var(--bio-ink-muted, #7a8278);
+    color: var(--bio-ink-muted);
 }
 
 .student-list-section h4 {
@@ -222,12 +222,12 @@ const formatTime = (t) => {
 
 .s-no {
     font-size: 11px;
-    color: var(--bio-ink-muted, #7a8278);
+    color: var(--bio-ink-muted);
 }
 
 .s-time {
     font-size: 11px;
-    color: var(--bio-ink-muted, #7a8278);
+    color: var(--bio-ink-muted);
     font-family: monospace;
 }
 </style>

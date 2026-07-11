@@ -98,13 +98,13 @@ const placeholder = (type) => {
   justify-content: center;
   border-radius: 50%;
   font-weight: 700;
-  background: #ecf5ff;
-  color: #409eff;
+  background: var(--bio-primary-soft);
+  color: var(--bio-primary);
 }
 
 .mark-card.check .mark-symbol {
-  background: #f0f9eb;
-  color: #67c23a;
+  background: var(--bio-primary-soft);
+  color: var(--bio-primary);
 }
 
 .mark-card.wrong .mark-symbol {
