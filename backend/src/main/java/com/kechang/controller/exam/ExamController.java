@@ -180,4 +180,12 @@ public class ExamController {
         examService.markSubjective(recordId, questionId, score, getUserId());
         return Result.success();
     }
+
+    @PutMapping("/api/exams/records/{recordId}/mark-all")
+    @PreAuthorize("hasAuthority('ROLE_TEACHER')")
+    public Result<Void> markSubjectiveBatch(@PathVariable Long recordId,
+            @RequestBody Map<String, Double> scores) {
+        examService.markSubjectiveBatch(recordId, scores, getUserId());
+        return Result.success();
+    }
 }

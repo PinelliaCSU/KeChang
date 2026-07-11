@@ -2,6 +2,8 @@ package com.kechang.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kechang.common.BusinessException;
 import com.kechang.common.PageResult;
 import com.kechang.dto.ExamSubmitDTO;
@@ -27,6 +29,8 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class ExamService {
+
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     private final QuestionMapper questionMapper;
     private final ExamPaperMapper paperMapper;
@@ -546,6 +550,51 @@ public class ExamService {
         }
     }
 
+    @Transactional
+    public void markSubjectiveBatch(Long recordId, Map<String, Double> scores, Long teacherId) {
+        if (scores == null || scores.isEmpty()) {
+            throw BusinessException.badRequest("scores is empty");
+        }
+        ExamRecord record = recordMapper.selectById(recordId);
+        if (record == null) {
+            throw BusinessException.notFound("exam record not found");
+        }
+        Exam exam = examMapper.selectById(record.getExamId());
+        if (exam != null) {
+            checkCourseOwner(exam.getCourseId(), teacherId);
+        }
+
+        List<ExamRecordAnswer> answers = answerMapper.selectList(new LambdaQueryWrapper<ExamRecordAnswer>()
+                .eq(ExamRecordAnswer::getRecordId, recordId));
+        for (ExamRecordAnswer answer : answers) {
+            String questionId = String.valueOf(answer.getQuestionId());
+            if (!scores.containsKey(questionId)) {
+                continue;
+            }
+            Double score = scores.get(questionId);
+            answer.setScore(score == null ? 0.0 : score);
+            answer.setMarkedBy(teacherId);
+            answerMapper.updateById(answer);
+        }
+
+        Double total = answerMapper.selectList(new LambdaQueryWrapper<ExamRecordAnswer>()
+                .eq(ExamRecordAnswer::getRecordId, recordId))
+                .stream().mapToDouble(a -> a.getScore() != null ? a.getScore() : 0).sum();
+        record.setTotalScore(total);
+        ExamPaper paper = exam != null ? paperMapper.selectById(exam.getPaperId()) : null;
+        double passScore = paper != null ? paper.getPassScore() : 60.0;
+        record.setPassStatus(total >= passScore ? 1 : 0);
+        recordMapper.updateById(record);
+        if (exam != null) {
+            gradeService.recalculateGrade(exam.getCourseId(), record.getStudentId());
+            notificationService.sendToUser(record.getStudentId(), teacherId, exam.getCourseId(), "EXAM",
+                    "Exam score updated: " + exam.getExamName(),
+                    "Your exam score has been updated. Current total score: " + total);
+            operationLogService.record(teacherId, "EXAM", "MARK_EXAM_RECORD", "EXAM_RECORD", record.getId(), exam.getExamName(),
+                    "Batch marked subjective answers and updated total score");
+        }
+    }
+
     public void deleteExam(Long id, Long teacherId) {
         Exam exam = examMapper.selectById(id);
         if (exam == null) {
@@ -596,9 +645,26 @@ public class ExamService {
             return false;
         }
         if ("MULTI".equals(question.getQuestionType())) {
-            return normalizeMulti(question.getAnswer()).equals(normalizeMulti(studentAnswer));
+            return normalizeObjectiveAnswer(question, question.getAnswer()).equals(normalizeObjectiveAnswer(question, studentAnswer));
+        }
+        if ("SINGLE".equals(question.getQuestionType())) {
+            return normalizeObjectiveAnswer(question, question.getAnswer()).equals(normalizeObjectiveAnswer(question, studentAnswer));
+        }
+        if ("JUDGE".equals(question.getQuestionType())) {
+            return normalizeJudge(question.getAnswer()).equals(normalizeJudge(studentAnswer));
         }
         return question.getAnswer().trim().equalsIgnoreCase(studentAnswer == null ? "" : studentAnswer.trim());
+    }
+
+    private String normalizeJudge(String answer) {
+        String text = answer == null ? "" : answer.trim().toLowerCase(Locale.ROOT);
+        if ("1".equals(text) || "对".equals(text) || "正确".equals(text) || "true".equals(text)) {
+            return "1";
+        }
+        if ("0".equals(text) || "错".equals(text) || "错误".equals(text) || "false".equals(text)) {
+            return "0";
+        }
+        return text;
     }
 
     private String normalizeSubmittedAnswer(Object answer) {
@@ -637,6 +703,55 @@ public class ExamService {
         return values;
     }
 
+    private List<String> normalizeObjectiveAnswer(Question question, String answer) {
+        List<OptionItem> options = parseOptions(question.getOptions());
+        return normalizeMulti(answer).stream()
+                .map(item -> optionTokenToLabel(item, options))
+                .filter(StringUtils::hasText)
+                .sorted()
+                .collect(Collectors.toList());
+    }
+
+    private String optionTokenToLabel(String token, List<OptionItem> options) {
+        String text = token == null ? "" : token.trim();
+        if (!StringUtils.hasText(text)) {
+            return "";
+        }
+        for (OptionItem option : options) {
+            if (option.label.equalsIgnoreCase(text) || option.content.equals(text)) {
+                return option.label;
+            }
+        }
+        return text.toUpperCase(Locale.ROOT);
+    }
+
+    private List<OptionItem> parseOptions(String optionsJson) {
+        if (!StringUtils.hasText(optionsJson)) {
+            return new ArrayList<>();
+        }
+        try {
+            List<Object> raw = OBJECT_MAPPER.readValue(optionsJson, new TypeReference<List<Object>>() {});
+            List<OptionItem> options = new ArrayList<>();
+            for (int i = 0; i < raw.size(); i++) {
+                Object item = raw.get(i);
+                String fallbackLabel = String.valueOf((char) ('A' + i));
+                if (item instanceof Map<?, ?> map) {
+                    Object label = map.get("label") != null ? map.get("label") : map.get("key");
+                    Object content = map.get("content") != null ? map.get("content") : map.get("value");
+                    options.add(new OptionItem(label == null ? fallbackLabel : String.valueOf(label).trim(),
+                            content == null ? "" : String.valueOf(content).trim()));
+                } else {
+                    options.add(new OptionItem(fallbackLabel, String.valueOf(item).trim()));
+                }
+            }
+            return options;
+        } catch (Exception e) {
+            return new ArrayList<>();
+        }
+    }
+
+    private record OptionItem(String label, String content) {}
+
     /**
      * 根据开始/结束时间自动计算考试状态
      */
@@ -654,3 +769,4 @@ public class ExamService {
         }
     }
 }
+

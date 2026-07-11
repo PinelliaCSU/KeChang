@@ -53,7 +53,8 @@ export const examApi = {
   submitExam: (id, data) => request.post(`/exams/${id}/submit`, data),
   getRecords: (id) => request.get(`/exams/${id}/records`),
   getRecordDetail: (recordId) => request.get(`/exams/records/${recordId}`),
-  mark: (recordId, params) => request.put(`/exams/records/${recordId}/mark`, null, { params })
+  mark: (recordId, params) => request.put(`/exams/records/${recordId}/mark`, null, { params }),
+  markAll: (recordId, data) => request.put(`/exams/records/${recordId}/mark-all`, data)
 }
 
 /** 随堂测验 API */
@@ -246,6 +247,11 @@ export const uploadApi = {
   uploadFile: (formData) => request.post('/upload/file', formData),
   preview: (params) => request.get('/upload/preview', { params }),
   pdfPages: (params) => request.get('/upload/pdf-pages', { params })
+}
+
+export const videoAnnotationApi = {
+  list: (fileKey) => request.get('/video-annotations', { params: { fileKey } }),
+  save: (fileKey, data) => request.put('/video-annotations', data, { params: { fileKey } })
 }
 
 /** 私信 API */
