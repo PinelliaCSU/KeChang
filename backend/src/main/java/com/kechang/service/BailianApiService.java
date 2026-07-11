@@ -148,9 +148,23 @@ public class BailianApiService {
     }
 
     /**
-     * 调用阿里百炼 Chat Completions API
+     * 调用阿里百炼 Chat Completions API（JSON 模式，用于组卷）
      */
     private String callChatApi(String systemPrompt, String userPrompt) {
+        return callChatApiInternal(systemPrompt, userPrompt, true);
+    }
+
+    /**
+     * 调用阿里百炼 Chat Completions API（文本模式，用于摘要等自由输出）
+     */
+    private String callChatApiText(String systemPrompt, String userPrompt) {
+        return callChatApiInternal(systemPrompt, userPrompt, false);
+    }
+
+    /**
+     * 调用阿里百炼 Chat Completions API
+     */
+    private String callChatApiInternal(String systemPrompt, String userPrompt, boolean jsonMode) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.set("Authorization", "Bearer " + config.getApiKey());
@@ -166,7 +180,9 @@ public class BailianApiService {
         // 控制输出格式和随机性
         body.put("temperature", 0.3);
         body.put("max_tokens", 4096);
-        body.put("response_format", Map.of("type", "json_object"));
+        if (jsonMode) {
+            body.put("response_format", Map.of("type", "json_object"));
+        }
 
         HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
 
@@ -282,5 +298,77 @@ public class BailianApiService {
         }
 
         return content.trim();
+    }
+
+    // ==================== AI 课件总结 ====================
+    /**
+     * 调用 AI 对课件内容进行摘要总结
+     *
+     * @param resourceName 资源名称
+     * @param fileContent 提取出的文本内容（媒体文件为占位描述）
+     * @param courseName 所属课程名称（可选，用于提供上下文）
+     * @return AI 生成的总结文本
+     */
+    public String summarizeResource(String resourceName, String fileContent, String courseName) {
+        if (fileContent == null || fileContent.isBlank()) {
+            return "课件内容为空，无法生成摘要。";
+        }
+
+        // 限制文本长度，避免超出 token 限制（保留约前 8000 字）
+        int maxChars = 8000;
+        String truncated = fileContent.length() > maxChars
+                ? fileContent.substring(0, maxChars) + "\n...(内容已截断)"
+                : fileContent;
+
+        // 判断是否为媒体文件（无法提取文字的类型）
+        boolean isMedia = truncated.startsWith("[视频文件]")
+                || truncated.startsWith("[音频文件]")
+                || truncated.startsWith("[图片文件]")
+                || truncated.startsWith("[不可读文件]");
+
+        String systemPrompt;
+        if (isMedia) {
+            systemPrompt = """
+                你是一位专业的教育内容分析助手。学生上传了一份无法直接提取文字的媒体课件，
+                你需要根据文件名和课程信息，为学生提供有价值的学习指导。
+
+                请按以下格式输出（使用 Markdown 格式）：
+                1. **学习目标预估**（根据文件名和课程名，推测本课件可能涉及的知识点，列出 3-5 条）
+                2. **内容简介**（一段话，约 100-200 字，说明这是什么类型的课件、可能涵盖的内容范围）
+                3. **相关概念**（根据文件名关键词，列出 3-6 个可能涉及的核心概念，附带简短解释）
+                4. **观看/学习建议**（3-5 条针对该类型文件的具体学习建议）
+
+                要求：
+                - 语言亲切、鼓励，适合学生阅读
+                - 根据文件名尽力推测主题，不要只说"无法分析"
+                - 学习建议要具体可操作，不要泛泛而谈
+                - 在开头简短说明"这是一份{视频/音频/图片}课件，以下分析基于文件名推测，具体内容请观看后确认"
+                """;
+        } else {
+            systemPrompt = """
+                你是一位专业的教育内容分析助手。你的任务是对课件内容进行结构化总结，帮助学生快速理解重点。
+
+                请按以下格式输出总结（使用 Markdown 格式）：
+                1. **核心要点**（3-5 条，每条一句话）
+                2. **内容概述**（一段话，约 150-300 字）
+                3. **关键概念**（列出 3-8 个关键词/概念，附带简短解释）
+                4. **学习建议**（1-3 条学习该内容的建议）
+
+                要求：
+                - 语言简洁明了，适合学生阅读
+                - 如果原文是代码/技术文档，请关注核心逻辑和重点
+                - 如果原文内容较少或无法理解，请如实说明
+                """;
+        }
+
+        String contextInfo = "";
+        if (courseName != null && !courseName.isBlank()) {
+            contextInfo = "（所属课程：" + courseName + "）";
+        }
+
+        String userPrompt = "请对以下课件《" + resourceName + "》" + contextInfo + "的内容进行总结：\n\n" + truncated;
+
+        String aiResponse = callChatApiText(systemPrompt, userPrompt);
+        return aiResponse != null ? aiResponse.trim() : "AI 服务暂时不可用，请稍后重试。";
     }
 }

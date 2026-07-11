@@ -25,6 +25,7 @@ export const courseApi = {
   getStudents: (id, params) => request.get(`/courses/${id}/students`, { params }),
   getResources: (id, params) => request.get(`/courses/${id}/resources`, { params }),
   markResourceViewed: (courseId, resourceId) => request.post(`/courses/${courseId}/resources/${resourceId}/view`),
+  summarizeResource: (courseId, resourceId) => request.post(`/courses/${courseId}/resources/${resourceId}/summarize`),
   enroll: (id) => request.post(`/courses/${id}/enroll`),
   unenroll: (id) => request.delete(`/courses/${id}/enroll`),
   removeStudent: (courseId, studentId) => request.delete(`/courses/${courseId}/students/${studentId}`)

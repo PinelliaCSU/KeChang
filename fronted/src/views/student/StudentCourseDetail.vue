@@ -49,7 +49,7 @@
                             <el-tag :type="statusTagType(courseStatus)">{{ courseStatus }}</el-tag>
                         </el-descriptions-item>
                         <el-descriptions-item label="课程简介" :span="2">{{ course.description || '暂无课程简介'
-                        }}</el-descriptions-item>
+                            }}</el-descriptions-item>
                     </el-descriptions>
                 </el-tab-pane>
 
@@ -70,7 +70,7 @@
                             <div class="student-tags">
                                 <el-tag v-if="s.major" size="small" effect="plain">{{ s.major }}</el-tag>
                                 <el-tag v-if="s.className" size="small" type="info" effect="plain">{{ s.className
-                                }}</el-tag>
+                                    }}</el-tag>
                                 <el-tag v-if="s.grade" size="small" type="warning" effect="plain">{{ s.grade }}</el-tag>
                             </div>
                         </div>
@@ -181,7 +181,7 @@
         <!-- 资源预览弹窗 -->
         <el-dialog v-model="previewVisible" title="资源预览" width="80%" top="5vh" destroy-on-close>
             <FilePreview v-if="previewResource" :url="previewResource.fileUrl" :name="previewResource.resourceName"
-                :type="previewResource.resourceType" />
+                :type="previewResource.resourceType" :resource-id="previewResource.id" :course-id="courseId()" />
         </el-dialog>
     </div>
 </template>

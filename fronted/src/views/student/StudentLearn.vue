@@ -125,7 +125,7 @@
 
     <el-dialog v-model="previewVisible" title="资源预览" width="80%" top="5vh" destroy-on-close>
       <FilePreview v-if="previewResource" :url="previewResource.fileUrl" :name="previewResource.resourceName"
-        :type="previewResource.resourceType" />
+        :type="previewResource.resourceType" :resource-id="previewResource.id" :course-id="courseId()" />
     </el-dialog>
   </div>
 </template>
