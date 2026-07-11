@@ -1,19 +1,13 @@
 <template>
   <aside class="sidebar-wrapper" :class="{ collapsed }">
-    <el-menu
-      :default-active="activeMenu"
-      :default-openeds="openMenus"
-      :collapse="collapsed"
-      :router="true"
-      background-color="transparent"
-      text-color="#4b5563"
-      active-text-color="#20c4cc"
-      class="sidebar-menu"
-    >
+    <el-menu :default-active="activeMenu" :default-openeds="openMenus" :collapse="collapsed" :router="true"
+      background-color="transparent" text-color="#4b5563" active-text-color="#20c4cc" class="sidebar-menu">
       <template v-for="item in menuItems" :key="item.path">
         <el-sub-menu v-if="item.children" :index="item.path">
           <template #title>
-            <el-icon><component :is="item.icon" /></el-icon>
+            <el-icon>
+              <component :is="item.icon" />
+            </el-icon>
             <span>{{ item.title }}</span>
           </template>
           <el-menu-item v-for="child in item.children" :key="child.path" :index="child.path">
@@ -21,7 +15,9 @@
           </el-menu-item>
         </el-sub-menu>
         <el-menu-item v-else :index="item.path">
-          <el-icon><component :is="item.icon" /></el-icon>
+          <el-icon>
+            <component :is="item.icon" />
+          </el-icon>
           <span>{{ item.title }}</span>
         </el-menu-item>
       </template>
@@ -85,7 +81,6 @@ const teacherMenus = [
     children: [
       { path: '/teacher/roll-call', title: '随机点名' },
       { path: '/teacher/checkin', title: '课堂签到' },
-      { path: '/teacher/announcements', title: '公告管理' },
       { path: '/teacher/posts', title: '互动问答' },
       { path: '/teacher/surveys', title: '问卷管理' },
       { path: '/teacher/messages', title: '私信' }
@@ -114,7 +109,6 @@ const studentMenus = [
     title: '互动交流',
     icon: 'ChatDotRound',
     children: [
-      { path: '/student/announcements', title: '课程公告' },
       { path: '/student/posts', title: '互动问答' },
       { path: '/student/messages', title: '私信' },
       { path: '/student/knowledge', title: '知识库' }

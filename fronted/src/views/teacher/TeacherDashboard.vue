@@ -79,7 +79,12 @@ import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { dashboardApi, assignmentApi, examApi, messageApi, qaApi } from '@/api'
 import ShortcutPanel from '@/components/DashBoard/ShortcutPanel.vue'
-import * as echarts from 'echarts'
+// ECharts 按需导入（替代全量 import * as echarts，减少 ~1MB 打包体积）
+import * as echarts from 'echarts/core'
+import { LineChart } from 'echarts/charts'
+import { GridComponent, TooltipComponent } from 'echarts/components'
+import { CanvasRenderer } from 'echarts/renderers'
+echarts.use([LineChart, GridComponent, TooltipComponent, CanvasRenderer])
 
 const router = useRouter()
 const stats = ref({})
@@ -107,55 +112,56 @@ const handleTodoClick = (t) => {
 const fetchTodos = async () => {
   const items = []
 
-  // 1. 待批改作业 — 查询有提交但未评分的作业
+  // 1. 待批改作业 — 查询有提交但未评分的作业（并行化替代串行 N+1）
   try {
     const assignRes = await assignmentApi.list({ page: 1, size: 100 })
     if (assignRes.data.code === 200) {
-      const assigns = assignRes.data.data?.records || []
-      for (const a of assigns.slice(0, 10)) {
-        try {
-          const subRes = await assignmentApi.getSubmitList(a.id, { page: 1, size: 100 })
-          if (subRes.data.code === 200) {
-            const submits = subRes.data.data?.records || []
-            const pending = submits.filter(s => s.score == null && s.status !== '已批改')
-            pending.forEach(s => {
-              items.push({
-                type: 'grade',
-                content: `批改《${a.title}》— ${s.studentName || '学生'}的作业`,
-                courseName: a.courseName || '',
-                time: s.submitTime ? formatTime(s.submitTime) : '今天',
-                route: '/teacher/assignments'
-              })
+      const assigns = (assignRes.data.data?.records || []).slice(0, 10)
+      // 并行获取所有作业的提交列表，替代串行 for 循环
+      const submitResults = await Promise.allSettled(
+        assigns.map(a => assignmentApi.getSubmitList(a.id, { page: 1, size: 100 }))
+      )
+      submitResults.forEach((result, i) => {
+        if (result.status === 'fulfilled' && result.value.data.code === 200) {
+          const submits = result.value.data.data?.records || []
+          const pending = submits.filter(s => s.score == null && s.status !== '已批改')
+          pending.forEach(s => {
+            items.push({
+              type: 'grade',
+              content: `批改《${assigns[i].title}》— ${s.studentName || '学生'}的作业`,
+              courseName: assigns[i].courseName || '',
+              time: s.submitTime ? formatTime(s.submitTime) : '今天',
+              route: '/teacher/assignments'
             })
-          }
-        } catch { /* ignore */ }
-      }
+          })
+        }
+      })
     }
   } catch { /* ignore */ }
 
-  // 2. 待阅卷考试 — 查询有记录但未评分的考试
+  // 2. 待阅卷考试 — 查询有记录但未评分的考试（并行化替代串行 N+1）
   try {
     const examRes = await examApi.listExams({ page: 1, size: 50 })
     if (examRes.data.code === 200) {
-      const exams = examRes.data.data?.records || []
-      for (const e of exams.slice(0, 5)) {
-        try {
-          const recRes = await examApi.getRecords(e.id)
-          if (recRes.data.code === 200) {
-            const records = recRes.data.data || []
-            const pending = records.filter(r => r.totalScore == null)
-            pending.forEach(r => {
-              items.push({
-                type: 'exam',
-                content: `阅卷《${e.examName}》— ${r.studentName || '学生'}`,
-                courseName: e.courseName || '',
-                time: r.submitTime ? formatTime(r.submitTime) : '今天',
-                route: '/teacher/exams'
-              })
+      const exams = (examRes.data.data?.records || []).slice(0, 5)
+      const recordResults = await Promise.allSettled(
+        exams.map(e => examApi.getRecords(e.id))
+      )
+      recordResults.forEach((result, i) => {
+        if (result.status === 'fulfilled' && result.value.data.code === 200) {
+          const records = result.value.data.data || []
+          const pending = records.filter(r => r.totalScore == null)
+          pending.forEach(r => {
+            items.push({
+              type: 'exam',
+              content: `阅卷《${exams[i].examName}》— ${r.studentName || '学生'}`,
+              courseName: exams[i].courseName || '',
+              time: r.submitTime ? formatTime(r.submitTime) : '今天',
+              route: '/teacher/exams'
             })
-          }
-        } catch { /* ignore */ }
-      }
+          })
+        }
+      })
     }
   } catch { /* ignore */ }
 

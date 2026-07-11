@@ -127,7 +127,12 @@ import { computed, ref, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { dashboardApi, courseApi, participationApi, assignmentApi, examApi, trainingApi, messageApi, evaluationApi, surveyApi, announcementApi } from '@/api'
 import ShortcutPanel from '@/components/DashBoard/ShortcutPanel.vue'
-import * as echarts from 'echarts'
+// ECharts 按需导入（替代全量 import * as echarts，减少 ~1MB 打包体积）
+import * as echarts from 'echarts/core'
+import { LineChart } from 'echarts/charts'
+import { GridComponent, TooltipComponent } from 'echarts/components'
+import { CanvasRenderer } from 'echarts/renderers'
+echarts.use([LineChart, GridComponent, TooltipComponent, CanvasRenderer])
 
 const router = useRouter()
 const stats = ref({})
@@ -161,133 +166,81 @@ const fetchTodos = async () => {
   const items = []
   const now = new Date()
 
+  // 并行发起所有 7 类待办查询（替代串行等待）
+  const results = await Promise.allSettled([
+    assignmentApi.list({ page: 1, size: 50 }),
+    examApi.listExams({ page: 1, size: 50 }),
+    trainingApi.listProjects({ page: 1, size: 50 }),
+    messageApi.conversations({ page: 1, size: 30 }),
+    evaluationApi.list({ page: 1, size: 50 }),
+    surveyApi.list({ page: 1, size: 50 }),
+    announcementApi.list({ page: 1, size: 50 })
+  ])
+
   // 1. 待提交作业
-  try {
-    const res = await assignmentApi.list({ page: 1, size: 50 })
-    const list = extractList(res)
-    list.forEach(a => {
+  const [assignRes, examRes, trainRes, convRes, evalRes, surveyRes, annRes] = results
+  if (assignRes.status === 'fulfilled') {
+    extractList(assignRes.value).forEach(a => {
       if (!a.submitted) {
-        items.push({
-          type: 'assignment',
-          title: `提交作业：${a.title}`,
-          courseName: a.courseName || '',
-          deadline: fmt(a.deadline),
-          overdue: isOverdue(a.deadline),
-          route: '/student/assignments'
-        })
+        items.push({ type: 'assignment', title: `提交作业：${a.title}`, courseName: a.courseName || '', deadline: fmt(a.deadline), overdue: isOverdue(a.deadline), route: '/student/assignments' })
       }
     })
-  } catch { /* ignore */ }
+  }
 
   // 2. 待参加考试
-  try {
-    const res = await examApi.listExams({ page: 1, size: 50 })
-    const list = extractList(res)
-    list.forEach(e => {
+  if (examRes.status === 'fulfilled') {
+    extractList(examRes.value).forEach(e => {
       if (e.submitted !== 1 && e.startTime && new Date(e.startTime) <= now && e.endTime && new Date(e.endTime) >= now) {
-        items.push({
-          type: 'exam',
-          title: `参加考试：${e.examName || e.title}`,
-          courseName: e.courseName || '',
-          deadline: fmt(e.endTime),
-          overdue: false,
-          route: '/student/exams'
-        })
+        items.push({ type: 'exam', title: `参加考试：${e.examName || e.title}`, courseName: e.courseName || '', deadline: fmt(e.endTime), overdue: false, route: '/student/exams' })
       }
     })
-  } catch { /* ignore */ }
+  }
 
   // 3. 待提交实训报告
-  try {
-    const res = await trainingApi.listProjects({ page: 1, size: 50 })
-    const list = extractList(res)
-    list.forEach(t => {
+  if (trainRes.status === 'fulfilled') {
+    extractList(trainRes.value).forEach(t => {
       if (t.taskCount > 0 && (t.reportCount == null || t.reportCount < t.taskCount)) {
-        items.push({
-          type: 'training',
-          title: `提交实训报告：${t.projectName || t.name || t.title}`,
-          courseName: t.courseName || '',
-          deadline: fmt(t.endDate || t.deadline),
-          overdue: isOverdue(t.endDate || t.deadline),
-          route: '/student/trainings'
-        })
+        items.push({ type: 'training', title: `提交实训报告：${t.projectName || t.name || t.title}`, courseName: t.courseName || '', deadline: fmt(t.endDate || t.deadline), overdue: isOverdue(t.endDate || t.deadline), route: '/student/trainings' })
       }
     })
-  } catch { /* ignore */ }
+  }
 
   // 4. 未读私信
-  try {
-    const convRes = await messageApi.conversations({ page: 1, size: 30 })
-    if (convRes.data?.code === 200) {
-      const convs = convRes.data.data?.records || convRes.data.data || []
-      convs.forEach(c => {
-        if (c.unreadCount > 0) {
-          items.push({
-            type: 'message',
-            title: `查看 ${c.partnerName || c.name || '联系人'} 的私信`,
-            courseName: c.courseName || '',
-            deadline: c.lastTime ? fmt(c.lastTime) : '今天',
-            overdue: false,
-            route: '/student/messages'
-          })
-        }
-      })
-    }
-  } catch { /* ignore */ }
+  if (convRes.status === 'fulfilled' && convRes.value.data?.code === 200) {
+    const convs = convRes.value.data.data?.records || convRes.value.data.data || []
+    convs.forEach(c => {
+      if (c.unreadCount > 0) {
+        items.push({ type: 'message', title: `查看 ${c.partnerName || c.name || '联系人'} 的私信`, courseName: c.courseName || '', deadline: c.lastTime ? fmt(c.lastTime) : '今天', overdue: false, route: '/student/messages' })
+      }
+    })
+  }
 
   // 5. 待填写教学评价
-  try {
-    const res = await evaluationApi.list({ page: 1, size: 50 })
-    const list = extractList(res)
-    list.forEach(e => {
+  if (evalRes.status === 'fulfilled') {
+    extractList(evalRes.value).forEach(e => {
       if (!e.submitted) {
-        items.push({
-          type: 'evaluation',
-          title: `填写教学评价：${e.evaluationName || e.courseName}`,
-          courseName: e.courseName || '',
-          deadline: fmt(e.endDate),
-          overdue: isOverdue(e.endDate),
-          route: '/student/evaluations'
-        })
+        items.push({ type: 'evaluation', title: `填写教学评价：${e.evaluationName || e.courseName}`, courseName: e.courseName || '', deadline: fmt(e.endDate), overdue: isOverdue(e.endDate), route: '/student/evaluations' })
       }
     })
-  } catch { /* ignore */ }
+  }
 
   // 6. 待填写问卷
-  try {
-    const res = await surveyApi.list({ page: 1, size: 50 })
-    const list = extractList(res)
-    list.forEach(s => {
+  if (surveyRes.status === 'fulfilled') {
+    extractList(surveyRes.value).forEach(s => {
       if (!s.submitted) {
-        items.push({
-          type: 'survey',
-          title: `填写问卷：${s.title}`,
-          courseName: s.courseName || '',
-          deadline: fmt(s.endDate),
-          overdue: isOverdue(s.endDate),
-          route: '/student/surveys'
-        })
+        items.push({ type: 'survey', title: `填写问卷：${s.title}`, courseName: s.courseName || '', deadline: fmt(s.endDate), overdue: isOverdue(s.endDate), route: '/student/surveys' })
       }
     })
-  } catch { /* ignore */ }
+  }
 
   // 7. 待确认公告
-  try {
-    const res = await announcementApi.list({ page: 1, size: 50 })
-    const list = extractList(res)
-    list.forEach(a => {
+  if (annRes.status === 'fulfilled') {
+    extractList(annRes.value).forEach(a => {
       if (!a.confirmed) {
-        items.push({
-          type: 'announcement',
-          title: `确认公告：${a.title}`,
-          courseName: a.courseName || '',
-          deadline: fmt(a.publishTime),
-          overdue: false,
-          route: '/student/announcements'
-        })
+        items.push({ type: 'announcement', title: `确认公告：${a.title}`, courseName: a.courseName || '', deadline: fmt(a.publishTime), overdue: false, route: `/student/courses/${a.courseId}?tab=announcements` })
       }
     })
-  } catch { /* ignore */ }
+  }
 
   todos.value = items
 }

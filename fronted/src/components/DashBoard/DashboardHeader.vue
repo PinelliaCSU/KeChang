@@ -1,9 +1,6 @@
 <template>
     <header class="top-header">
         <div class="header-left">
-            <button class="app-switch" type="button" aria-label="应用菜单">
-                <span></span><span></span><span></span><span></span>
-            </button>
             <div class="logo-area" @click="router.push(roleHome())">
                 <img src="@/img/logo.jpg" alt="Logo" class="logo-img" />
                 <span class="brand-name">中南大学</span>
@@ -307,6 +304,7 @@ onUnmounted(() => {
 }
 
 .logo-area {
+    padding-left: 22px;
     gap: 12px;
     cursor: pointer;
 }

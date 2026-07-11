@@ -1,8 +1,13 @@
 <template>
   <div class="learn-page">
+    <div class="back-row">
+      <el-button link @click="router.back()">
+        <span class="back-arrow">←</span> 返回
+      </el-button>
+    </div>
+
     <div class="course-header">
-      <div>
-        <el-button link @click="router.back()">返回</el-button>
+      <div class="course-info">
         <h2 class="course-title">{{ course.courseName || '课程学习' }}</h2>
         <p class="course-meta">{{ course.teacherName || '授课教师' }} · {{ course.description || '暂无课程简介' }}</p>
       </div>
@@ -24,7 +29,8 @@
           <template #title>
             <div class="chapter-title">
               <span>{{ chapter.sortOrder }} {{ chapter.chapterName }}</span>
-              <span class="chapter-stat">{{ resourcesByChapter(chapter.id).length }} 个资源 · {{ assignmentsByChapter(chapter.id).length }} 个作业</span>
+              <span class="chapter-stat">{{ resourcesByChapter(chapter.id).length }} 个资源 · {{
+                assignmentsByChapter(chapter.id).length }} 个作业</span>
             </div>
           </template>
 
@@ -46,9 +52,7 @@
 
             <el-empty
               v-if="resourcesByChapter(chapter.id).length === 0 && assignmentsByChapter(chapter.id).length === 0"
-              description="本章节暂无内容"
-              :image-size="70"
-            />
+              description="本章节暂无内容" :image-size="70" />
           </div>
         </el-collapse-item>
       </el-collapse>
@@ -120,13 +124,14 @@
     </div>
 
     <el-dialog v-model="previewVisible" title="资源预览" width="80%" top="5vh" destroy-on-close>
-      <FilePreview v-if="previewResource" :url="previewResource.fileUrl" :name="previewResource.resourceName" :type="previewResource.resourceType" />
+      <FilePreview v-if="previewResource" :url="previewResource.fileUrl" :name="previewResource.resourceName"
+        :type="previewResource.resourceType" />
     </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { assignmentApi, courseApi, knowledgeApi, announcementApi } from '@/api'
 import { ElMessage } from 'element-plus'
@@ -168,8 +173,27 @@ const fetchCourseData = async () => {
   }
 }
 
-const resourcesByChapter = (chapterId) => resources.value.filter(resource => resource.chapterId === chapterId)
-const assignmentsByChapter = (chapterId) => assignments.value.filter(assignment => assignment.chapterId === chapterId)
+// 使用 computed 按章节分组为 Map，O(1) 查找替代每次渲染时 O(n) filter
+const resourcesByChapterMap = computed(() => {
+  const map = new Map()
+  resources.value.forEach(r => {
+    const arr = map.get(r.chapterId) || []
+    arr.push(r)
+    map.set(r.chapterId, arr)
+  })
+  return map
+})
+const assignmentsByChapterMap = computed(() => {
+  const map = new Map()
+  assignments.value.forEach(a => {
+    const arr = map.get(a.chapterId) || []
+    arr.push(a)
+    map.set(a.chapterId, arr)
+  })
+  return map
+})
+const resourcesByChapter = (chapterId) => resourcesByChapterMap.value.get(chapterId) || []
+const assignmentsByChapter = (chapterId) => assignmentsByChapterMap.value.get(chapterId) || []
 const formatDate = (value) => value ? String(value).replace('T', ' ').slice(0, 16) : '--'
 
 const formatTime = (t) => {
@@ -224,33 +248,188 @@ onMounted(fetchCourseData)
 </script>
 
 <style scoped>
-.learn-page { display: flex; flex-direction: column; gap: 22px; }
-.course-header { display: flex; align-items: flex-start; justify-content: space-between; }
-.course-title { display: inline-block; margin: 0 0 8px 8px; font-size: 24px; color: #303133; }
-.course-meta { margin: 0; color: #909399; font-size: 14px; }
-.learn-tabs { display: flex; gap: 44px; border-bottom: 1px solid #e4e7ed; color: #606266; font-size: 18px; }
-.learn-tabs span { padding: 0 0 12px; cursor: pointer; transition: color 0.2s; }
-.learn-tabs span:hover { color: var(--bio-primary); }
-.learn-tabs .active { color: var(--bio-primary); border-bottom: 3px solid var(--bio-primary); }
-.chapter-panel, .note-panel, .announcement-panel, .resource-panel, .assignment-panel { background: #fff; border: 1px solid #e4e7ed; border-radius: 8px; padding: 24px; }
-.chapter-title { width: 100%; display: flex; justify-content: space-between; padding-right: 20px; font-size: 18px; }
-.chapter-stat { color: #909399; font-size: 13px; font-weight: 400; }
-.chapter-body { padding: 12px 24px 20px; }
-.learn-item { display: grid; grid-template-columns: 36px minmax(180px, 1fr) auto auto; align-items: center; gap: 12px; padding: 14px 0; color: #606266; }
-.item-icon { width: 28px; height: 28px; border-radius: 50%; background: #ffe1a3; display: flex; align-items: center; justify-content: center; }
-.item-icon.assignment { background: var(--bio-primary-soft); color: var(--bio-primary); font-size: 13px; font-weight: 700; }
-.item-name { color: #303133; font-size: 15px; }
-.item-meta { color: #909399; font-size: 13px; }
-.note-panel h4 { margin: 0 0 12px; color: #303133; }
-.note-actions { display: flex; justify-content: flex-end; margin-top: 12px; }
+.learn-page {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.back-row {
+  margin-bottom: -14px;
+}
+
+.back-arrow {
+  font-size: 16px;
+  margin-right: 2px;
+}
+
+.course-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.course-title {
+  margin: 0 0 8px 0;
+  font-size: 24px;
+  color: #303133;
+}
+
+.course-meta {
+  margin: 0;
+  color: #909399;
+  font-size: 14px;
+}
+
+.learn-tabs {
+  display: flex;
+  gap: 44px;
+  border-bottom: 1px solid #e4e7ed;
+  color: #606266;
+  font-size: 18px;
+}
+
+.learn-tabs span {
+  padding: 0 0 12px;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.learn-tabs span:hover {
+  color: var(--bio-primary);
+}
+
+.learn-tabs .active {
+  color: var(--bio-primary);
+  border-bottom: 3px solid var(--bio-primary);
+}
+
+.chapter-panel,
+.note-panel,
+.announcement-panel,
+.resource-panel,
+.assignment-panel {
+  background: #fff;
+  border: 1px solid #e4e7ed;
+  border-radius: 8px;
+  padding: 24px;
+}
+
+.chapter-title {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  padding-right: 20px;
+  font-size: 18px;
+}
+
+.chapter-stat {
+  color: #909399;
+  font-size: 13px;
+  font-weight: 400;
+}
+
+.chapter-body {
+  padding: 12px 24px 20px;
+}
+
+.learn-item {
+  display: grid;
+  grid-template-columns: 36px minmax(180px, 1fr) auto auto;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 0;
+  color: #606266;
+}
+
+.item-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #ffe1a3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.item-icon.assignment {
+  background: var(--bio-primary-soft);
+  color: var(--bio-primary);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.item-name {
+  color: #303133;
+  font-size: 15px;
+}
+
+.item-meta {
+  color: #909399;
+  font-size: 13px;
+}
+
+.note-panel h4 {
+  margin: 0 0 12px;
+  color: #303133;
+}
+
+.note-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 12px;
+}
 
 /* 公告样式 */
-.announcement-list { display: flex; flex-direction: column; gap: 16px; }
-.announcement-card { padding: 20px; border: 1px solid #ebeef5; border-radius: 10px; transition: box-shadow 0.2s; }
-.announcement-card:hover { box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
-.announcement-card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
-.announcement-card-header h3 { margin: 0; font-size: 16px; color: #303133; }
-.announcement-desc { font-size: 13px; color: #909399; margin-bottom: 12px; line-height: 1.6; }
-.announcement-meta { display: flex; flex-wrap: wrap; gap: 16px; font-size: 12px; color: #909399; margin-bottom: 12px; }
-.announcement-actions { display: flex; align-items: center; justify-content: flex-end; }
+.announcement-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.announcement-card {
+  padding: 20px;
+  border: 1px solid #ebeef5;
+  border-radius: 10px;
+  transition: box-shadow 0.2s;
+}
+
+.announcement-card:hover {
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+}
+
+.announcement-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.announcement-card-header h3 {
+  margin: 0;
+  font-size: 16px;
+  color: #303133;
+}
+
+.announcement-desc {
+  font-size: 13px;
+  color: #909399;
+  margin-bottom: 12px;
+  line-height: 1.6;
+}
+
+.announcement-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  font-size: 12px;
+  color: #909399;
+  margin-bottom: 12px;
+}
+
+.announcement-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
 </style>

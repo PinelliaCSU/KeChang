@@ -4,7 +4,16 @@ import ElementPlus from 'element-plus'
 import 'element-plus/dist/index.css'
 import './styles/element-override.css'
 import zhCn from 'element-plus/dist/locale/zh-cn.mjs'
-import * as ElementPlusIconsVue from '@element-plus/icons-vue'
+
+// 按需导入实际使用的图标（替代全局注册 ~200+ 图标，减少 ~300KB 打包体积）
+import {
+  ArrowDown, ArrowLeft, ArrowRight, Bell, Calendar, ChatDotRound, ChatLineSquare,
+  Checked, CircleCheck, CircleCheckFilled, CircleCloseFilled, Clock, Close,
+  Collection, Connection, DataAnalysis, Document, DocumentCopy, Edit, Expand,
+  Fold, Folder, FullScreen, Hide, Iphone, List, Loading, Location, Notebook,
+  Odometer, PictureFilled, Plus, QuestionFilled, Reading, Refresh, School,
+  Search, Star, SwitchButton, Timer, Tools, TrendCharts, User, VideoCamera, View
+} from '@element-plus/icons-vue'
 
 import App from './App.vue'
 import router from './router'
@@ -12,8 +21,16 @@ import { installKeyboardNavigation } from './utils/keyboardNavigation'
 
 const app = createApp(App)
 
-// 注册所有 Element Plus 图标
-for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
+// 按需注册实际使用的图标
+const icons = {
+  ArrowDown, ArrowLeft, ArrowRight, Bell, Calendar, ChatDotRound, ChatLineSquare,
+  Checked, CircleCheck, CircleCheckFilled, CircleCloseFilled, Clock, Close,
+  Collection, Connection, DataAnalysis, Document, DocumentCopy, Edit, Expand,
+  Fold, Folder, FullScreen, Hide, Iphone, List, Loading, Location, Notebook,
+  Odometer, PictureFilled, Plus, QuestionFilled, Reading, Refresh, School,
+  Search, Star, SwitchButton, Timer, Tools, TrendCharts, User, VideoCamera, View
+}
+for (const [key, component] of Object.entries(icons)) {
   app.component(key, component)
 }
 

@@ -198,7 +198,7 @@ import { computeStatus, statusTagType } from '@/utils/status'
 const route = useRoute()
 const router = useRouter()
 
-const activeTab = ref('info')
+const activeTab = ref(route.query.tab || 'info')
 const course = ref({})
 const chapters = ref([])
 const resources = ref([])
@@ -279,8 +279,11 @@ const fetchCourse = async () => {
 
 /** 检测当前学生是否已加入该课程 */
 const checkEnrolled = async () => {
+    // 优先使用课程详情中的 enrolled 字段
+    if (course.value.enrolled !== undefined) return
     try {
-        const res = await courseApi.list({ page: 1, size: 999 })
+        // 仅获取最近一页（size=20），已加入的课程通常排在最前
+        const res = await courseApi.list({ page: 1, size: 20 })
         if (res.data.code === 200) {
             const data = res.data.data
             const list = Array.isArray(data?.records)

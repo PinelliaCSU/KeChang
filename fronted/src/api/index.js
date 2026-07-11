@@ -40,7 +40,7 @@ export const examApi = {
   // 试卷
   listPapers: (params) => request.get('/papers', { params }),
   createPaper: (data) => request.post('/papers', data),
-  aiGenerate: (params) => request.post('/papers/ai-generate', null, { params }),
+  aiGenerate: (data) => request.post('/papers/ai-generate', data),
   getPaper: (id) => request.get(`/papers/${id}`),
   deletePaper: (id) => request.delete(`/papers/${id}`),
   // 考试
