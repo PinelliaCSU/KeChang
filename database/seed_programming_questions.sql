@@ -1,6 +1,6 @@
 -- =============================================================
 -- 课畅 - 编程题种子数据
--- 包含 C、C++、Python 三种语言的示例编程题
+-- 包含 C、C++、Python、SQL 四种语言的示例编程题
 -- =============================================================
 
 -- 示例1: C语言 - 两数之和（简单）
@@ -103,6 +103,29 @@ VALUES (
         'hiddenTestCases', JSON_ARRAY(
             JSON_OBJECT('input', '6\n1 2 3 4 5 6', 'expectedOutput', '1 2 3 4 5 6'),
             JSON_OBJECT('input', '10\n10 9 8 7 6 5 4 3 2 1', 'expectedOutput', '1 2 3 4 5 6 7 8 9 10')
+        )
+    )
+);
+
+-- 示例5: SQL - 学生成绩查询（简单）
+INSERT INTO question (question_type, content, answer, analysis, score, difficulty, knowledge_point, course_id, create_by, programming_config)
+VALUES (
+    'CODE',
+    '已有 student 表结构如下：\n  CREATE TABLE student (id INT, name TEXT, score INT);\n已插入以下数据：\n  INSERT INTO student VALUES (1, ''张三'', 85), (2, ''李四'', 92), (3, ''王五'', 78), (4, ''赵六'', 88), (5, ''孙七'', 95);\n\n请编写 SQL 查询：查询成绩大于等于 85 分的学生姓名和成绩，按成绩降序排列。\n\n输出格式：\n每行一个学生，格式为 "姓名|成绩"。',
+    '',
+    '使用 WHERE 子句过滤 score >= 85，使用 ORDER BY 降序排列。注意输出格式需要拼接字段。',
+    10, 2, 'SQL-查询语句', NULL, NULL,
+    JSON_OBJECT(
+        'language', 'sql',
+        'templateCode', '-- 创建表并插入数据\nCREATE TABLE student (id INT, name TEXT, score INT);\nINSERT INTO student VALUES (1, ''张三'', 85), (2, ''李四'', 92), (3, ''王五'', 78), (4, ''赵六'', 88), (5, ''孙七'', 95);\n\n-- 在此编写查询语句\nSELECT name || ''|'' || score FROM student WHERE score >= 85 ORDER BY score DESC;',
+        'timeLimit', 3,
+        'memoryLimit', 128,
+        'scoringMode', 'perCase',
+        'testCases', JSON_ARRAY(
+            JSON_OBJECT('input', '', 'expectedOutput', '孙七|95\n李四|92\n赵六|88\n张三|85')
+        ),
+        'hiddenTestCases', JSON_ARRAY(
+            JSON_OBJECT('input', '', 'expectedOutput', '孙七|95\n李四|92\n赵六|88\n张三|85')
         )
     )
 );

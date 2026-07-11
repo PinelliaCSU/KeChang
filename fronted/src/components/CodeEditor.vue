@@ -8,6 +8,7 @@
                     <el-option label="C" value="c" />
                     <el-option label="C++" value="cpp" />
                     <el-option label="Python" value="python" />
+                    <el-option label="SQL" value="sql" />
                 </el-select>
                 <span v-if="templateAvailable" class="template-hint">
                     <el-button link type="primary" size="small" @click="resetToTemplate">
@@ -64,7 +65,7 @@ let editor = null
 const templateAvailable = ref(!!props.templateCode)
 
 // Monaco 语言映射
-const langMap = { c: 'c', cpp: 'cpp', python: 'python' }
+const langMap = { c: 'c', cpp: 'cpp', python: 'python', sql: 'sql' }
 
 function initEditor() {
     if (!editorContainer.value) return

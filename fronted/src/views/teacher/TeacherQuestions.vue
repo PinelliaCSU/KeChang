@@ -141,6 +141,7 @@
                   <el-option label="C" value="c" />
                   <el-option label="C++" value="cpp" />
                   <el-option label="Python" value="python" />
+                  <el-option label="SQL" value="sql" />
                 </el-select>
               </el-form-item>
             </el-col>
@@ -550,4 +551,5 @@ onMounted(() => { fetchCourses(); fetchQuestions() })
   font-weight: 600;
   font-size: 13px;
   color: #374151;
-}</style>
+}
+</style>

@@ -47,7 +47,8 @@ public class CodeExecutionService {
     private static final Map<String, String> IMAGE_MAP = Map.of(
             "c", "kechang/runner-c",
             "cpp", "kechang/runner-cpp",
-            "python", "kechang/runner-python"
+            "python", "kechang/runner-python",
+            "sql", "kechang/runner-sql"
     );
 
     /**
@@ -56,7 +57,8 @@ public class CodeExecutionService {
     private static final Map<String, String> SOURCE_FILE = Map.of(
             "c", "main.c",
             "cpp", "main.cpp",
-            "python", "main.py"
+            "python", "main.py",
+            "sql", "main.sql"
     );
 
     // ==================== 公共方法 ====================
@@ -116,7 +118,7 @@ public class CodeExecutionService {
             Path sourcePath = Path.of(workDir, fileName);
             Files.writeString(sourcePath, sourceCode, StandardCharsets.UTF_8);
 
-            // 编译（C / C++）
+            // 编译（C / C++），SQL 和 Python 无需编译
             String compileError = null;
             if ("c".equals(language) || "cpp".equals(language)) {
                 compileError = compileCode(workDir, image, fileName, language);
@@ -213,7 +215,10 @@ public class CodeExecutionService {
 
             // 构造执行命令
             String execCmd;
-            if ("python".equals(language)) {
+            if ("sql".equals(language)) {
+                // SQL: 用 sqlite3 执行（输入仅用于创建表的场景，直接执行 SQL 文件）
+                execCmd = String.format("timeout %d sqlite3 :memory: < /code/main.sql > /code/output.txt 2>/code/error.txt", execTimeout);
+            } else if ("python".equals(language)) {
                 execCmd = String.format("timeout %d python3 /code/main.py < /code/input.txt > /code/output.txt 2>/code/error.txt", execTimeout);
             } else {
                 execCmd = String.format("timeout %d /code/program < /code/input.txt > /code/output.txt 2>/code/error.txt", execTimeout);
