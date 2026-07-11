@@ -305,7 +305,12 @@ const fetchPapers = async () => {
   try {
     const res = await examApi.listPapers({ page: page.value, size: pageSize.value, courseId: courseFilter.value || undefined })
     if (res.data.code === 200) {
-      papers.value = res.data.data.records
+      // 将 courseId 映射为 courseName，以便表格显示"所属课程"
+      const courseMap = Object.fromEntries(courseList.value.map(c => [c.id, c.courseName]))
+      papers.value = (res.data.data.records || []).map(p => ({
+        ...p,
+        courseName: courseMap[p.courseId] || '未知课程'
+      }))
       total.value = res.data.data.total
     }
   } catch (e) { /* ignore */ }
@@ -502,7 +507,7 @@ const handleDelete = async (id) => {
   } catch (e) { /* ignore */ }
 }
 
-onMounted(() => { fetchCourses(); fetchPapers() })
+onMounted(async () => { await fetchCourses(); fetchPapers() })
 </script>
 
 <style scoped>
