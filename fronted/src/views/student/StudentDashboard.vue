@@ -283,7 +283,7 @@ const fetchTodos = async () => {
           courseName: a.courseName || '',
           deadline: fmt(a.publishTime),
           overdue: false,
-          route: '/student/announcements'
+          route: `/student/courses/${a.courseId}?tab=announcements`
         })
       }
     })

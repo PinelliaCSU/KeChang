@@ -162,8 +162,76 @@
           </el-table>
           <el-empty v-if="students.length === 0" description="暂无学生选课" :image-size="90" />
         </el-tab-pane>
+
+        <el-tab-pane label="公告管理" name="announcements">
+          <div class="tab-toolbar">
+            <el-button type="primary" @click="openAnnounceDialog()">+ 发布公告</el-button>
+          </div>
+          <el-table v-if="announcements.length > 0 || annLoading" :data="announcements" v-loading="annLoading" stripe
+            class="kechang-table" style="width:100%">
+            <el-table-column prop="title" label="公告标题" min-width="200" />
+            <el-table-column label="发布时间" width="170">
+              <template #default="{ row }">{{ formatTime(row.publishTime) }}</template>
+            </el-table-column>
+            <el-table-column label="确认人数" width="100" align="center">
+              <template #default="{ row }">
+                <el-tag :type="row.confirmCount > 0 ? 'success' : 'info'" size="small">{{ row.confirmCount || 0
+                  }}</el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column label="操作" width="260" fixed="right">
+              <template #default="{ row }">
+                <el-button size="small" @click="openAnnounceDialog(row)">编辑</el-button>
+                <el-button size="small" type="success" @click="viewConfirms(row)">查看确认</el-button>
+                <el-button size="small" type="danger" @click="handleAnnDelete(row.id)">删除</el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+          <el-empty v-if="!annLoading && announcements.length === 0" description="暂无公告" :image-size="100" />
+          <el-pagination v-if="annTotal > annPageSize" :current-page="annPage" :page-size="annPageSize"
+            :total="annTotal" layout="prev, pager, next" @current-change="p => { annPage = p; fetchAnnouncements() }"
+            style="margin-top:16px;justify-content:center" />
+        </el-tab-pane>
       </el-tabs>
     </div>
+
+    <!-- 公告弹窗 -->
+    <el-dialog v-model="annDialogVisible" :title="annEditingId ? '编辑公告' : '发布公告'" width="620px" destroy-on-close
+      @closed="resetAnnForm">
+      <el-form :model="annForm" label-width="90px">
+        <el-form-item label="公告标题" required>
+          <el-input v-model="annForm.title" placeholder="请输入公告标题" />
+        </el-form-item>
+        <el-form-item label="公告内容" required>
+          <el-input v-model="annForm.content" type="textarea" :rows="6" placeholder="请输入公告内容" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="annDialogVisible = false">取消</el-button>
+        <el-button type="primary" :loading="annSubmitting" @click="handleAnnSubmit">
+          {{ annEditingId ? '保存修改' : '发布公告' }}
+        </el-button>
+      </template>
+    </el-dialog>
+
+    <!-- 确认列表弹窗 -->
+    <el-dialog v-model="confirmDialogVisible" :title="'确认列表 - ' + confirmTitle" width="650px" destroy-on-close>
+      <el-table :data="confirmList" stripe class="kechang-table" style="width:100%">
+        <el-table-column prop="studentName" label="学生姓名" min-width="120" />
+        <el-table-column prop="studentNo" label="学号" min-width="120" />
+        <el-table-column prop="username" label="用户名" min-width="100" />
+        <el-table-column label="确认时间" width="170">
+          <template #default="{ row }">{{ formatTime(row.confirmTime) }}</template>
+        </el-table-column>
+      </el-table>
+      <el-empty v-if="confirmList.length === 0" description="暂无学生确认" :image-size="80" />
+      <el-pagination v-if="confirmTotal > 10" :current-page="confirmPage" :page-size="10" :total="confirmTotal"
+        layout="prev, pager, next" @current-change="p => { confirmPage = p; viewConfirms(confirmCurrentRow) }"
+        style="margin-top:16px;justify-content:center" />
+      <template #footer>
+        <el-button @click="confirmDialogVisible = false">关闭</el-button>
+      </template>
+    </el-dialog>
 
     <el-dialog v-model="chapterDialogVisible" :title="editingChapterId ? '编辑章节' : '添加章节'" width="430px">
       <el-form :model="chapterForm" label-width="80px">
@@ -197,7 +265,7 @@
 <script setup>
 import { reactive, ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { assignmentApi, courseApi, gradeApi } from '@/api'
+import { assignmentApi, courseApi, gradeApi, announcementApi } from '@/api'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import FilePreview from '@/components/FilePreview.vue'
 import CourseEditDialog from '@/components/CourseEditDialog.vue'
@@ -220,6 +288,96 @@ const uploading = ref(false)
 const editingChapterId = ref(null)
 const previewVisible = ref(false)
 const previewResource = ref(null)
+
+// 公告相关
+const announcements = ref([])
+const annLoading = ref(false)
+const annPage = ref(1)
+const annPageSize = ref(10)
+const annTotal = ref(0)
+const annDialogVisible = ref(false)
+const annEditingId = ref(null)
+const annSubmitting = ref(false)
+const annForm = reactive({ title: '', content: '' })
+const confirmDialogVisible = ref(false)
+const confirmTitle = ref('')
+const confirmList = ref([])
+const confirmPage = ref(1)
+const confirmTotal = ref(0)
+const confirmCurrentRow = ref(null)
+
+const fetchAnnouncements = async () => {
+  annLoading.value = true
+  try {
+    const res = await announcementApi.list({ page: annPage.value, size: annPageSize.value, courseId: courseId() })
+    if (res.data.code === 200) {
+      announcements.value = res.data.data?.records || []
+      annTotal.value = res.data.data?.total || 0
+    }
+  } catch (e) { /* ignore */ } finally { annLoading.value = false }
+}
+
+const openAnnounceDialog = (row) => {
+  if (row) {
+    annEditingId.value = row.id
+    annForm.title = row.title || ''
+    annForm.content = row.content || ''
+  } else {
+    annEditingId.value = null
+    annForm.title = ''
+    annForm.content = ''
+  }
+  annDialogVisible.value = true
+}
+
+const resetAnnForm = () => {
+  annEditingId.value = null
+  annForm.title = ''
+  annForm.content = ''
+}
+
+const handleAnnSubmit = async () => {
+  if (!annForm.title.trim()) { ElMessage.warning('请输入公告标题'); return }
+  if (!annForm.content.trim()) { ElMessage.warning('请输入公告内容'); return }
+  annSubmitting.value = true
+  try {
+    if (annEditingId.value) {
+      await announcementApi.update(annEditingId.value, { ...annForm, courseId: courseId() })
+      ElMessage.success('公告已更新')
+    } else {
+      await announcementApi.create({ ...annForm, courseId: courseId() })
+      ElMessage.success('公告发布成功')
+    }
+    annDialogVisible.value = false
+    await fetchAnnouncements()
+  } catch (e) {
+    ElMessage.error(e.response?.data?.message || '操作失败')
+  } finally { annSubmitting.value = false }
+}
+
+const handleAnnDelete = async (id) => {
+  try {
+    await ElMessageBox.confirm('确定删除该公告吗？', '删除公告', { type: 'warning', confirmButtonText: '删除', cancelButtonText: '取消' })
+    await announcementApi.delete(id)
+    ElMessage.success('公告已删除')
+    await fetchAnnouncements()
+  } catch (e) {
+    if (e !== 'cancel') ElMessage.error(e.response?.data?.message || '删除失败')
+  }
+}
+
+const viewConfirms = async (row) => {
+  confirmCurrentRow.value = row
+  confirmTitle.value = row.title || ''
+  try {
+    const res = await announcementApi.getConfirms(row.id, { page: confirmPage.value, size: 10 })
+    if (res.data.code === 200) {
+      confirmList.value = res.data.data?.records || []
+      confirmTotal.value = res.data.data?.total || 0
+    }
+  } catch (e) { /* ignore */ }
+  confirmDialogVisible.value = true
+}
 
 // 统计相关
 const statsLoading = ref(false)
@@ -298,7 +456,7 @@ const distBarClass = (label) => {
 
 const loadAll = async () => {
   try {
-    await Promise.all([fetchCourse(), fetchStudents(), fetchResources(), fetchAssignments(), fetchStats()])
+    await Promise.all([fetchCourse(), fetchStudents(), fetchResources(), fetchAssignments(), fetchStats(), fetchAnnouncements()])
   } catch (e) {
     ElMessage.error('课程详情加载失败')
   }
@@ -400,6 +558,12 @@ const previewFile = (resource) => {
 }
 
 const formatDate = (value) => value ? String(value).replace('T', ' ').slice(0, 16) : '--'
+const formatTime = (t) => {
+  if (!t) return '-'
+  const d = new Date(t)
+  const pad = n => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
 const formatFileSize = (size) => {
   const n = Number(size || 0)
   if (n < 1024) return `${n} B`
