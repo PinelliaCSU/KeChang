@@ -211,10 +211,10 @@ const openEdit = (row) => {
   if (row.questionType === 'SINGLE' || row.questionType === 'MULTI') {
     try { optionList.value = JSON.parse(row.options) } catch { optionList.value = ['', '', '', ''] }
     if (row.questionType === 'SINGLE') {
-      correctSingle.value = optionList.value.indexOf(row.answer)
+      correctSingle.value = answerToOptionIndex(row.answer)
       if (correctSingle.value < 0) correctSingle.value = 0
     } else {
-      try { correctMulti.value = JSON.parse(row.answer).map(a => optionList.value.indexOf(a)).filter(i => i >= 0) } catch { correctMulti.value = [] }
+      correctMulti.value = parseMultiAnswer(row.answer).map(answerToOptionIndex).filter(i => i >= 0)
     }
   }
   dialogVisible.value = true
@@ -222,6 +222,25 @@ const openEdit = (row) => {
 
 const addOption = () => { if (optionList.value.length < 8) optionList.value.push('') }
 const removeOption = (idx) => { optionList.value.splice(idx, 1); if (correctSingle.value >= optionList.value.length) correctSingle.value = 0 }
+const optionLabel = (idx) => optionLetters[idx] || String.fromCharCode(65 + idx)
+
+const answerToOptionIndex = (answer) => {
+  const text = String(answer || '').trim()
+  if (!text) return -1
+  const labelIndex = optionLetters.findIndex(letter => letter === text.toUpperCase())
+  if (labelIndex >= 0 && labelIndex < optionList.value.length) return labelIndex
+  return optionList.value.findIndex(option => String(option || '').trim() === text)
+}
+
+const parseMultiAnswer = (answer) => {
+  if (!answer) return []
+  const text = String(answer).trim()
+  try {
+    const parsed = JSON.parse(text)
+    if (Array.isArray(parsed)) return parsed.map(item => String(item).trim()).filter(Boolean)
+  } catch { /* ignore old comma format */ }
+  return text.split(',').map(item => item.trim()).filter(Boolean)
+}
 
 watch(() => form.questionType, () => {
   optionList.value = ['', '', '', '']
@@ -233,14 +252,21 @@ const handleSubmit = async () => {
   if (!form.content) { ElMessage.warning('请输入题目内容'); return }
   let answer = form.answer
   if (form.questionType === 'SINGLE') {
-    const opts = optionList.value.filter(o => o.trim())
+    const opts = optionList.value.map((text, index) => ({ text: String(text || '').trim(), index })).filter(item => item.text)
     if (opts.length < 2) { ElMessage.warning('请至少填写2个选项'); return }
-    answer = opts[correctSingle.value] || opts[0]
+    const compactIndex = opts.findIndex(item => item.index === correctSingle.value)
+    if (compactIndex < 0) { ElMessage.warning('请选择一个已填写的正确答案'); return }
+    answer = optionLabel(compactIndex)
   } else if (form.questionType === 'MULTI') {
-    const opts = optionList.value.filter(o => o.trim())
+    const opts = optionList.value.map((text, index) => ({ text: String(text || '').trim(), index })).filter(item => item.text)
     if (opts.length < 2) { ElMessage.warning('请至少填写2个选项'); return }
     if (correctMulti.value.length === 0) { ElMessage.warning('请选择至少一个正确答案'); return }
-    answer = JSON.stringify(correctMulti.value.map(i => opts[i]))
+    const compactIndexes = correctMulti.value
+      .map(index => opts.findIndex(item => item.index === index))
+      .filter(index => index >= 0)
+      .sort((a, b) => a - b)
+    if (compactIndexes.length === 0) { ElMessage.warning('请选择已填写的正确答案'); return }
+    answer = compactIndexes.map(optionLabel).join(',')
   }
   if (!answer && form.questionType !== 'ESSAY') { ElMessage.warning('请设置正确答案'); return }
 

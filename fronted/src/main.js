@@ -17,6 +17,7 @@ import {
 
 import App from './App.vue'
 import router from './router'
+import { installKeyboardNavigation } from './utils/keyboardNavigation'
 
 const app = createApp(App)
 
@@ -38,3 +39,4 @@ app.use(router)
 app.use(ElementPlus, { locale: zhCn })
 
 app.mount('#app')
+installKeyboardNavigation()

@@ -64,6 +64,9 @@
 
 .el-input__wrapper.is-focus,
 .el-select__wrapper.is-focused,
+.el-select__wrapper:focus,
+.el-radio:focus,
+.el-checkbox:focus,
 .el-textarea__inner:focus {
   box-shadow: 0 0 0 1px var(--el-color-primary) inset !important;
 }
@@ -96,6 +99,28 @@
   border-top: 1px solid var(--el-border-color-light);
   padding: 16px 24px 20px;
   background: #fafafa;
+}
+
+.el-dialog .el-table,
+.el-dialog .kechang-table {
+  font-size: 14px;
+}
+
+.el-dialog .el-table th.el-table__cell,
+.el-dialog .kechang-table th.el-table__cell {
+  height: 46px;
+  font-size: 14px;
+}
+
+.el-dialog .el-table td.el-table__cell,
+.el-dialog .kechang-table td.el-table__cell {
+  height: 46px;
+  padding: 7px 0;
+}
+
+.el-dialog .el-table .cell {
+  padding: 0 8px;
+  line-height: 20px;
 }
 
 .el-popover.el-popper,

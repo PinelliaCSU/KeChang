@@ -142,9 +142,10 @@ const hasPreviewCopy = computed(() => previewUrl.value && previewUrl.value !== p
 const fileName = computed(() => props.name || getFileName(props.url))
 const extension = computed(() => getFileExtension(fileName.value || props.url))
 const previewExtension = computed(() => getFileExtension(effectivePreviewUrl.value || fileName.value))
+const annotationFileKey = computed(() => props.url || fileName.value || resolvedPreviewUrl.value)
 const annotationKey = computed(() => {
   const userKey = userStore.userId || userStore.username || 'guest'
-  return `kechang_video_annotations:${userKey}:${props.url || resolvedPreviewUrl.value || fileName.value}`
+  return `kechang_video_annotations:${userKey}:${annotationFileKey.value}`
 })
 
 const previewType = computed(() => {
@@ -213,19 +214,54 @@ const loadText = async () => {
   }
 }
 
-const loadAnnotations = () => {
-  annotations.value = []
-  if (previewType.value !== 'video') return
+const readLocalAnnotations = () => {
   try {
     const raw = localStorage.getItem(annotationKey.value)
-    annotations.value = raw ? JSON.parse(raw) : []
+    return raw ? JSON.parse(raw) : []
   } catch {
-    annotations.value = []
+    return []
+  }
+}
+
+const loadAnnotations = async () => {
+  annotations.value = []
+  if (previewType.value !== 'video' || !annotationFileKey.value) return
+  try {
+    const res = await videoAnnotationApi.list(annotationFileKey.value)
+    if (res.data.code === 200) {
+      const serverAnnotations = Array.isArray(res.data.data) ? res.data.data : []
+      const localAnnotations = readLocalAnnotations()
+      annotations.value = serverAnnotations.length ? serverAnnotations : localAnnotations
+      localStorage.setItem(annotationKey.value, JSON.stringify(annotations.value))
+      if (!serverAnnotations.length && localAnnotations.length) {
+        await syncAnnotationsToServer(localAnnotations)
+      }
+      return
+    }
+  } catch {
+    // Keep preview usable if the API is temporarily unavailable.
+  }
+  annotations.value = readLocalAnnotations()
+}
+
+const syncAnnotationsToServer = async (payload) => {
+  if (!annotationFileKey.value) return
+  try {
+    await videoAnnotationApi.save(annotationFileKey.value, payload)
+  } catch {
+    // Local cache is already written; the next successful save will resync.
   }
 }
 
 const saveAnnotations = () => {
-  localStorage.setItem(annotationKey.value, JSON.stringify(sortedAnnotations.value))
+  if (previewType.value !== 'video' || !annotationFileKey.value) return
+  const payload = sortedAnnotations.value
+  localStorage.setItem(annotationKey.value, JSON.stringify(payload))
+  if (annotationSaveTimer) window.clearTimeout(annotationSaveTimer)
+  annotationSaveTimer = window.setTimeout(async () => {
+    await syncAnnotationsToServer(payload)
+    annotationSaveTimer = null
+  }, 250)
 }
 
 watch(() => [props.url, fileName.value], loadPreview, { immediate: true })
@@ -377,6 +413,13 @@ const downloadFile = () => {
   link.rel = 'noopener noreferrer'
   link.click()
 }
+
+onBeforeUnmount(() => {
+  if (annotationSaveTimer) {
+    window.clearTimeout(annotationSaveTimer)
+    syncAnnotationsToServer(sortedAnnotations.value)
+  }
+})
 </script>
 
 <style scoped>

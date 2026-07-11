@@ -207,16 +207,22 @@
     </el-dialog>
 
     <!-- 报告列表弹窗 -->
-    <el-dialog v-model="reportDialogVisible" :title="currentTask ? '提交列表 - ' + currentTask.taskName : '提交列表'" width="920px">
+    <el-dialog v-model="reportDialogVisible" :title="currentTask ? '提交列表 - ' + currentTask.taskName : '提交列表'" width="88%" class="report-list-dialog">
       <div class="dialog-toolbar">
         <span class="toolbar-muted">共 {{ reports.length }} 份提交</span>
         <el-button size="small" :disabled="reports.length === 0" @click="exportTrainingReports">导出实训评分</el-button>
       </div>
-      <el-table v-if="reports.length > 0 || reportLoading" :data="reports" v-loading="reportLoading" stripe border>
-        <el-table-column prop="studentNo" label="学号" width="120" />
-        <el-table-column prop="studentName" label="姓名" width="110" />
-        <el-table-column prop="reportContent" label="内容" min-width="220" show-overflow-tooltip />
-        <el-table-column label="附件" width="150">
+      <el-table v-if="reports.length > 0 || reportLoading" :data="reports" v-loading="reportLoading" stripe border table-layout="fixed" class="report-list-table">
+        <el-table-column label="学生" min-width="145">
+          <template #default="{ row }">
+            <div class="student-cell">
+              <strong>{{ row.studentName || '学生' }}</strong>
+              <span>{{ row.studentNo || row.studentId || '--' }}</span>
+            </div>
+          </template>
+        </el-table-column>
+        <el-table-column prop="reportContent" label="内容" min-width="185" show-overflow-tooltip />
+        <el-table-column label="附件" width="115">
           <template #default="{ row }">
             <div v-if="(row.attachments && row.attachments.length > 0) || row.attachmentUrl" style="display:flex;flex-wrap:wrap;gap:4px">
               <template v-if="row.attachments && row.attachments.length > 0">
@@ -227,14 +233,14 @@
             <span v-else style="color:#c0c4cc">--</span>
           </template>
         </el-table-column>
-        <el-table-column prop="submitTime" label="提交时间" width="170" />
-        <el-table-column prop="score" label="评分" width="90">
+        <el-table-column prop="submitTime" label="提交时间" width="155" show-overflow-tooltip />
+        <el-table-column prop="score" label="评分" width="70" align="center">
           <template #default="{ row }">{{ row.score != null ? row.score : '未评' }}</template>
         </el-table-column>
-        <el-table-column prop="comment" label="评语" min-width="150" show-overflow-tooltip>
+        <el-table-column prop="comment" label="评语" min-width="125" show-overflow-tooltip>
           <template #default="{ row }">{{ row.comment || '--' }}</template>
         </el-table-column>
-        <el-table-column label="操作" width="90">
+        <el-table-column label="操作" width="76" align="center">
           <template #default="{ row }">
             <el-button size="small" type="primary" @click="openReportGrade(row)">评分</el-button>
           </template>
@@ -699,6 +705,42 @@ onMounted(() => {
   align-items: center;
   justify-content: space-between;
   margin-bottom: 12px;
+}
+
+.report-list-dialog :deep(.el-dialog__body) {
+  overflow: hidden;
+}
+
+.report-list-table {
+  width: 100%;
+}
+
+.report-list-table :deep(.el-table__body-wrapper) {
+  overflow-x: hidden;
+}
+
+.student-cell {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+  line-height: 1.35;
+}
+
+.student-cell strong {
+  overflow: hidden;
+  color: #303133;
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.student-cell span {
+  overflow: hidden;
+  color: #909399;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .toolbar-muted {

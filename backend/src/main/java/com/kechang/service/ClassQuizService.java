@@ -1,6 +1,8 @@
 package com.kechang.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kechang.common.BusinessException;
 import com.kechang.dto.ClassQuizAnswerDTO;
 import com.kechang.dto.ClassQuizCreateDTO;
@@ -18,6 +20,8 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class ClassQuizService {
+
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     private final ClassQuizMapper quizMapper;
     private final ClassQuizQuestionMapper quizQuestionMapper;
@@ -413,7 +417,10 @@ public class ClassQuizService {
             return false;
         }
         if ("MULTI".equals(question.getQuestionType())) {
-            return normalizeMulti(question.getAnswer()).equals(normalizeMulti(studentAnswer));
+            return normalizeObjectiveAnswer(question, question.getAnswer()).equals(normalizeObjectiveAnswer(question, studentAnswer));
+        }
+        if ("SINGLE".equals(question.getQuestionType())) {
+            return normalizeObjectiveAnswer(question, question.getAnswer()).equals(normalizeObjectiveAnswer(question, studentAnswer));
         }
         if ("JUDGE".equals(question.getQuestionType())) {
             return normalizeJudge(question.getAnswer()).equals(normalizeJudge(studentAnswer));
@@ -466,4 +473,53 @@ public class ClassQuizService {
                 .sorted()
                 .collect(Collectors.toList());
     }
+
+    private List<String> normalizeObjectiveAnswer(Question question, String answer) {
+        List<OptionItem> options = parseOptions(question.getOptions());
+        return normalizeMulti(answer).stream()
+                .map(item -> optionTokenToLabel(item, options))
+                .filter(StringUtils::hasText)
+                .sorted()
+                .collect(Collectors.toList());
+    }
+
+    private String optionTokenToLabel(String token, List<OptionItem> options) {
+        String text = token == null ? "" : token.trim();
+        if (!StringUtils.hasText(text)) {
+            return "";
+        }
+        for (OptionItem option : options) {
+            if (option.label.equalsIgnoreCase(text) || option.content.equals(text)) {
+                return option.label;
+            }
+        }
+        return text.toUpperCase(Locale.ROOT);
+    }
+
+    private List<OptionItem> parseOptions(String optionsJson) {
+        if (!StringUtils.hasText(optionsJson)) {
+            return new ArrayList<>();
+        }
+        try {
+            List<Object> raw = OBJECT_MAPPER.readValue(optionsJson, new TypeReference<List<Object>>() {});
+            List<OptionItem> options = new ArrayList<>();
+            for (int i = 0; i < raw.size(); i++) {
+                Object item = raw.get(i);
+                String fallbackLabel = String.valueOf((char) ('A' + i));
+                if (item instanceof Map<?, ?> map) {
+                    Object label = map.get("label") != null ? map.get("label") : map.get("key");
+                    Object content = map.get("content") != null ? map.get("content") : map.get("value");
+                    options.add(new OptionItem(label == null ? fallbackLabel : String.valueOf(label).trim(),
+                            content == null ? "" : String.valueOf(content).trim()));
+                } else {
+                    options.add(new OptionItem(fallbackLabel, String.valueOf(item).trim()));
+                }
+            }
+            return options;
+        } catch (Exception e) {
+            return new ArrayList<>();
+        }
+    }
+
+    private record OptionItem(String label, String content) {}
 }

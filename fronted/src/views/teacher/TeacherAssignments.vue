@@ -120,36 +120,42 @@
       </template>
     </el-dialog>
 
-    <el-dialog v-model="submitDialogVisible" title="作业提交列表" width="960px">
+    <el-dialog v-model="submitDialogVisible" title="作业提交列表" width="88%" class="submit-list-dialog">
       <div class="submit-tools">
         <el-button type="primary" plain :disabled="!submits.length" @click="downloadSubmitArchive">下载全部提交附件</el-button>
       </div>
       <el-table v-if="submits.length > 0 || subLoading" :data="submits" v-loading="subLoading" stripe
-        class="kechang-table" style="width:100%">
-        <el-table-column prop="studentName" label="学生" width="120" />
-        <el-table-column prop="studentNo" label="学号" width="130" />
-        <el-table-column prop="content" label="提交内容" min-width="190" show-overflow-tooltip />
-        <el-table-column label="附件" width="100">
+        class="kechang-table submit-list-table" table-layout="fixed" style="width:100%">
+        <el-table-column label="学生" min-width="145">
+          <template #default="{ row }">
+            <div class="student-cell">
+              <strong>{{ row.studentName || '学生' }}</strong>
+              <span>{{ row.studentNo || row.studentId || '--' }}</span>
+            </div>
+          </template>
+        </el-table-column>
+        <el-table-column prop="content" label="提交内容" min-width="170" show-overflow-tooltip />
+        <el-table-column label="附件" width="78" align="center">
           <template #default="{ row }">
             <el-button v-if="submitFiles(row).length" size="small" link type="primary"
               @click="previewFiles(submitFiles(row), `${row.studentName || '学生'}提交`)">预览</el-button>
             <span v-else class="muted">无</span>
           </template>
         </el-table-column>
-        <el-table-column prop="submitTime" label="提交时间" width="170" />
-        <el-table-column label="评分" width="80">
+        <el-table-column prop="submitTime" label="提交时间" width="155" show-overflow-tooltip />
+        <el-table-column label="评分" width="70" align="center">
           <template #default="{ row }">{{ row.score != null ? row.score : '未评' }}</template>
         </el-table-column>
-        <el-table-column prop="comment" label="评语" min-width="140" show-overflow-tooltip />
-        <el-table-column label="优秀" width="70">
+        <el-table-column prop="comment" label="评语" min-width="125" show-overflow-tooltip />
+        <el-table-column label="优秀" width="68" align="center">
           <template #default="{ row }">
             <el-tag v-if="row.isExcellent" type="success" size="small">优秀</el-tag>
             <span v-else class="muted">--</span>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="110">
+        <el-table-column label="操作" width="92" align="center">
           <template #default="{ row }">
-            <el-button size="small" type="primary" @click="openGradeDialog(row)">在线批阅</el-button>
+            <el-button size="small" type="primary" @click="openGradeDialog(row)">批阅</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -502,6 +508,38 @@ onMounted(async () => {
   display: flex;
   justify-content: flex-end;
   margin-bottom: 12px;
+}
+
+.submit-list-dialog :deep(.el-dialog__body) {
+  overflow: hidden;
+}
+
+.submit-list-table :deep(.el-table__body-wrapper) {
+  overflow-x: hidden;
+}
+
+.student-cell {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+  line-height: 1.35;
+}
+
+.student-cell strong {
+  overflow: hidden;
+  color: #303133;
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.student-cell span {
+  overflow: hidden;
+  color: #909399;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .muted {
