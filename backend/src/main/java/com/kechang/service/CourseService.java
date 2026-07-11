@@ -17,6 +17,7 @@ import org.springframework.util.StringUtils;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -82,11 +83,7 @@ public class CourseService {
             }
             vo.setEnrolled(isEnrolled(c.getId(), currentStudentId));
             if (currentStudentId != null) {
-                CourseStudent cs = courseStudentMapper.selectOne(new LambdaQueryWrapper<CourseStudent>()
-                        .eq(CourseStudent::getCourseId, c.getId())
-                        .eq(CourseStudent::getStudentId, currentStudentId)
-                        .last("limit 1"));
-                vo.setProgress(cs != null ? cs.getProgress() : 0.0);
+                vo.setProgress(computeTimeProgress(c));
             }
             return vo;
         }).collect(Collectors.toList());
@@ -462,6 +459,19 @@ public class CourseService {
         if (!course.getTeacherId().equals(teacherId)) {
             throw BusinessException.forbidden("只能管理自己创建的课程");
         }
+    }
+
+    private double computeTimeProgress(Course course) {
+        LocalDate start = course.getStartDate();
+        LocalDate end = course.getEndDate();
+        if (start == null || end == null) return 0.0;
+        LocalDate today = LocalDate.now();
+        if (!today.isAfter(start)) return 0.0;
+        if (!today.isBefore(end)) return 100.0;
+        long totalDays = ChronoUnit.DAYS.between(start, end);
+        if (totalDays <= 0) return 100.0;
+        long elapsedDays = ChronoUnit.DAYS.between(start, today);
+        return Math.min(100.0, Math.max(0.0, (double) elapsedDays / totalDays * 100.0));
     }
 
     private void checkCourseReadable(Course course, Long currentUserId, String role) {
