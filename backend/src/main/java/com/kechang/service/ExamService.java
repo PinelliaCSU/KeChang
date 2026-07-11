@@ -47,6 +47,7 @@ public class ExamService {
     private final NotificationService notificationService;
     private final OperationLogService operationLogService;
     private final BailianApiService bailianApiService;
+    private final KnowledgeService knowledgeService;
 
     // ==================== 试题库 ====================
     public PageResult<Question> getQuestionList(int page, int size, String questionType,
@@ -482,6 +483,13 @@ public class ExamService {
                     }
                 }
                 answerMapper.insert(a);
+                // 自动收集错题到知识库
+                if (a.getIsCorrect() != null && a.getIsCorrect() == 0 && q != null) {
+                    Course course = courseMapper.selectById(exam.getCourseId());
+                    knowledgeService.collectWrongQuestion(studentId, q, exam.getCourseId(),
+                            course != null ? course.getCourseName() : null, "EXAM", examId,
+                            a.getStudentAnswer());
+                }
             }
         }
         record.setTotalScore(totalScore);

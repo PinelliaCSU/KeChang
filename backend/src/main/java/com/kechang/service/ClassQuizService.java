@@ -29,6 +29,7 @@ public class ClassQuizService {
     private final QuestionMapper questionMapper;
     private final CourseMapper courseMapper;
     private final CourseStudentMapper courseStudentMapper;
+    private final KnowledgeService knowledgeService;
 
     public List<Map<String, Object>> teacherList(Long teacherId, Long courseId) {
         LambdaQueryWrapper<ClassQuiz> wrapper = new LambdaQueryWrapper<ClassQuiz>()
@@ -160,6 +161,13 @@ public class ClassQuizService {
             record.setIsCorrect(isAnswerCorrect(question, answer) ? 1 : 0);
             record.setSubmitTime(LocalDateTime.now());
             answerMapper.insert(record);
+            // 自动收集错题到知识库
+            if (record.getIsCorrect() != null && record.getIsCorrect() == 0) {
+                Course course = courseMapper.selectById(quiz.getCourseId());
+                knowledgeService.collectWrongQuestion(studentId, question, quiz.getCourseId(),
+                        course != null ? course.getCourseName() : null, "CLASS_QUIZ", quiz.getId(),
+                        record.getAnswer());
+            }
         }
         increaseCourseProgress(quiz.getCourseId(), studentId, 5.0);
         return sanitizeForStudent(withMyAnswer(toDetail(quiz), quiz.getId(), studentId));

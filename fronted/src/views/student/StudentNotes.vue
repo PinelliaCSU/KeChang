@@ -1,7 +1,12 @@
 <template>
   <div class="page-shell">
     <div class="page-title-bar">
-      <h2 class="page-title">学习笔记</h2>
+      <div class="title-left">
+        <el-button text @click="$router.push('/student/knowledge')">
+          <el-icon><ArrowLeft /></el-icon> 返回
+        </el-button>
+        <h2 class="page-title">学习笔记</h2>
+      </div>
       <el-button type="primary" size="default" @click="showCreate = true">+ 新建笔记</el-button>
     </div>
 
@@ -85,6 +90,12 @@ onMounted(fetchNotes)
   align-items: center;
   justify-content: space-between;
   margin-bottom: 4px;
+}
+
+.title-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .page-title {

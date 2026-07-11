@@ -9,10 +9,10 @@ import zhCn from 'element-plus/dist/locale/zh-cn.mjs'
 import {
   ArrowDown, ArrowLeft, ArrowRight, Bell, Calendar, ChatDotRound, ChatLineSquare,
   Checked, CircleCheck, CircleCheckFilled, CircleCloseFilled, Clock, Close,
-  Collection, Connection, DataAnalysis, Document, DocumentCopy, Edit, Expand,
+  Collection, Connection, DataAnalysis, Delete, Document, DocumentCopy, Edit, Expand,
   Fold, Folder, FullScreen, Hide, Iphone, List, Loading, Location, Notebook,
   Odometer, PictureFilled, Plus, QuestionFilled, Reading, Refresh, School,
-  Search, Setting, Star, SwitchButton, Timer, Tools, TrendCharts, User, VideoCamera, View
+  Search, Setting, Star, SwitchButton, Timer, Tools, TrendCharts, UploadFilled, User, VideoCamera, View, WarningFilled
 } from '@element-plus/icons-vue'
 
 import App from './App.vue'
@@ -25,10 +25,10 @@ const app = createApp(App)
 const icons = {
   ArrowDown, ArrowLeft, ArrowRight, Bell, Calendar, ChatDotRound, ChatLineSquare,
   Checked, CircleCheck, CircleCheckFilled, CircleCloseFilled, Clock, Close,
-  Collection, Connection, DataAnalysis, Document, DocumentCopy, Edit, Expand,
+  Collection, Connection, DataAnalysis, Delete, Document, DocumentCopy, Edit, Expand,
   Fold, Folder, FullScreen, Hide, Iphone, List, Loading, Location, Notebook,
   Odometer, PictureFilled, Plus, QuestionFilled, Reading, Refresh, School,
-  Search, Setting, Star, SwitchButton, Timer, Tools, TrendCharts, User, VideoCamera, View
+  Search, Setting, Star, SwitchButton, Timer, Tools, TrendCharts, UploadFilled, User, VideoCamera, View, WarningFilled
 }
 for (const [key, component] of Object.entries(icons)) {
   app.component(key, component)

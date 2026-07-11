@@ -394,6 +394,75 @@ class KnowledgeController {
         knowledgeService.togglePublic(id);
         return Result.success();
     }
+
+    // ==================== 我的资料 ====================
+
+    @GetMapping("/knowledge/materials")
+    @PreAuthorize("hasAuthority('ROLE_STUDENT')")
+    public Result<PageResult<StudentMaterial>> listMaterials(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "12") int size,
+            @RequestParam(required = false) Long courseId,
+            @RequestParam(required = false) String keyword) {
+        return Result.success(knowledgeService.listMaterials(uid(), page, size, courseId, keyword));
+    }
+
+    @PostMapping("/knowledge/materials")
+    @PreAuthorize("hasAuthority('ROLE_STUDENT')")
+    public Result<Void> createMaterial(@RequestBody StudentMaterial material) {
+        material.setStudentId(uid());
+        knowledgeService.createMaterial(material);
+        return Result.success();
+    }
+
+    @PutMapping("/knowledge/materials/{id}")
+    @PreAuthorize("hasAuthority('ROLE_STUDENT')")
+    public Result<Void> updateMaterial(@PathVariable Long id, @RequestBody StudentMaterial material) {
+        knowledgeService.updateMaterial(id, material, uid());
+        return Result.success();
+    }
+
+    @DeleteMapping("/knowledge/materials/{id}")
+    @PreAuthorize("hasAuthority('ROLE_STUDENT')")
+    public Result<Void> deleteMaterial(@PathVariable Long id) {
+        knowledgeService.deleteMaterial(id, uid());
+        return Result.success();
+    }
+
+    // ==================== 我的错题 ====================
+
+    @GetMapping("/knowledge/wrong-questions")
+    @PreAuthorize("hasAuthority('ROLE_STUDENT')")
+    public Result<PageResult<StudentWrongQuestion>> listWrongQuestions(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "12") int size,
+            @RequestParam(required = false) Long courseId,
+            @RequestParam(required = false) Integer isMastered,
+            @RequestParam(required = false) String keyword) {
+        return Result.success(knowledgeService.listWrongQuestions(uid(), page, size, courseId, isMastered, keyword));
+    }
+
+    @PutMapping("/knowledge/wrong-questions/{id}/mastered")
+    @PreAuthorize("hasAuthority('ROLE_STUDENT')")
+    public Result<Void> markMastered(@PathVariable Long id) {
+        knowledgeService.markMastered(id, uid());
+        return Result.success();
+    }
+
+    @DeleteMapping("/knowledge/wrong-questions/{id}")
+    @PreAuthorize("hasAuthority('ROLE_STUDENT')")
+    public Result<Void> deleteWrongQuestion(@PathVariable Long id) {
+        knowledgeService.deleteWrongQuestion(id, uid());
+        return Result.success();
+    }
+
+    // ==================== 统计 ====================
+
+    @GetMapping("/knowledge/stats")
+    @PreAuthorize("hasAuthority('ROLE_STUDENT')")
+    public Result<Map<String, Object>> getKnowledgeStats() {
+        return Result.success(knowledgeService.getKnowledgeStats(uid()));
+    }
 }
 
 // ==================== 通知 ====================

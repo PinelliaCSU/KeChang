@@ -141,7 +141,7 @@ const studentMenus = [
       { path: '/student/class-quizzes', title: '随堂测验' },
       { path: '/student/checkin', title: '课堂签到' },
       { path: '/student/trainings', title: '实训中心' },
-      { path: '/student/notes', title: '学习笔记' }
+      { path: '/student/knowledge', title: '知识库' }
     ]
   },
   {
@@ -150,8 +150,7 @@ const studentMenus = [
     icon: 'ChatDotRound',
     children: [
       { path: '/student/posts', title: '互动问答' },
-      { path: '/student/messages', title: '私信' },
-      { path: '/student/knowledge', title: '知识库' }
+      { path: '/student/messages', title: '私信' }
     ]
   },
   {

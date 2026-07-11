@@ -205,14 +205,31 @@ export const surveyApi = {
 
 /** 知识库 API */
 export const knowledgeApi = {
+  // 系统知识库文章
   listArticles: (params) => request.get('/knowledge/articles', { params }),
   getArticle: (id) => request.get(`/knowledge/articles/${id}`),
   createArticle: (data) => request.post('/knowledge/articles', data),
+
+  // 学习笔记
   listNotes: (params) => request.get('/notes', { params }),
   createNote: (data) => request.post('/notes', data),
   updateNote: (id, data) => request.put(`/notes/${id}`, data),
   deleteNote: (id) => request.delete(`/notes/${id}`),
-  togglePublic: (id) => request.put(`/notes/${id}/public`)
+  togglePublic: (id) => request.put(`/notes/${id}/public`),
+
+  // 我的资料
+  myMaterials: (params) => request.get('/knowledge/materials', { params }),
+  createMaterial: (data) => request.post('/knowledge/materials', data),
+  updateMaterial: (id, data) => request.put(`/knowledge/materials/${id}`, data),
+  deleteMaterial: (id) => request.delete(`/knowledge/materials/${id}`),
+
+  // 我的错题
+  myWrongQuestions: (params) => request.get('/knowledge/wrong-questions', { params }),
+  markMastered: (id) => request.put(`/knowledge/wrong-questions/${id}/mastered`),
+  deleteWrongQuestion: (id) => request.delete(`/knowledge/wrong-questions/${id}`),
+
+  // 统计
+  knowledgeStats: () => request.get('/knowledge/stats')
 }
 
 /** 通知 API */
