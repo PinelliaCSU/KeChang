@@ -68,14 +68,25 @@ const isToday = (dayStr) => {
     return d.toDateString() === today.toDateString()
 }
 
+// 预计算日期→事件映射，避免每个日历单元格重复 O(n) 过滤
+const eventsByDay = computed(() => {
+    const map = new Map()
+    for (const e of allEvents.value) {
+        const arr = map.get(e.date) || []
+        arr.push(e)
+        map.set(e.date, arr)
+    }
+    return map
+})
+
 const getEventsForDay = (dayStr) => {
-    return allEvents.value.filter(e => e.date === dayStr)
+    return eventsByDay.value.get(dayStr) || []
 }
 
 const todayEvents = computed(() => {
     const d = date.value
     const dayStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-    return allEvents.value.filter(e => e.date === dayStr)
+    return eventsByDay.value.get(dayStr) || []
 })
 
 const formatDate = (d) => {

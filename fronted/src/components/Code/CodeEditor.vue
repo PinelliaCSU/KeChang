@@ -41,6 +41,8 @@
 import { ref, computed, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { CaretRight } from '@element-plus/icons-vue'
 import CodeRunPanel from './CodeRunPanel.vue'
+// Monaco Worker 配置（延迟到代码编辑器首次加载时执行，避免阻塞应用启动）
+import '../../utils/monacoSetup'
 import * as monaco from 'monaco-editor'
 
 const props = defineProps({

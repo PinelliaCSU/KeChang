@@ -212,6 +212,8 @@ const fetchTodos = async () => {
 
 const refreshTodos = () => { fetchTodos() }
 
+let chartInstance = null
+
 onMounted(async () => {
   try {
     const res = await dashboardApi.teacherStats()
@@ -225,8 +227,8 @@ onMounted(async () => {
 
   await nextTick()
   if (chartRef.value) {
-    const chart = echarts.init(chartRef.value)
-    chart.setOption({
+    chartInstance = echarts.init(chartRef.value)
+    chartInstance.setOption({
       tooltip: { trigger: 'axis' },
       xAxis: { type: 'category', data: (stats.value.activeTrend || []).map(item => String(item.date || '').slice(5)) },
       yAxis: { type: 'value' },
@@ -244,9 +246,11 @@ const onVisibilityChange = () => {
   if (!document.hidden) refreshTodos()
 }
 
-// 组件卸载时移除监听
+// 组件卸载时移除监听并销毁 ECharts 实例，防止内存泄漏
 onUnmounted(() => {
   document.removeEventListener('visibilitychange', onVisibilityChange)
+  chartInstance?.dispose()
+  chartInstance = null
 })
 </script>
 

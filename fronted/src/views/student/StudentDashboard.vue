@@ -277,6 +277,8 @@ const onVisibilityChange = () => {
   if (!document.hidden) fetchTodos()
 }
 
+let chartInstance = null
+
 onMounted(async () => {
   await fetchData()
   await fetchTodos()
@@ -284,8 +286,8 @@ onMounted(async () => {
 
   await nextTick()
   if (chartRef.value) {
-    const chart = echarts.init(chartRef.value)
-    chart.setOption({
+    chartInstance = echarts.init(chartRef.value)
+    chartInstance.setOption({
       tooltip: { trigger: 'axis' },
       xAxis: { type: 'category', data: activeTrend.value.map(item => String(item.date || '').slice(5)) },
       yAxis: { type: 'value', name: '完成项' },
@@ -300,6 +302,8 @@ onMounted(async () => {
 
 onUnmounted(() => {
   document.removeEventListener('visibilitychange', onVisibilityChange)
+  chartInstance?.dispose()
+  chartInstance = null
 })
 </script>
 

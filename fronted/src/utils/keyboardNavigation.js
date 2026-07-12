@@ -152,16 +152,23 @@ const autoFocusFormContainers = (root = document) => {
 
 const installAutoFocusObserver = () => {
   window.setTimeout(() => autoFocusFormContainers(document), 200)
+  let rafId = null
   const observer = new MutationObserver((mutations) => {
-    for (const mutation of mutations) {
-      for (const node of mutation.addedNodes) {
-        if (node instanceof HTMLElement) {
-          autoFocusFormContainers(node.matches('.el-dialog, .login-card, .el-form, form, .page-shell')
-            ? node.parentElement || document
-            : node)
+    // 使用 requestAnimationFrame 防抖：同一帧内的多次 DOM 变更合并为一次处理，
+    // 避免布局销毁/重建时成百上千次昂贵的 querySelectorAll 查询
+    if (rafId) return
+    rafId = requestAnimationFrame(() => {
+      rafId = null
+      for (const mutation of mutations) {
+        for (const node of mutation.addedNodes) {
+          if (node instanceof HTMLElement) {
+            autoFocusFormContainers(node.matches('.el-dialog, .login-card, .el-form, form, .page-shell')
+              ? node.parentElement || document
+              : node)
+          }
         }
       }
-    }
+    })
   })
   observer.observe(document.body, { childList: true, subtree: true })
 }

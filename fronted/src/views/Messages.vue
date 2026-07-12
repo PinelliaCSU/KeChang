@@ -483,7 +483,7 @@ onMounted(async () => {
       if (!a.hasHistory && b.hasHistory) return 1
       return (a.name || a.username || '').localeCompare(b.name || b.username || '', 'zh')
     })
-  }, 3000)
+  }, 10000)
 })
 
 onUnmounted(() => {

@@ -68,7 +68,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { ElMessage } from 'element-plus'
@@ -212,11 +212,17 @@ const onDialogClosed = () => {
 }
 
 // ==================== 生命周期 ====================
+const onStorageChange = (e) => {
+    if (e.key === STORAGE_KEY) loadEntries()
+}
+
 onMounted(() => {
     loadEntries()
-    window.addEventListener('storage', (e) => {
-        if (e.key === STORAGE_KEY) loadEntries()
-    })
+    window.addEventListener('storage', onStorageChange)
+})
+
+onUnmounted(() => {
+    window.removeEventListener('storage', onStorageChange)
 })
 </script>
 
