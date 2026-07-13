@@ -18,8 +18,10 @@ import {
 import App from './App.vue'
 import router from './router'
 import { installKeyboardNavigation } from './utils/keyboardNavigation'
+import RichTextEditor from './components/RichTextEditor.vue'
 
 const app = createApp(App)
+app.component('RichTextEditor', RichTextEditor)
 
 // 按需注册实际使用的图标
 const icons = {

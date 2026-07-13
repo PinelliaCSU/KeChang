@@ -3,7 +3,9 @@
     <div class="page-title-bar">
       <div class="title-left">
         <el-button text @click="$router.push('/student/knowledge')">
-          <el-icon><ArrowLeft /></el-icon> 返回
+          <el-icon>
+            <ArrowLeft />
+          </el-icon> 返回
         </el-button>
         <h2 class="page-title">学习笔记</h2>
       </div>
@@ -14,18 +16,23 @@
       <div class="note-grid">
         <div class="note-card" v-for="n in notes" :key="n.id">
           <h4 class="note-title">{{ n.title }}</h4>
-          <p class="note-preview">{{ (n.content || '').substring(0, 120) || '暂无内容' }}</p>
+          <p class="note-preview" v-html="notePreviewHtml(n.content)"></p>
           <div class="note-footer">
             <span class="note-course">{{ n.courseName || '' }}</span>
             <span class="note-time">{{ n.createTime || '' }}</span>
           </div>
           <div class="note-actions" @click.stop>
-            <el-button size="small" text @click="editNote(n)"><el-icon><Edit /></el-icon></el-button>
-            <el-button size="small" text type="danger" @click="deleteNote(n)"><el-icon><Delete /></el-icon></el-button>
+            <el-button size="small" text @click="editNote(n)"><el-icon>
+                <Edit />
+              </el-icon></el-button>
+            <el-button size="small" text type="danger" @click="deleteNote(n)"><el-icon>
+                <Delete />
+              </el-icon></el-button>
           </div>
         </div>
       </div>
-      <PaginationWrapper v-model:page="page" v-model:size="size" :total="total" :page-sizes="[12, 24, 48]" @change="fetchNotes" />
+      <PaginationWrapper v-model:page="page" v-model:size="size" :total="total" :page-sizes="[12, 24, 48]"
+        @change="fetchNotes" />
     </div>
 
     <div class="panel empty-panel" v-else>
@@ -33,10 +40,12 @@
     </div>
 
     <!-- 新建笔记弹窗 -->
-    <el-dialog v-model="showCreate" title="新建笔记" width="500px" destroy-on-close>
+    <el-dialog v-model="showCreate" title="新建笔记" width="700px" destroy-on-close>
       <el-form label-width="80px">
         <el-form-item label="标题" required><el-input v-model="createForm.title" /></el-form-item>
-        <el-form-item label="内容"><el-input v-model="createForm.content" type="textarea" :rows="6" /></el-form-item>
+        <el-form-item label="内容">
+          <RichTextEditor v-model="createForm.content" placeholder="在此编写笔记内容..." />
+        </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="showCreate = false">取消</el-button>
@@ -45,10 +54,12 @@
     </el-dialog>
 
     <!-- 编辑笔记弹窗 -->
-    <el-dialog v-model="showEdit" title="编辑笔记" width="500px" destroy-on-close>
+    <el-dialog v-model="showEdit" title="编辑笔记" width="700px" destroy-on-close>
       <el-form label-width="80px">
         <el-form-item label="标题" required><el-input v-model="editForm.title" /></el-form-item>
-        <el-form-item label="内容"><el-input v-model="editForm.content" type="textarea" :rows="6" /></el-form-item>
+        <el-form-item label="内容">
+          <RichTextEditor v-model="editForm.content" placeholder="在此编写笔记内容..." />
+        </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="showEdit = false">取消</el-button>
@@ -117,6 +128,12 @@ const doEdit = async () => {
     fetchNotes()
   } catch (e) { ElMessage.error('修改失败') }
   saving.value = false
+}
+
+const notePreviewHtml = (content) => {
+  if (!content) return '<span style="color:#b7bfcc">暂无内容</span>'
+  const text = content.replace(/<[^>]*>/g, '')
+  return text.substring(0, 120) || '<span style="color:#b7bfcc">暂无内容</span>'
 }
 
 const deleteNote = async (item) => {
@@ -194,6 +211,7 @@ onMounted(fetchNotes)
   transition: opacity 0.2s;
   margin-top: 4px;
 }
+
 .note-card:hover .note-actions {
   opacity: 1;
 }

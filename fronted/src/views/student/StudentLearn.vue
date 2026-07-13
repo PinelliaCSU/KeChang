@@ -84,7 +84,8 @@
         </div>
       </div>
       <el-empty v-else description="暂无课程公告" :image-size="100" />
-      <PaginationWrapper v-bind="annPaginationProps" @update:page="handleAnnPageChange" @update:size="handleAnnSizeChange" @change="fetchAnnouncements" />
+      <PaginationWrapper v-bind="annPaginationProps" @update:page="handleAnnPageChange"
+        @update:size="handleAnnSizeChange" @change="fetchAnnouncements" />
     </div>
 
     <!-- 课件 -->
@@ -113,13 +114,14 @@
         </div>
       </div>
       <el-empty v-else description="暂无作业" :image-size="100" />
-      <PaginationWrapper v-bind="assignPaginationProps" @update:page="handleAssignPageChange" @update:size="handleAssignSizeChange" @change="fetchAssignments" />
+      <PaginationWrapper v-bind="assignPaginationProps" @update:page="handleAssignPageChange"
+        @update:size="handleAssignSizeChange" @change="fetchAssignments" />
     </div>
 
     <!-- 笔记 -->
     <div class="note-panel" v-if="activeTab === 'note'">
       <h4>学习笔记</h4>
-      <el-input v-model="noteContent" type="textarea" :rows="3" placeholder="在此输入本课程学习笔记..." />
+      <RichTextEditor v-model="noteContent" placeholder="在此输入本课程学习笔记..." />
       <div class="note-actions">
         <el-button type="primary" @click="saveNote">保存笔记</el-button>
       </div>
