@@ -40,13 +40,14 @@
     </div>
 
     <!-- 新建笔记弹窗 -->
-    <el-dialog v-model="showCreate" title="新建笔记" width="700px" destroy-on-close>
+    <el-dialog v-model="showCreate" title="新建笔记" width="750px" destroy-on-close>
       <el-form label-width="80px">
         <el-form-item label="标题" required><el-input v-model="createForm.title" /></el-form-item>
-        <el-form-item label="内容">
-          <RichTextEditor v-model="createForm.content" placeholder="在此编写笔记内容..." />
-        </el-form-item>
       </el-form>
+      <div class="editor-section">
+        <label class="editor-label">内容</label>
+        <RichTextEditor ref="createEditorRef" :modelValue="createForm.content" placeholder="在此编写笔记内容..." />
+      </div>
       <template #footer>
         <el-button @click="showCreate = false">取消</el-button>
         <el-button type="primary" :loading="submitting" @click="doCreate">创建</el-button>
@@ -54,13 +55,14 @@
     </el-dialog>
 
     <!-- 编辑笔记弹窗 -->
-    <el-dialog v-model="showEdit" title="编辑笔记" width="700px" destroy-on-close>
+    <el-dialog v-model="showEdit" title="编辑笔记" width="750px" destroy-on-close>
       <el-form label-width="80px">
         <el-form-item label="标题" required><el-input v-model="editForm.title" /></el-form-item>
-        <el-form-item label="内容">
-          <RichTextEditor v-model="editForm.content" placeholder="在此编写笔记内容..." />
-        </el-form-item>
       </el-form>
+      <div class="editor-section">
+        <label class="editor-label">内容</label>
+        <RichTextEditor ref="editEditorRef" :modelValue="editForm.content" placeholder="在此编写笔记内容..." />
+      </div>
       <template #footer>
         <el-button @click="showEdit = false">取消</el-button>
         <el-button type="primary" :loading="saving" @click="doEdit">保存</el-button>
@@ -85,6 +87,8 @@ const editForm = ref({ title: '', content: '' })
 const editId = ref(null)
 const submitting = ref(false)
 const saving = ref(false)
+const createEditorRef = ref(null)
+const editEditorRef = ref(null)
 
 const { page, size, total, resetPage } = usePagination({ defaultSize: 12 })
 
@@ -103,7 +107,8 @@ const doCreate = async () => {
   if (!createForm.value.title.trim()) { ElMessage.warning('请输入标题'); return }
   submitting.value = true
   try {
-    await knowledgeApi.createNote(createForm.value)
+    const content = createEditorRef.value?.getHTML() || ''
+    await knowledgeApi.createNote({ title: createForm.value.title, content })
     ElMessage.success('笔记创建成功')
     showCreate.value = false
     createForm.value = { title: '', content: '' }
@@ -122,7 +127,8 @@ const doEdit = async () => {
   if (!editForm.value.title.trim()) { ElMessage.warning('请输入标题'); return }
   saving.value = true
   try {
-    await knowledgeApi.updateNote(editId.value, editForm.value)
+    const content = editEditorRef.value?.getHTML() || ''
+    await knowledgeApi.updateNote(editId.value, { title: editForm.value.title, content })
     ElMessage.success('笔记修改成功')
     showEdit.value = false
     fetchNotes()
@@ -214,6 +220,18 @@ onMounted(fetchNotes)
 
 .note-card:hover .note-actions {
   opacity: 1;
+}
+
+.editor-section {
+  margin-top: 16px;
+}
+
+.editor-label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #303133;
 }
 
 .note-title {

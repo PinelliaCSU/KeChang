@@ -1,7 +1,7 @@
 <template>
-    <div class="rich-editor-wrapper" :class="{ 'is-disabled': disabled }">
+    <div ref="wrapperRef" class="rich-editor-wrapper" :class="{ 'is-disabled': disabled }">
         <!-- 工具栏 -->
-        <div class="rich-editor-toolbar" v-if="editor && !disabled">
+        <div class="rich-editor-toolbar" v-if="editor && !disabled" @click.stop>
             <!-- 撤销/重做 -->
             <div class="toolbar-group">
                 <button class="toolbar-btn" title="撤销 (Ctrl+Z)" @click="editor.chain().focus().undo().run()">
@@ -66,77 +66,27 @@
 
             <span class="toolbar-divider"></span>
 
-            <!-- 文字颜色 -->
-            <div class="toolbar-group">
-                <div class="color-picker-wrapper">
-                    <button class="toolbar-btn" title="文字颜色" @click="showFontColor = !showFontColor">
-                        <span class="color-indicator" :style="{ borderBottomColor: currentFontColor }">A</span>
-                    </button>
-                    <div class="color-picker-dropdown" v-if="showFontColor" @click.stop>
-                        <div class="color-grid">
-                            <span class="color-swatch" v-for="c in colors" :key="c" :style="{ backgroundColor: c }"
-                                :class="{ active: currentFontColor === c }" @click="setFontColor(c)"></span>
-                        </div>
-                        <div class="color-reset" @click="setFontColor(null)">恢复默认</div>
-                    </div>
-                </div>
-                <div class="color-picker-wrapper">
-                    <button class="toolbar-btn" title="文字背景" @click="showHighlight = !showHighlight">
-                        <svg viewBox="0 0 24 24" width="16" height="16">
-                            <path fill="currentColor" d="M3 3h18v4l-2 2v10a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V9L3 7V3z" />
-                        </svg>
-                    </button>
-                    <div class="color-picker-dropdown" v-if="showHighlight" @click.stop>
-                        <div class="color-grid">
-                            <span class="color-swatch" v-for="c in highlightColors" :key="c"
-                                :style="{ backgroundColor: c }" :class="{ active: currentHighlight === c }"
-                                @click="setHighlight(c)"></span>
-                        </div>
-                        <div class="color-reset" @click="setHighlight(null)">恢复默认</div>
-                    </div>
-                </div>
-            </div>
-
-            <span class="toolbar-divider"></span>
-
-            <!-- 字号 -->
-            <div class="toolbar-group">
-                <select class="toolbar-select" @change="setFontSize($event.target.value)" :value="currentFontSize">
-                    <option value="">字号</option>
-                    <option v-for="s in fontSizes" :key="s" :value="s">{{ s }}px</option>
-                </select>
-            </div>
-
-            <span class="toolbar-divider"></span>
-
-            <!-- 对齐 -->
-            <div class="toolbar-group">
-                <button class="toolbar-btn" :class="{ active: editor.isActive({ textAlign: 'left' }) }" title="左对齐"
-                    @click="editor.chain().focus().setTextAlign('left').run()">
-                    <svg viewBox="0 0 24 24" width="16" height="16">
-                        <path fill="currentColor"
-                            d="M3 3h18v2H3V3zm0 4h12v2H3V7zm0 4h18v2H3v-2zm0 4h12v2H3v-2zm0 4h18v2H3v-2z" />
-                    </svg>
-                </button>
-                <button class="toolbar-btn" :class="{ active: editor.isActive({ textAlign: 'center' }) }" title="居中"
-                    @click="editor.chain().focus().setTextAlign('center').run()">
-                    <svg viewBox="0 0 24 24" width="16" height="16">
-                        <path fill="currentColor"
-                            d="M3 3h18v2H3V3zm2 4h14v2H5V7zm-2 4h18v2H3v-2zm2 4h14v2H5v-2zm-2 4h18v2H3v-2z" />
-                    </svg>
-                </button>
-                <button class="toolbar-btn" :class="{ active: editor.isActive({ textAlign: 'right' }) }" title="右对齐"
-                    @click="editor.chain().focus().setTextAlign('right').run()">
-                    <svg viewBox="0 0 24 24" width="16" height="16">
-                        <path fill="currentColor"
-                            d="M3 3h18v2H3V3zm6 4h12v2H9V7zm-6 4h18v2H3v-2zm6 4h12v2H9v-2zm-6 4h18v2H3v-2z" />
-                    </svg>
-                </button>
-            </div>
-
-            <span class="toolbar-divider"></span>
-
             <!-- 列表 -->
+            <div class="toolbar-group">
+                <button class="toolbar-btn" :class="{ active: editor.isActive('bulletList') }" title="无序列表"
+                    @click="editor.chain().focus().toggleBulletList().run()">
+                    <svg viewBox="0 0 24 24" width="16" height="16">
+                        <path fill="currentColor"
+                            d="M3 5h2v2H3V5zm0 6h2v2H3v-2zm0 6h2v2H3v-2zm5-6h14v2H8v-2zm0-6h14v2H8V5zm0 12h14v2H8v-2z" />
+                    </svg>
+                </button>
+                <button class="toolbar-btn" :class="{ active: editor.isActive('orderedList') }" title="有序列表"
+                    @click="editor.chain().focus().toggleOrderedList().run()">
+                    <svg viewBox="0 0 24 24" width="16" height="16">
+                        <path fill="currentColor"
+                            d="M3 17h2v.5H4v1h1V19H3v1h3v-4H3v1zm1-9h1V4H3v1h1v3zm-1 3h1.8L3 13.1v.9h3v-1H4.2L6 10.9V10H3v1zm5-6v2h14V5H8zm0 14h14v-2H8v2zm0-6h14v-2H8v2z" />
+                    </svg>
+                </button>
+            </div>
+
+            <span class="toolbar-divider"></span>
+
+            <!-- 插入 -->
             <div class="toolbar-group">
                 <button class="toolbar-btn" :class="{ active: editor.isActive('bulletList') }" title="无序列表"
                     @click="editor.chain().focus().toggleBulletList().run()">
@@ -198,167 +148,73 @@
 </template>
 
 <script setup>
-import { ref, watch, onBeforeUnmount, onMounted, nextTick } from 'vue'
+import { ref, onBeforeUnmount } from 'vue'
 import { useEditor, EditorContent } from '@tiptap/vue-3'
 import StarterKit from '@tiptap/starter-kit'
 import Underline from '@tiptap/extension-underline'
-import { TextStyle, FontSize } from '@tiptap/extension-text-style'
-import Color from '@tiptap/extension-color'
-import Highlight from '@tiptap/extension-highlight'
 import Image from '@tiptap/extension-image'
 import Link from '@tiptap/extension-link'
-import TextAlign from '@tiptap/extension-text-align'
-import DOMPurify from 'dompurify'
 import { uploadApi } from '@/api'
 import { resolveFileUrl } from '@/utils/fileUrl'
 import { ElMessage } from 'element-plus'
 
-// ============ Props & Emits ============
 const props = defineProps({
     modelValue: { type: String, default: '' },
     disabled: { type: Boolean, default: false },
     placeholder: { type: String, default: '开始编辑笔记...' }
 })
 
-const emit = defineEmits(['update:modelValue'])
-
-// ============ 颜色选项 ============
-const colors = [
-    '#000000', '#434343', '#666666', '#999999', '#b7b7b7', '#cccccc',
-    '#980000', '#ff0000', '#ff9900', '#ffff00', '#00ff00', '#00ffff',
-    '#4a86e8', '#0000ff', '#9900ff', '#ff00ff',
-    '#e06666', '#f6b26b', '#ffd966', '#93c47d', '#76a5af', '#6fa8dc',
-    '#8e7cc3', '#c27ba0'
-]
-
-const highlightColors = [
-    '#ffff00', '#ff9900', '#00ff00', '#00ffff', '#4a86e8', '#ff00ff',
-    '#f4cccc', '#fce5cd', '#fff2cc', '#d9ead3', '#d0e0e3', '#cfe2f3',
-    '#d9d2e9', '#ead1dc'
-]
-
-const fontSizes = [12, 14, 16, 18, 20, 24, 28, 32]
-
-// ============ 状态 ============
 const imageInput = ref(null)
-const showFontColor = ref(false)
-const showHighlight = ref(false)
-const currentFontColor = ref('#000000')
-const currentHighlight = ref(null)
-const currentFontSize = ref('')
-const isUpdatingFromProps = ref(false)
+const wrapperRef = ref(null)
 
 // ============ 初始化编辑器 ============
 const editor = useEditor({
     content: props.modelValue,
     extensions: [
-        StarterKit.configure({
-            heading: { levels: [2, 3, 4] }
-        }),
+        StarterKit.configure({ heading: { levels: [2, 3, 4] } }),
         Underline,
-        TextStyle,
-        Color,
-        Highlight.configure({ multicolor: true }),
-        FontSize,
         Image.configure({ inline: false, allowBase64: false }),
-        Link.configure({ openOnClick: false, HTMLAttributes: { target: '_blank', rel: 'noopener noreferrer' } }),
-        TextAlign.configure({ types: ['heading', 'paragraph'] })
+        Link.configure({ openOnClick: false, HTMLAttributes: { target: '_blank', rel: 'noopener noreferrer' } })
     ],
     editorProps: {
         attributes: {
             class: 'prose-mirror-content',
             placeholder: props.placeholder
         }
-    },
-    onUpdate: ({ editor }) => {
-        if (isUpdatingFromProps.value) return
-        const html = editor.getHTML()
-        // DOMPurify 清洗
-        const clean = DOMPurify.sanitize(html, {
-            ALLOWED_TAGS: ['p', 'br', 'strong', 'b', 'em', 'i', 'u', 's', 'del', 'h2', 'h3', 'h4',
-                'ul', 'ol', 'li', 'a', 'img', 'span', 'div', 'hr', 'pre', 'code', 'blockquote'],
-            ALLOWED_ATTR: ['href', 'target', 'rel', 'src', 'alt', 'title', 'style', 'class'],
-            ALLOW_DATA_ATTR: false
-        })
-        emit('update:modelValue', clean === '<p></p>' ? '' : clean)
     }
 })
 
-// ============ v-model 双向同步 ============
-watch(() => props.modelValue, (val) => {
-    if (!editor.value) return
-    const editorHTML = editor.value.getHTML()
-    const cleanEditor = editorHTML === '<p></p>' ? '' : editorHTML
-    if (val === cleanEditor) return
-    isUpdatingFromProps.value = true
-    editor.value.commands.setContent(val || '')
-    nextTick(() => { isUpdatingFromProps.value = false })
-})
-
-// ============ 文字颜色 ============
-const setFontColor = (color) => {
-    showFontColor.value = false
-    if (color) {
-        editor.value.chain().focus().setColor(color).run()
-        currentFontColor.value = color
-    } else {
-        editor.value.chain().focus().unsetColor().run()
-        currentFontColor.value = '#000000'
-    }
+// 暴露方法：父组件通过 ref 读取内容
+const getHTML = () => {
+    if (!editor.value) return ''
+    const html = editor.value.getHTML()
+    return html === '<p></p>' ? '' : html
 }
-
-// ============ 高亮 ============
-const setHighlight = (color) => {
-    showHighlight.value = false
-    if (color) {
-        editor.value.chain().focus().toggleHighlight({ color }).run()
-        currentHighlight.value = color
-    } else {
-        editor.value.chain().focus().unsetHighlight().run()
-        currentHighlight.value = null
-    }
-}
-
-// ============ 字号 ============
-const setFontSize = (size) => {
-    if (size) {
-        editor.value.chain().focus().setFontSize(size + 'px').run()
-        currentFontSize.value = size
-    } else {
-        editor.value.chain().focus().unsetFontSize().run()
-        currentFontSize.value = ''
-    }
-}
+defineExpose({ getHTML })
 
 // ============ 图片上传 ============
-const triggerImageUpload = () => {
-    imageInput.value?.click()
-}
+const triggerImageUpload = () => { imageInput.value?.click() }
 
 const handleImageUpload = async (e) => {
     const file = e.target.files?.[0]
     if (!file) return
-    // 重置 input，允许重复选同一文件
     e.target.value = ''
     try {
         const formData = new FormData()
         formData.append('file', file)
         const res = await uploadApi.uploadFile(formData)
         if (res.data.code === 200) {
-            const url = resolveFileUrl(res.data.data?.url)
-            editor.value.chain().focus().setImage({ src: url }).run()
+            editor.value.chain().focus().setImage({ src: resolveFileUrl(res.data.data?.url) }).run()
         } else {
             ElMessage.error('图片上传失败')
         }
-    } catch (err) {
-        ElMessage.error('图片上传失败')
-    }
+    } catch { ElMessage.error('图片上传失败') }
 }
 
 // ============ 链接 ============
 const setLink = () => {
-    const previousUrl = editor.value.getAttributes('link').href
-    const url = window.prompt('请输入链接地址', previousUrl || 'https://')
+    const prev = editor.value.getAttributes('link').href
+    const url = window.prompt('请输入链接地址', prev || 'https://')
     if (url === null) return
     if (url === '') {
         editor.value.chain().focus().extendMarkRange('link').unsetLink().run()
@@ -367,23 +223,7 @@ const setLink = () => {
     editor.value.chain().focus().extendMarkRange('link').setLink({ href: url }).run()
 }
 
-// ============ 点击外部关闭颜色选择器 ============
-const handleClickOutside = (e) => {
-    const wrapper = document.querySelector('.rich-editor-wrapper')
-    if (wrapper && !wrapper.contains(e.target)) {
-        showFontColor.value = false
-        showHighlight.value = false
-    }
-}
-
-onMounted(() => {
-    document.addEventListener('click', handleClickOutside)
-})
-
-onBeforeUnmount(() => {
-    document.removeEventListener('click', handleClickOutside)
-    editor.value?.destroy()
-})
+onBeforeUnmount(() => { editor.value?.destroy() })
 </script>
 
 <style>
@@ -391,7 +231,6 @@ onBeforeUnmount(() => {
 .rich-editor-wrapper {
     border: 1px solid var(--bio-border, #dcdfe6);
     border-radius: var(--bio-radius-md, 8px);
-    overflow: hidden;
     background: #fff;
     transition: border-color 0.2s;
     display: flex;
@@ -458,92 +297,6 @@ onBeforeUnmount(() => {
     height: 18px;
     background: var(--bio-border-soft, #e8edf3);
     margin: 0 4px;
-}
-
-/* 颜色指示器 */
-.color-indicator {
-    display: inline-block;
-    border-bottom: 2px solid currentColor;
-    font-weight: 700;
-    font-size: 12px;
-    line-height: 1;
-}
-
-/* 颜色选择器 */
-.color-picker-wrapper {
-    position: relative;
-}
-
-.color-picker-dropdown {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    z-index: 100;
-    background: #fff;
-    border: 1px solid var(--bio-border, #dcdfe6);
-    border-radius: 8px;
-    padding: 8px;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-    margin-top: 4px;
-    min-width: 180px;
-}
-
-.color-grid {
-    display: grid;
-    grid-template-columns: repeat(8, 1fr);
-    gap: 3px;
-}
-
-.color-swatch {
-    display: block;
-    width: 18px;
-    height: 18px;
-    border-radius: 3px;
-    cursor: pointer;
-    border: 1px solid rgba(0, 0, 0, 0.1);
-    transition: transform 0.1s;
-}
-
-.color-swatch:hover {
-    transform: scale(1.2);
-    border-color: var(--bio-primary, #20c4cc);
-}
-
-.color-swatch.active {
-    border: 2px solid var(--bio-primary, #20c4cc);
-    transform: scale(1.15);
-}
-
-.color-reset {
-    margin-top: 6px;
-    padding: 4px 0;
-    text-align: center;
-    font-size: 12px;
-    color: var(--bio-ink-muted, #8a94a6);
-    cursor: pointer;
-    border-top: 1px solid var(--bio-border-soft, #e8edf3);
-}
-
-.color-reset:hover {
-    color: var(--bio-primary, #20c4cc);
-}
-
-/* 字号下拉 */
-.toolbar-select {
-    height: 28px;
-    border: 1px solid var(--bio-border-soft, #e8edf3);
-    border-radius: 4px;
-    padding: 0 6px;
-    font-size: 12px;
-    color: var(--bio-ink-soft, #4b5563);
-    background: #fff;
-    cursor: pointer;
-    outline: none;
-    min-width: 62px;
-}
-
-.toolbar-select:focus {
-    border-color: var(--bio-primary, #20c4cc);
 }
 
 /* ============ 编辑区 ============ */
