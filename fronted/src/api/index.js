@@ -314,3 +314,13 @@ export const messageApi = {
   /** 清空与某人的聊天记录 */
   clearConversation: (otherUserId) => request.delete(`/messages/with/${otherUserId}`)
 }
+
+/** 日程 API */
+export const scheduleApi = {
+  listByMonth: (year, month) => request.get('/schedules/month', { params: { year, month } }),
+  listByDate: (date) => request.get('/schedules/date', { params: { date } }),
+  detail: (id) => request.get(`/schedules/${id}`),
+  create: (data) => request.post('/schedules', data),
+  update: (id, data) => request.put(`/schedules/${id}`, data),
+  delete: (id) => request.delete(`/schedules/${id}`)
+}
