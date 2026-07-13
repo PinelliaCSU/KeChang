@@ -139,7 +139,14 @@ const studentMenus = [
       { path: '/student/courses', title: '课程中心' },
       { path: '/student/assignments', title: '我的作业' },
       { path: '/student/exams', title: '在线考试' },
-      { path: '/student/class-quizzes', title: '随堂测验' },
+      { path: '/student/class-quizzes', title: '随堂测验' }
+    ]
+  },
+  {
+    path: 'practice-sub',
+    title: '实践拓展',
+    icon: 'TrendCharts',
+    children: [
       { path: '/student/checkin', title: '课堂签到' },
       { path: '/student/trainings', title: '实训中心' },
       { path: '/student/course-knowledge', title: '智能知识库' },
