@@ -64,6 +64,9 @@ springdoc:
 kechang:
   upload:
     path: ./uploads
+  rag:
+    # local-json 适合本地轻量开发；redis 使用 Redis Stack RediSearch VECTOR 索引，更接近真实部署。
+    vector-store: ${RAG_VECTOR_STORE:local-json}
   office:
     # 安装 LibreOffice 后建议显式配置，Word 转 PDF 才能保留表格、图片和复杂格式
     # Windows 示例："C:/Program Files/LibreOffice/program/soffice.exe"
@@ -87,4 +90,4 @@ bailian:
     enabled: ${EMBEDDING_ENABLED:true}
     endpoint: ${EMBEDDING_ENDPOINT:https://dashscope.aliyuncs.com/compatible-mode/v1/embeddings}
     model: ${EMBEDDING_MODEL:text-embedding-v3}
-    fallback-dimension: ${EMBEDDING_FALLBACK_DIMENSION:256}
+    fallback-dimension: ${EMBEDDING_FALLBACK_DIMENSION:1024}

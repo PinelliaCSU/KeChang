@@ -21,12 +21,13 @@ services:
       - kechang-net
 
   redis:
-    image: redis:7-alpine
+    image: redis/redis-stack-server:7.2.0-v10
     container_name: kechang-redis
     restart: always
     ports:
       - "6379:6379"
-    command: redis-server --requirepass redis123
+    environment:
+      REDIS_ARGS: "--requirepass redis123 --appendonly yes"
     volumes:
       - redis_data:/data
     networks:
@@ -55,11 +56,14 @@ services:
       SOFFICE_PATH: ${SOFFICE_PATH:-/usr/bin/soffice}
       EMBEDDING_ENABLED: ${EMBEDDING_ENABLED:-true}
       EMBEDDING_MODEL: ${EMBEDDING_MODEL:-text-embedding-v3}
+      RAG_VECTOR_STORE: ${RAG_VECTOR_STORE:-redis}
     ports:
       - "8080:8080"
     volumes:
       # 挂载 Docker socket，允许后端创建沙箱容器执行学生代码
       - /var/run/docker.sock:/var/run/docker.sock
+      # 持久化课程资源、作业附件、PDF 预览和批注文件
+      - backend_uploads:/app/uploads
     networks:
       - kechang-net
 
@@ -77,6 +81,7 @@ services:
 volumes:
   mysql_data:
   redis_data:
+  backend_uploads:
 
 networks:
   kechang-net:

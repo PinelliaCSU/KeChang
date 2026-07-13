@@ -25,6 +25,12 @@ spring:
           max-idle: 8
           min-idle: 0
 
+kechang:
+  rag:
+    # 本地普通 Redis 不支持向量检索；要演示真实 Redis Vector 时，先启动 Redis Stack/RediSearch，
+    # 再把环境变量 RAG_VECTOR_STORE 设为 redis，或直接改成 redis。
+    vector-store: ${RAG_VECTOR_STORE:local-json}
+
 # MyBatis-Plus: 开发环境启用 SQL 日志
 mybatis-plus:
   configuration:
@@ -45,4 +51,4 @@ bailian:
     enabled: ${EMBEDDING_ENABLED:true}
     endpoint: ${EMBEDDING_ENDPOINT:https://dashscope.aliyuncs.com/compatible-mode/v1/embeddings}
     model: ${EMBEDDING_MODEL:text-embedding-v3}
-    fallback-dimension: ${EMBEDDING_FALLBACK_DIMENSION:256}
+    fallback-dimension: ${EMBEDDING_FALLBACK_DIMENSION:1024}

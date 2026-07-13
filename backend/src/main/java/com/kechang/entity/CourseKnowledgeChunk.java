@@ -20,6 +20,12 @@ public class CourseKnowledgeChunk {
     private String sourceType;
     private Long sourceId;
     private String sourceUrl;
+    private Integer pageNo;
+    private Integer startTime;
+    private Integer endTime;
+    private String sectionTitle;
+    private Integer tokenCount;
+    private String metadataJson;
 
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createTime;

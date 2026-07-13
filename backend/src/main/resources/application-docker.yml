@@ -24,6 +24,8 @@ spring:
           min-idle: 4
 
 kechang:
+  rag:
+    vector-store: ${RAG_VECTOR_STORE:redis}
   office:
     soffice-path: ${SOFFICE_PATH:/usr/bin/soffice}
 
@@ -42,4 +44,4 @@ bailian:
     enabled: ${EMBEDDING_ENABLED:true}
     endpoint: ${EMBEDDING_ENDPOINT:https://dashscope.aliyuncs.com/compatible-mode/v1/embeddings}
     model: ${EMBEDDING_MODEL:text-embedding-v3}
-    fallback-dimension: ${EMBEDDING_FALLBACK_DIMENSION:256}
+    fallback-dimension: ${EMBEDDING_FALLBACK_DIMENSION:1024}
