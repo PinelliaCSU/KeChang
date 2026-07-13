@@ -112,6 +112,9 @@ const studentLng = ref(null)
 const now = ref(new Date())
 let timer = null
 
+// 签到结束时定格此刻的时间，防止倒计时继续走
+const frozenNow = ref(null)
+
 // 检查URL参数中是否有预填code（扫码进入）
 const urlCode = computed(() => route.query.code || '')
 
@@ -128,11 +131,33 @@ const isLateWindow = computed(() => props.session?.isLateWindow || false)
 const countdownText = computed(() => {
     if (!props.session?.endTime) return ''
     const end = new Date(props.session.endTime)
-    const remaining = Math.max(0, end - now.value)
+    // 签到已结束则使用定格时间，否则使用实时时间
+    const effectiveNow = props.session?.status !== 'ACTIVE' && frozenNow.value
+        ? frozenNow.value
+        : now.value
+    const remaining = Math.max(0, end - effectiveNow)
     const m = Math.floor(remaining / 60000)
     const s = Math.floor((remaining % 60000) / 1000)
     if (m > 0) return `${m}分${s}秒`
     return `${s}秒`
+})
+
+// 监听签到状态：一旦变为非 ACTIVE（教师结束签到），立刻停止倒计时
+watch(() => props.session?.status, (status, oldStatus) => {
+    if (oldStatus === 'ACTIVE' && status !== 'ACTIVE') {
+        frozenNow.value = new Date()
+        if (timer) {
+            clearInterval(timer)
+            timer = null
+        }
+    }
+    // 如果重新变为 ACTIVE，恢复计时
+    if (status === 'ACTIVE') {
+        frozenNow.value = null
+        if (!timer) {
+            timer = setInterval(() => { now.value = new Date() }, 1000)
+        }
+    }
 })
 
 const statusLabel = (s) => ({ SUCCESS: '正常', LATE: '迟到', ABSENT: '缺勤' })[s] || s
@@ -190,7 +215,14 @@ const handleCheckin = async () => {
     }
 }
 
-onMounted(() => { timer = setInterval(() => { now.value = new Date() }, 1000) })
+onMounted(() => {
+    // 仅当签到仍活跃时才启动倒计时
+    if (props.session?.status === 'ACTIVE') {
+        timer = setInterval(() => { now.value = new Date() }, 1000)
+    } else {
+        frozenNow.value = new Date()
+    }
+})
 onUnmounted(() => { if (timer) clearInterval(timer) })
 </script>
 

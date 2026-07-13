@@ -62,50 +62,50 @@
             </div>
 
             <template v-if="sessions.length">
-              <el-table :data="sessions" class="kechang-table is-borderless"
-                  @row-click="selectSession" style="cursor:pointer">
-                  <el-table-column prop="courseName" label="课程" width="160" />
-                  <el-table-column prop="title" label="签到标题" min-width="180" />
-                  <el-table-column label="方式" width="120">
-                      <template #default="{ row }">
-                          <el-tag :type="row.checkinType === 'LOCATION' ? 'warning' : ''" size="small" effect="plain">
-                              {{ typeLabel(row.checkinType) }}
-                          </el-tag>
-                      </template>
-                  </el-table-column>
-                  <el-table-column label="签到码" width="100">
-                      <template #default="{ row }">{{ row.code }}</template>
-                  </el-table-column>
-                  <el-table-column label="时间" width="180">
-                      <template #default="{ row }">
-                          <span>{{ formatShort(row.startTime) }} - {{ formatShort(row.endTime) }}</span>
-                      </template>
-                  </el-table-column>
-                  <el-table-column label="签到情况" width="160">
-                      <template #default="{ row }">
-                          <div class="cell-stats">
-                              <span class="cs-item success">{{ row.successCount || 0 }}</span>
-                              <span class="cs-sep">/</span>
-                              <span class="cs-item late">{{ row.lateCount || 0 }}</span>
-                              <span class="cs-sep">/</span>
-                              <span class="cs-item total">{{ row.totalStudents || 0 }}</span>
-                          </div>
-                      </template>
-                  </el-table-column>
-                  <el-table-column label="状态" width="90">
-                      <template #default="{ row }">
-                          <el-tag :type="row.status === 'ACTIVE' ? 'danger' : 'info'" size="small">
-                              {{ row.status === 'ACTIVE' ? '签到中' : '已结束' }}
-                          </el-tag>
-                      </template>
-                  </el-table-column>
-                  <el-table-column label="操作" width="100">
-                      <template #default="{ row }">
-                          <el-button text type="primary" size="small" @click.stop="selectSession(row)">详情</el-button>
-                      </template>
-                  </el-table-column>
-              </el-table>
-              <PaginationWrapper v-model:page="page" v-model:size="size" :total="total" @change="loadSessions" />
+                <el-table :data="sessions" class="kechang-table is-borderless" @row-click="selectSession"
+                    style="cursor:pointer">
+                    <el-table-column prop="courseName" label="课程" width="160" />
+                    <el-table-column prop="title" label="签到标题" min-width="180" />
+                    <el-table-column label="方式" width="120">
+                        <template #default="{ row }">
+                            <el-tag :type="row.checkinType === 'LOCATION' ? 'warning' : ''" size="small" effect="plain">
+                                {{ typeLabel(row.checkinType) }}
+                            </el-tag>
+                        </template>
+                    </el-table-column>
+                    <el-table-column label="签到码" width="100">
+                        <template #default="{ row }">{{ row.code }}</template>
+                    </el-table-column>
+                    <el-table-column label="时间" width="180">
+                        <template #default="{ row }">
+                            <span>{{ formatShort(row.startTime) }} - {{ formatShort(row.endTime) }}</span>
+                        </template>
+                    </el-table-column>
+                    <el-table-column label="签到情况" width="160">
+                        <template #default="{ row }">
+                            <div class="cell-stats">
+                                <span class="cs-item success">{{ row.successCount || 0 }}</span>
+                                <span class="cs-sep">/</span>
+                                <span class="cs-item late">{{ row.lateCount || 0 }}</span>
+                                <span class="cs-sep">/</span>
+                                <span class="cs-item total">{{ row.totalStudents || 0 }}</span>
+                            </div>
+                        </template>
+                    </el-table-column>
+                    <el-table-column label="状态" width="90">
+                        <template #default="{ row }">
+                            <el-tag :type="row.status === 'ACTIVE' ? 'danger' : 'info'" size="small">
+                                {{ row.status === 'ACTIVE' ? '签到中' : '已结束' }}
+                            </el-tag>
+                        </template>
+                    </el-table-column>
+                    <el-table-column label="操作" width="100">
+                        <template #default="{ row }">
+                            <el-button text type="primary" size="small" @click.stop="selectSession(row)">详情</el-button>
+                        </template>
+                    </el-table-column>
+                </el-table>
+                <PaginationWrapper v-model:page="page" v-model:size="size" :total="total" @change="loadSessions" />
             </template>
             <el-empty v-else description="暂无签到记录" :image-size="120" />
         </div>
@@ -190,13 +190,14 @@ const loadSessions = async () => {
         const res = await checkinApi.teacherList({ page: page.value, size: size.value, courseId: filterCourseId.value || undefined, keyword: searchKeyword.value || undefined })
         sessions.value = res.data.data?.records || []
         total.value = res.data.data?.total || 0
-        // 检查是否有活跃签到
+        // 检查是否有活跃签到（仅当前页）
         const active = sessions.value.find(s => s.status === 'ACTIVE')
         if (active && !activeSession.value) {
             activeSession.value = active
             startPolling()
         }
-        if (!active) {
+        // 仅在第1页且当前页无活跃签到时才清除，避免分页误判
+        if (!active && page.value === 1) {
             activeSession.value = null
             stopPolling()
         }
@@ -250,14 +251,15 @@ const handleCloseCheckin = async () => {
 }
 
 const onCreated = async (session) => {
-    await loadSessions()
-    // 找到刚创建的签到
-    const created = sessions.value.find(s => s.id === session?.id) || sessions.value[0]
-    if (created && created.status === 'ACTIVE') {
-        activeSession.value = created
-        activeStats.value = await loadStats(created.id)
+    // 直接使用创建接口返回的 session，不依赖分页列表查找
+    if (session && session.status === 'ACTIVE') {
+        activeSession.value = session
+        activeStats.value = await loadStats(session.id)
         startPolling()
     }
+    // 重置到第1页并刷新历史列表（后台执行，不影响已设置的 activeSession）
+    resetPage()
+    await loadSessions()
 }
 
 const enterFullscreen = () => { fullscreenVisible.value = true }
@@ -268,7 +270,7 @@ const startPolling = () => {
         if (activeSession.value) {
             activeStats.value = await loadStats(activeSession.value.id)
         }
-    }, 30000)
+    }, 10000)
 }
 
 const stopPolling = () => {

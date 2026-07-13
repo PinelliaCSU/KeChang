@@ -3,7 +3,9 @@
         <div class="display-header" v-if="fullscreen">
             <h2>{{ session?.courseName }} - {{ session?.title || '课堂签到' }}</h2>
             <el-button @click="$emit('close')" circle>
-                <el-icon><Close /></el-icon>
+                <el-icon>
+                    <Close />
+                </el-icon>
             </el-button>
         </div>
 
@@ -11,14 +13,8 @@
             <div class="countdown-ring">
                 <svg class="ring-svg" viewBox="0 0 120 120">
                     <circle class="ring-bg" cx="60" cy="60" r="52" />
-                    <circle
-                        class="ring-progress"
-                        cx="60"
-                        cy="60"
-                        r="52"
-                        :stroke-dasharray="circumference"
-                        :stroke-dashoffset="dashOffset"
-                    />
+                    <circle class="ring-progress" cx="60" cy="60" r="52" :stroke-dasharray="circumference"
+                        :stroke-dashoffset="dashOffset" />
                 </svg>
                 <div class="ring-text">
                     <span class="time-num">{{ countdown.minutes }}</span>
@@ -41,7 +37,9 @@
             <p v-if="session?.checkinType === 'QR_CODE'" class="code-hint">也可以输入上方数字码完成签到</p>
 
             <div v-if="session?.checkinType === 'LOCATION'" class="loc-info">
-                <el-icon :size="28"><Location /></el-icon>
+                <el-icon :size="28">
+                    <Location />
+                </el-icon>
                 <p>已设定签到位置</p>
                 <p class="loc-detail">有效范围：{{ session?.locationRadius || 100 }} 米</p>
             </div>
@@ -67,7 +65,9 @@
                 </div>
             </div>
             <el-button type="danger" @click="$emit('closeCheckin')" :loading="closing">
-                <el-icon><SwitchButton /></el-icon>
+                <el-icon>
+                    <SwitchButton />
+                </el-icon>
                 结束签到
             </el-button>
         </div>
@@ -92,6 +92,9 @@ const qrCanvas = ref(null)
 const now = ref(new Date())
 let timer = null
 
+// 签到结束时定格此刻的时间，防止倒计时继续走
+const frozenNow = ref(null)
+
 const codeChars = computed(() => String(props.session?.code || '').split(''))
 const circumference = 2 * Math.PI * 52
 
@@ -100,7 +103,11 @@ const countdown = computed(() => {
     const end = new Date(props.session.endTime)
     const start = new Date(props.session.startTime)
     const total = Math.max(1, end - start)
-    const remaining = Math.max(0, end - now.value)
+    // 签到已结束则使用定格时间，否则使用实时时间
+    const effectiveNow = props.session?.status !== 'ACTIVE' && frozenNow.value
+        ? frozenNow.value
+        : now.value
+    const remaining = Math.max(0, end - effectiveNow)
     const progress = remaining / total
     const mins = Math.floor(remaining / 60000)
     const secs = Math.floor((remaining % 60000) / 1000)
@@ -108,6 +115,24 @@ const countdown = computed(() => {
         minutes: String(mins).padStart(2, '0'),
         seconds: String(secs).padStart(2, '0'),
         progress
+    }
+})
+
+// 监听签到状态：一旦变为非 ACTIVE（教师结束签到），立刻停止倒计时
+watch(() => props.session?.status, (status, oldStatus) => {
+    if (oldStatus === 'ACTIVE' && status !== 'ACTIVE') {
+        frozenNow.value = new Date()
+        if (timer) {
+            clearInterval(timer)
+            timer = null
+        }
+    }
+    // 如果重新变为 ACTIVE（切换查看不同场次），恢复计时
+    if (status === 'ACTIVE') {
+        frozenNow.value = null
+        if (!timer) {
+            timer = setInterval(() => { now.value = new Date() }, 1000)
+        }
     }
 })
 
@@ -131,7 +156,12 @@ watch(() => props.session?.checkinType, (type) => {
 })
 
 onMounted(() => {
-    timer = setInterval(() => { now.value = new Date() }, 1000)
+    // 仅当签到仍活跃时才启动倒计时
+    if (props.session?.status === 'ACTIVE') {
+        timer = setInterval(() => { now.value = new Date() }, 1000)
+    } else {
+        frozenNow.value = new Date()
+    }
     if (props.session?.checkinType === 'QR_CODE') setTimeout(generateQR, 100)
 })
 
