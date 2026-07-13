@@ -103,7 +103,7 @@ public class ExamService {
         // 应用默认值
         double totalScore = dto.getTotalScore() != null ? dto.getTotalScore() : 100.0;
         int duration = dto.getDuration() != null ? dto.getDuration() : 120;
-        double passScore = dto.getPassScore() != null ? dto.getPassScore() : 60.0;
+        double passScore = dto.getPassScore() != null ? dto.getPassScore() : Math.round(totalScore * 0.6);
 
         // 校验及格分不能大于总分
         if (passScore > totalScore) {

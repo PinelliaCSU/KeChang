@@ -68,7 +68,7 @@
           </el-col>
           <el-col :span="8">
             <el-form-item label="及格分"><el-input-number v-model="paperForm.passScore" :min="1"
-                style="width:100%" /></el-form-item>
+                style="width:100%" @change="passScoreManual = true" /></el-form-item>
           </el-col>
         </el-row>
 
@@ -251,7 +251,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, computed } from 'vue'
+import { ref, reactive, onMounted, computed, watch } from 'vue'
 import { examApi, courseApi } from '@/api'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { usePagination } from '@/composables/usePagination'
@@ -266,6 +266,13 @@ const courseList = ref([])
 const createDialogVisible = ref(false)
 const submitting = ref(false)
 const paperForm = reactive({ paperName: '', courseId: null, totalScore: 100, duration: 90, passScore: 60 })
+const passScoreManual = ref(false)
+// 总分变化时自动计算及格分（手动改过后不再联动）
+watch(() => paperForm.totalScore, (newVal) => {
+  if (!passScoreManual.value) {
+    paperForm.passScore = Math.round(newVal * 0.6)
+  }
+})
 const bankQuestions = ref([])
 const qLoading = ref(false)
 const qTypeFilter = ref(''); const qKeyword = ref('')
@@ -341,7 +348,8 @@ const loadQuestions = async () => {
 const onCourseChange = () => { bankQuestions.value = []; selectedQuestions.value = []; loadQuestions() }
 
 const openCreateDialog = () => {
-  paperForm.paperName = ''; paperForm.courseId = null; paperForm.totalScore = 100; paperForm.duration = 90; paperForm.passScore = 60
+  paperForm.paperName = ''; paperForm.courseId = null; paperForm.totalScore = 100; paperForm.duration = 90
+  passScoreManual.value = false; paperForm.passScore = Math.round(paperForm.totalScore * 0.6)
   bankQuestions.value = []; selectedQuestions.value = []
   Object.keys(selectedScoreMap).forEach(k => delete selectedScoreMap[k])
   createDialogVisible.value = true
