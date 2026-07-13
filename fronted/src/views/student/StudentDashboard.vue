@@ -129,10 +129,10 @@ import { dashboardApi, courseApi, participationApi, assignmentApi, examApi, trai
 import ShortcutPanel from '@/components/DashBoard/ShortcutPanel.vue'
 // ECharts 按需导入（替代全量 import * as echarts，减少 ~1MB 打包体积）
 import * as echarts from 'echarts/core'
-import { LineChart } from 'echarts/charts'
+import { LineChart, BarChart } from 'echarts/charts'
 import { GridComponent, TooltipComponent } from 'echarts/components'
 import { CanvasRenderer } from 'echarts/renderers'
-echarts.use([LineChart, GridComponent, TooltipComponent, CanvasRenderer])
+echarts.use([LineChart, BarChart, GridComponent, TooltipComponent, CanvasRenderer])
 
 const router = useRouter()
 const stats = ref({})

@@ -84,7 +84,8 @@
         </div>
       </div>
       <el-empty v-else description="暂无课程公告" :image-size="100" />
-      <PaginationWrapper v-bind="annPaginationProps" @update:page="handleAnnPageChange" @update:size="handleAnnSizeChange" @change="fetchAnnouncements" />
+      <PaginationWrapper v-bind="annPaginationProps" @update:page="handleAnnPageChange"
+        @update:size="handleAnnSizeChange" @change="fetchAnnouncements" />
     </div>
 
     <!-- 课件 -->
@@ -113,13 +114,14 @@
         </div>
       </div>
       <el-empty v-else description="暂无作业" :image-size="100" />
-      <PaginationWrapper v-bind="assignPaginationProps" @update:page="handleAssignPageChange" @update:size="handleAssignSizeChange" @change="fetchAssignments" />
+      <PaginationWrapper v-bind="assignPaginationProps" @update:page="handleAssignPageChange"
+        @update:size="handleAssignSizeChange" @change="fetchAssignments" />
     </div>
 
     <!-- 笔记 -->
     <div class="note-panel" v-if="activeTab === 'note'">
       <h4>学习笔记</h4>
-      <el-input v-model="noteContent" type="textarea" :rows="3" placeholder="在此输入本课程学习笔记..." />
+      <RichTextEditor ref="noteEditorRef" :modelValue="noteContent" placeholder="在此输入本课程学习笔记..." />
       <div class="note-actions">
         <el-button type="primary" @click="saveNote">保存笔记</el-button>
       </div>
@@ -150,6 +152,7 @@ const assignments = ref([])
 const announcements = ref([])
 const openChapterNames = ref([])
 const noteContent = ref('')
+const noteEditorRef = ref(null)
 const previewVisible = ref(false)
 const previewResource = ref(null)
 const activeTab = ref('chapter')
@@ -242,14 +245,15 @@ const previewFile = async (resource) => {
 }
 
 const saveNote = async () => {
-  if (!noteContent.value.trim()) {
+  const content = noteEditorRef.value?.getHTML() || ''
+  if (!content.trim() && !content.includes('<img')) {
     ElMessage.warning('请输入笔记内容')
     return
   }
   try {
     await knowledgeApi.createNote({
       title: `${course.value.courseName || '课程'}学习笔记`,
-      content: noteContent.value,
+      content,
       courseId: courseId()
     })
     ElMessage.success('笔记已保存')

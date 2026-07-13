@@ -12,6 +12,7 @@ import com.kechang.mapper.KnowledgeArticleMapper;
 import com.kechang.mapper.LearningNoteMapper;
 import com.kechang.mapper.StudentMaterialMapper;
 import com.kechang.mapper.StudentWrongQuestionMapper;
+import com.kechang.util.HtmlSanitizer;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -31,7 +32,6 @@ public class KnowledgeService {
     private final StudentWrongQuestionMapper wrongQuestionMapper;
 
     // ==================== 知识库文章 ====================
-
     public PageResult<KnowledgeArticle> listArticles(int page, int size, String keyword) {
         LambdaQueryWrapper<KnowledgeArticle> w = new LambdaQueryWrapper<>();
         if (keyword != null) {
@@ -57,7 +57,6 @@ public class KnowledgeService {
     }
 
     // ==================== 学习笔记（已有） ====================
-
     public PageResult<LearningNote> listNotes(Long studentId, int page, int size) {
         Page<LearningNote> p = noteMapper.selectPage(new Page<>(page, size),
                 new LambdaQueryWrapper<LearningNote>().eq(LearningNote::getStudentId, studentId)
@@ -66,11 +65,13 @@ public class KnowledgeService {
     }
 
     public void createNote(LearningNote n) {
+        n.setContent(HtmlSanitizer.sanitize(n.getContent()));
         noteMapper.insert(n);
     }
 
     public void updateNote(Long id, LearningNote n) {
         n.setId(id);
+        n.setContent(HtmlSanitizer.sanitize(n.getContent()));
         noteMapper.updateById(n);
     }
 
@@ -87,7 +88,6 @@ public class KnowledgeService {
     }
 
     // ==================== 我的资料 ====================
-
     public PageResult<StudentMaterial> listMaterials(Long studentId, int page, int size, Long courseId, String keyword) {
         LambdaQueryWrapper<StudentMaterial> w = new LambdaQueryWrapper<>();
         w.eq(StudentMaterial::getStudentId, studentId);
@@ -125,7 +125,6 @@ public class KnowledgeService {
     }
 
     // ==================== 我的错题 ====================
-
     public PageResult<StudentWrongQuestion> listWrongQuestions(Long studentId, int page, int size,
             Long courseId, Integer isMastered, String keyword) {
         LambdaQueryWrapper<StudentWrongQuestion> w = new LambdaQueryWrapper<>();
@@ -199,7 +198,6 @@ public class KnowledgeService {
     }
 
     // ==================== 统计 ====================
-
     public Map<String, Object> getKnowledgeStats(Long studentId) {
         Map<String, Object> stats = new HashMap<>();
 
