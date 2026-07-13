@@ -299,7 +299,7 @@ const openMenus = computed(() => {
   flex-direction: column;
   justify-content: center;
   gap: 7px;
-  font-size: 13px;
+  font-size: 15px;
   transition: background var(--bio-dur-normal) var(--bio-ease-out), color var(--bio-dur-normal) var(--bio-ease-out);
 }
 
@@ -335,8 +335,7 @@ const openMenus = computed(() => {
   height: 38px;
   align-items: center;
   flex-direction: row;
-  justify-content: flex-start;
-  padding-left: 10px !important;
+  justify-content: center;
   font-size: 13px;
 }
 

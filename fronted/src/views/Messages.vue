@@ -142,11 +142,11 @@ let searchTimer = null
 // 轮询
 let pollTimer = null
 
-// 本地过滤联系人
+// 本地过滤联系人（基于已排序的列表）
 const filteredContacts = computed(() => {
   const kw = searchKeyword.value.trim().toLowerCase()
-  if (!kw) return contacts.value
-  return contacts.value.filter(c => {
+  if (!kw) return sortedContacts.value
+  return sortedContacts.value.filter(c => {
     const name = (c.name || '').toLowerCase()
     const uname = (c.username || '').toLowerCase()
     const course = (c.courseName || '').toLowerCase()
@@ -157,6 +157,22 @@ const filteredContacts = computed(() => {
 // 按时间升序展示消息
 const displayMessages = computed(() => {
   return [...messages.value].reverse()
+})
+
+// 使用 computed 排序联系人，避免轮询时全量重建数组触发重渲染
+const sortedContacts = computed(() => {
+  return [...contacts.value].sort((a, b) => {
+    if (a.unreadCount > 0 && b.unreadCount === 0) return -1
+    if (b.unreadCount > 0 && a.unreadCount === 0) return 1
+    if (a.hasHistory && b.hasHistory) {
+      const ta = a.lastTime ? new Date(a.lastTime).getTime() : 0
+      const tb = b.lastTime ? new Date(b.lastTime).getTime() : 0
+      return tb - ta
+    }
+    if (a.hasHistory && !b.hasHistory) return -1
+    if (!a.hasHistory && b.hasHistory) return 1
+    return (a.name || a.username || '').localeCompare(b.name || b.username || '', 'zh')
+  })
 })
 
 // ==================== 数据加载 ====================
@@ -470,19 +486,7 @@ onMounted(async () => {
         })
       }
     }
-    // 重新排序：未读置顶
-    contacts.value = [...contacts.value].sort((a, b) => {
-      if (a.unreadCount > 0 && b.unreadCount === 0) return -1
-      if (b.unreadCount > 0 && a.unreadCount === 0) return 1
-      if (a.hasHistory && b.hasHistory) {
-        const ta = a.lastTime ? new Date(a.lastTime).getTime() : 0
-        const tb = b.lastTime ? new Date(b.lastTime).getTime() : 0
-        return tb - ta
-      }
-      if (a.hasHistory && !b.hasHistory) return -1
-      if (!a.hasHistory && b.hasHistory) return 1
-      return (a.name || a.username || '').localeCompare(b.name || b.username || '', 'zh')
-    })
+    // 排序由 sortedContacts computed 自动处理，无需手动重建数组触发重渲染
   }, 10000)
 })
 

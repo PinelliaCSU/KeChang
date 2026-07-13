@@ -5,8 +5,10 @@
       <AppSidebar />
       <main class="main-content">
         <router-view v-slot="{ Component, route }">
-          <transition name="fade-slide" mode="out-in">
-            <component :is="Component" :key="route.path" />
+          <transition name="fade-slide">
+            <keep-alive :max="6">
+              <component :is="Component" :key="route.path" />
+            </keep-alive>
           </transition>
         </router-view>
       </main>
