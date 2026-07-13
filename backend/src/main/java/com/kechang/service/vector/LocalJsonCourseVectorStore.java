@@ -3,6 +3,7 @@ package com.kechang.service.vector;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -17,6 +18,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 @Service
 @RequiredArgsConstructor
+@ConditionalOnProperty(name = "kechang.rag.vector-store", havingValue = "local-json", matchIfMissing = true)
 public class LocalJsonCourseVectorStore implements CourseVectorStore {
 
     private final ObjectMapper objectMapper;

@@ -439,6 +439,28 @@ public class FileProcessingService {
         }
     }
 
+    public List<TextPage> extractTextPages(String fileUrl, String resourceName) {
+        if (!StringUtils.hasText(fileUrl)) {
+            return List.of();
+        }
+        try {
+            Path source = resolveUploadPath(fileUrl);
+            if (!Files.exists(source)) {
+                return List.of();
+            }
+            String ext = extension(fileUrl);
+            if ("pdf".equals(ext)) {
+                return extractPdfTextPages(source);
+            }
+            if ("pptx".equals(ext)) {
+                return extractPptxTextPages(source);
+            }
+            return List.of();
+        } catch (Exception e) {
+            return List.of();
+        }
+    }
+
     private String extractPdfText(Path pdfPath) {
         try (PDDocument document = PDDocument.load(pdfPath.toFile())) {
             org.apache.pdfbox.text.PDFTextStripper stripper = new org.apache.pdfbox.text.PDFTextStripper();
@@ -451,6 +473,28 @@ public class FileProcessingService {
         } catch (IOException e) {
             return "";
         }
+    }
+
+    private List<TextPage> extractPdfTextPages(Path pdfPath) {
+        List<TextPage> pages = new ArrayList<>();
+        try (PDDocument document = PDDocument.load(pdfPath.toFile())) {
+            org.apache.pdfbox.text.PDFTextStripper stripper = new org.apache.pdfbox.text.PDFTextStripper();
+            stripper.setSortByPosition(true);
+            for (int i = 1; i <= document.getNumberOfPages(); i++) {
+                stripper.setStartPage(i);
+                stripper.setEndPage(i);
+                String text = stripper.getText(document);
+                if (StringUtils.hasText(text)) {
+                    TextPage page = new TextPage();
+                    page.setPageNo(i);
+                    page.setContent(text.trim());
+                    pages.add(page);
+                }
+            }
+        } catch (IOException e) {
+            return List.of();
+        }
+        return pages;
     }
 
     private String extractDocxText(Path source) {
@@ -479,6 +523,31 @@ public class FileProcessingService {
         } catch (Exception e) {
             return "";
         }
+    }
+
+    private List<TextPage> extractPptxTextPages(Path source) {
+        List<TextPage> pages = new ArrayList<>();
+        try (InputStream in = Files.newInputStream(source); org.apache.poi.xslf.usermodel.XMLSlideShow ppt = new org.apache.poi.xslf.usermodel.XMLSlideShow(in)) {
+            int pageNo = 1;
+            for (var slide : ppt.getSlides()) {
+                StringBuilder sb = new StringBuilder();
+                for (var shape : slide.getShapes()) {
+                    if (shape instanceof org.apache.poi.xslf.usermodel.XSLFTextShape textShape) {
+                        sb.append(textShape.getText()).append("\n");
+                    }
+                }
+                if (StringUtils.hasText(sb.toString())) {
+                    TextPage page = new TextPage();
+                    page.setPageNo(pageNo);
+                    page.setContent(sb.toString().trim());
+                    pages.add(page);
+                }
+                pageNo++;
+            }
+        } catch (Exception e) {
+            return List.of();
+        }
+        return pages;
     }
 
     private List<String> wrapLine(String line, int size) {
@@ -522,5 +591,11 @@ public class FileProcessingService {
         public int safePage() {
             return page == null || page < 1 ? 1 : page;
         }
+    }
+
+    @Data
+    public static class TextPage {
+        private Integer pageNo;
+        private String content;
     }
 }

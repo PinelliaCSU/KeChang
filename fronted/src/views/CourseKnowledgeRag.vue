@@ -35,7 +35,7 @@
         </div>
 
         <el-alert v-if="stats?.storageReady === false" class="storage-alert" type="warning" show-icon :closable="false"
-          title="课程知识库表还没有初始化，请先执行 database/migration_add_course_knowledge_rag.sql，再重建知识库。" />
+          title="课程知识库表还没有初始化或字段不完整，请先执行 database/migration_add_course_knowledge_rag.sql 和 database/migration_add_course_knowledge_chunk_metadata.sql，再重建知识库。" />
 
         <div class="answer-box" v-loading="asking">
           <div v-if="answer" class="answer-content" v-html="renderMarkdown(answer)"></div>
@@ -47,7 +47,7 @@
           <div v-for="ref in references" :key="ref.chunkId" class="reference-item">
             <div>
               <strong>{{ ref.title }}</strong>
-              <span>{{ sourceLabel(ref.sourceType) }} · 相似度 {{ Math.round((ref.score || 0) * 100) }}%</span>
+              <span>{{ sourceLabel(ref.sourceType) }}{{ refLocator(ref) }} · 相似度 {{ Math.round((ref.score || 0) * 100) }}%</span>
             </div>
             <p>{{ ref.snippet }}</p>
           </div>
@@ -79,6 +79,7 @@
             <div>
               <strong>{{ doc.title }}</strong>
               <span>{{ sourceLabel(doc.sourceType) }} · {{ doc.chunkCount || 0 }} 片段</span>
+              <em v-if="doc.errorMessage">{{ doc.errorMessage }}</em>
             </div>
             <el-tag size="small" :type="doc.status === 'READY' ? 'success' : doc.status === 'FAILED' ? 'danger' : 'warning'">
               {{ statusLabel(doc.status) }}
@@ -296,6 +297,23 @@ const sourceLabel = (type) => ({
   MANUAL: '手动知识'
 }[type] || type || '未知来源')
 
+const formatSeconds = (seconds) => {
+  if (seconds === null || seconds === undefined || seconds < 0) return '--:--'
+  const minute = Math.floor(seconds / 60)
+  const second = seconds % 60
+  return `${String(minute).padStart(2, '0')}:${String(second).padStart(2, '0')}`
+}
+
+const refLocator = (ref) => {
+  const parts = []
+  if (ref.sectionTitle) parts.push(ref.sectionTitle)
+  if (ref.pageNo) parts.push(`第 ${ref.pageNo} 页`)
+  if (ref.startTime !== null && ref.startTime !== undefined) {
+    parts.push(`${formatSeconds(ref.startTime)}-${formatSeconds(ref.endTime)}`)
+  }
+  return parts.length ? ` · ${parts.join(' · ')}` : ''
+}
+
 const statusLabel = (status) => ({
   READY: '已就绪',
   FAILED: '失败',
@@ -395,6 +413,15 @@ onMounted(loadCourses)
 .reference-item span {
   color: var(--bio-ink-muted, #8a94a6);
   font-size: 13px;
+}
+
+.doc-item em {
+  display: block;
+  margin-top: 4px;
+  color: #c4665a;
+  font-size: 12px;
+  font-style: normal;
+  line-height: 1.45;
 }
 
 .chat-panel {

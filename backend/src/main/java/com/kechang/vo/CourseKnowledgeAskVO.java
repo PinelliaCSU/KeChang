@@ -17,6 +17,11 @@ public class CourseKnowledgeAskVO {
         private String title;
         private String sourceType;
         private String sourceUrl;
+        private Integer pageNo;
+        private Integer startTime;
+        private Integer endTime;
+        private String sectionTitle;
+        private String metadataJson;
         private Double score;
         private String snippet;
     }
