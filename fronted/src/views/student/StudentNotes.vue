@@ -19,6 +19,10 @@
             <span class="note-course">{{ n.courseName || '' }}</span>
             <span class="note-time">{{ n.createTime || '' }}</span>
           </div>
+          <div class="note-actions" @click.stop>
+            <el-button size="small" text @click="editNote(n)"><el-icon><Edit /></el-icon></el-button>
+            <el-button size="small" text type="danger" @click="deleteNote(n)"><el-icon><Delete /></el-icon></el-button>
+          </div>
         </div>
       </div>
     </div>
@@ -38,19 +42,35 @@
         <el-button type="primary" :loading="submitting" @click="doCreate">创建</el-button>
       </template>
     </el-dialog>
+
+    <!-- 编辑笔记弹窗 -->
+    <el-dialog v-model="showEdit" title="编辑笔记" width="500px" destroy-on-close>
+      <el-form label-width="80px">
+        <el-form-item label="标题" required><el-input v-model="editForm.title" /></el-form-item>
+        <el-form-item label="内容"><el-input v-model="editForm.content" type="textarea" :rows="6" /></el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="showEdit = false">取消</el-button>
+        <el-button type="primary" :loading="saving" @click="doEdit">保存</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
 import { knowledgeApi } from '@/api'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import EmptyIllustration from '@/components/EmptyIllustration.vue'
 
 const notes = ref([])
 const showCreate = ref(false)
+const showEdit = ref(false)
 const createForm = ref({ title: '', content: '' })
+const editForm = ref({ title: '', content: '' })
+const editId = ref(null)
 const submitting = ref(false)
+const saving = ref(false)
 
 const fetchNotes = async () => {
   try {
@@ -73,6 +93,33 @@ const doCreate = async () => {
     fetchNotes()
   } catch (e) { ElMessage.error('创建失败') }
   submitting.value = false
+}
+
+const editNote = (item) => {
+  editId.value = item.id
+  editForm.value = { title: item.title, content: item.content || '' }
+  showEdit.value = true
+}
+
+const doEdit = async () => {
+  if (!editForm.value.title.trim()) { ElMessage.warning('请输入标题'); return }
+  saving.value = true
+  try {
+    await knowledgeApi.updateNote(editId.value, editForm.value)
+    ElMessage.success('笔记修改成功')
+    showEdit.value = false
+    fetchNotes()
+  } catch (e) { ElMessage.error('修改失败') }
+  saving.value = false
+}
+
+const deleteNote = async (item) => {
+  try {
+    await ElMessageBox.confirm('确定删除该笔记？', '确认删除', { type: 'warning' })
+    await knowledgeApi.deleteNote(item.id)
+    ElMessage.success('已删除')
+    fetchNotes()
+  } catch (e) { /* cancelled */ }
 }
 
 onMounted(fetchNotes)
@@ -125,11 +172,24 @@ onMounted(fetchNotes)
   padding: 16px;
   cursor: pointer;
   transition: all 0.3s;
+  position: relative;
 }
 
 .note-card:hover {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   transform: translateY(-2px);
+}
+
+.note-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.2s;
+  margin-top: 4px;
+}
+.note-card:hover .note-actions {
+  opacity: 1;
 }
 
 .note-title {
