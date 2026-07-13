@@ -11,7 +11,7 @@ services:
       MYSQL_USER: kechang
       MYSQL_PASSWORD: kechang123
     ports:
-      - "3306:3306"
+      - "3307:3306"
     volumes:
       - ./database:/docker-entrypoint-initdb.d
       - ./database/my.cnf:/etc/mysql/conf.d/my.cnf
@@ -57,11 +57,15 @@ services:
       EMBEDDING_ENABLED: ${EMBEDDING_ENABLED:-true}
       EMBEDDING_MODEL: ${EMBEDDING_MODEL:-text-embedding-v3}
       RAG_VECTOR_STORE: ${RAG_VECTOR_STORE:-redis}
+      CODE_SANDBOX_WORK_DIR: /sandbox-work
+      CODE_SANDBOX_VOLUME: kechang_code_sandbox
     ports:
       - "8080:8080"
     volumes:
       # 挂载 Docker socket，允许后端创建沙箱容器执行学生代码
       - /var/run/docker.sock:/var/run/docker.sock
+      # 代码执行沙箱需要和 runner 容器共享 named volume，用于挂载并执行学生代码文件
+      - code_sandbox:/sandbox-work
       # 持久化课程资源、作业附件、PDF 预览和批注文件
       - backend_uploads:/app/uploads
     networks:
@@ -82,6 +86,8 @@ volumes:
   mysql_data:
   redis_data:
   backend_uploads:
+  code_sandbox:
+    name: kechang_code_sandbox
 
 networks:
   kechang-net:
