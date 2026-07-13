@@ -3,13 +3,13 @@
     <div class="page-title-bar">
       <h2 class="page-title">课程中心</h2>
       <div class="page-actions">
-        <el-input v-model="keyword" placeholder="搜索课程..." style="width: 260px" clearable />
+        <el-input v-model="keyword" placeholder="搜索课程..." style="width: 260px" clearable @change="onKeywordChange" @clear="onKeywordChange" />
       </div>
     </div>
 
-    <div class="panel" v-if="filteredCourses.length > 0">
+    <div class="panel" v-if="courses.length > 0">
       <div class="course-grid">
-        <article v-for="course in filteredCourses" :key="course.id" class="course-card" @click="viewDetail(course)">
+        <article v-for="course in courses" :key="course.id" class="course-card" @click="viewDetail(course)">
           <div
             class="card-cover"
             :style="{ background: course.coverImg ? `url(${resolveFileUrl(course.coverImg)}) center/cover no-repeat` : getCoverColor(course.id) }"
@@ -44,6 +44,7 @@
           </div>
         </article>
       </div>
+      <PaginationWrapper v-model:page="page" v-model:size="size" :total="total" :page-sizes="[12, 24, 48]" @change="fetchCourses" />
     </div>
 
     <div class="panel empty-panel" v-else>
@@ -61,18 +62,15 @@ import CourseCoverPattern from '@/components/CourseCoverPattern.vue'
 import EmptyIllustration from '@/components/EmptyIllustration.vue'
 import { computeStatus, statusTagType } from '@/utils/status'
 import { resolveFileUrl } from '@/utils/fileUrl'
+import { usePagination } from '@/composables/usePagination'
+import PaginationWrapper from '@/components/PaginationWrapper.vue'
 
 const router = useRouter()
 const courses = ref([])
 const keyword = ref('')
+const { page, size, total, resetPage } = usePagination({ defaultSize: 12, pageSizes: [12, 24, 48] })
 
 const coverPalette = ['#f5f7fa', '#f2f6f8', '#f7f8fa', '#eef7f8']
-
-const filteredCourses = computed(() => {
-  const kw = keyword.value.trim().toLowerCase()
-  if (!kw) return courses.value
-  return courses.value.filter(course => String(course.courseName || course.name || '').toLowerCase().includes(kw))
-})
 
 const getCoverColor = (id) => coverPalette[((id || 1) - 1) % coverPalette.length]
 
@@ -118,7 +116,7 @@ const unenrollCourse = async (course) => {
 
 const fetchCourses = async () => {
   try {
-    const res = await courseApi.list({ page: 1, size: 50 })
+    const res = await courseApi.list({ page: page.value, size: size.value, keyword: keyword.value || undefined })
     if (res.data.code === 200) {
       const data = res.data.data
       courses.value = Array.isArray(data?.records)
@@ -128,10 +126,16 @@ const fetchCourses = async () => {
           : Array.isArray(data)
             ? data
             : []
+      total.value = data?.total || courses.value.length
     }
   } catch (e) {
     ElMessage.error('课程列表加载失败')
   }
+}
+
+const onKeywordChange = () => {
+  resetPage()
+  fetchCourses()
 }
 
 onMounted(fetchCourses)

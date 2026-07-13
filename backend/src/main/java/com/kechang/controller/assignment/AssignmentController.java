@@ -41,6 +41,7 @@ public class AssignmentController {
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) Long courseId,
             @RequestParam(required = false) Long chapterId) {
+        size = PageResult.clampSize(size);
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         Long userId = (Long) authentication.getPrincipal();
         String role = authentication.getAuthorities().stream()
@@ -96,6 +97,7 @@ public class AssignmentController {
     public Result<PageResult<AssignmentSubmitVO>> submits(@PathVariable Long id,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size) {
+        size = PageResult.clampSize(size);
         return Result.success(assignmentService.getSubmitList(id, page, size, getUserId()));
     }
 

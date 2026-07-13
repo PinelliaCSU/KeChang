@@ -9,9 +9,9 @@
       </div>
       <div class="title-actions">
         <el-input v-model="keyword" placeholder="搜索资料..." size="default" style="width:220px" clearable
-          @clear="searchMaterials" />
+          @clear="onFilterChange" />
         <el-select v-model="filterCourse" placeholder="全部课程" size="default" style="width:160px" clearable
-          @change="searchMaterials">
+          @change="onFilterChange">
           <el-option v-for="c in courses" :key="c.id" :label="c.courseName" :value="c.id" />
         </el-select>
         <el-button type="primary" size="default" @click="showUpload = true">+ 上传资料</el-button>
@@ -54,10 +54,7 @@
           </div>
         </div>
       </div>
-      <div class="pagination-wrap" v-if="total > size">
-        <el-pagination background layout="prev, pager, next" :total="total" :page-size="size"
-          v-model:current-page="page" @current-change="fetchMaterials" />
-      </div>
+      <PaginationWrapper v-model:page="page" v-model:size="size" :total="total" :page-sizes="[12, 24, 48]" @change="fetchMaterials" />
     </div>
 
     <div class="panel empty-panel" v-else-if="!loading">
@@ -117,6 +114,8 @@ import { knowledgeApi, courseApi, uploadApi } from '@/api'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import EmptyIllustration from '@/components/EmptyIllustration.vue'
 import FilePreview from '@/components/FilePreview.vue'
+import { usePagination } from '@/composables/usePagination'
+import PaginationWrapper from '@/components/PaginationWrapper.vue'
 
 const materials = ref([])
 const courses = ref([])
@@ -125,9 +124,7 @@ const uploading = ref(false)
 const saving = ref(false)
 const keyword = ref('')
 const filterCourse = ref(null)
-const page = ref(1)
-const size = ref(12)
-const total = ref(0)
+const { page, size, total, resetPage } = usePagination({ defaultSize: 12 })
 const showUpload = ref(false)
 const showEdit = ref(false)
 const showPreview = ref(false)
@@ -151,14 +148,11 @@ const isImage = (type) => {
 }
 
 let searchTimer = null
-const searchMaterials = () => {
-  page.value = 1
-  fetchMaterials()
-}
+const onFilterChange = () => { resetPage(); fetchMaterials() }
 
 watch(keyword, () => {
   clearTimeout(searchTimer)
-  searchTimer = setTimeout(() => searchMaterials(), 300)
+  searchTimer = setTimeout(() => onFilterChange(), 300)
 })
 
 const fetchMaterials = async () => {

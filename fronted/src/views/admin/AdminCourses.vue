@@ -30,9 +30,9 @@
     <DataPanel max-width="1400px">
       <template #toolbar>
         <div class="search-bar">
-          <el-input v-model="keyword" placeholder="搜索课程名称" clearable style="width:260px" @change="fetchCourses"
-            @clear="fetchCourses" />
-          <el-select v-model="statusFilter" placeholder="状态筛选" clearable style="width:150px" @change="fetchCourses">
+          <el-input v-model="keyword" placeholder="搜索课程名称" clearable style="width:260px" @change="onFilterChange"
+            @clear="onFilterChange" />
+          <el-select v-model="statusFilter" placeholder="状态筛选" clearable style="width:150px" @change="onFilterChange">
             <el-option label="进行中" value="进行中" />
             <el-option label="已结束" value="已结束" />
           </el-select>
@@ -53,6 +53,7 @@
         </el-table-column>
         <el-table-column prop="description" label="简介" min-width="220" show-overflow-tooltip />
       </el-table>
+      <PaginationWrapper v-model:page="page" v-model:size="size" :total="total" :page-sizes="[12, 24, 48]" @change="fetchCourses" />
     </DataPanel>
   </div>
 </template>
@@ -63,12 +64,14 @@ import { courseApi } from '@/api'
 import { ElMessage } from 'element-plus'
 import { computeStatus, statusTagType } from '@/utils/status'
 import DataPanel from '@/components/DataPanel.vue'
+import { usePagination } from '@/composables/usePagination'
+import PaginationWrapper from '@/components/PaginationWrapper.vue'
 
 const courses = ref([])
-const total = ref(0)
 const loading = ref(false)
 const keyword = ref('')
 const statusFilter = ref('')
+const { page, size, total, resetPage } = usePagination({ defaultSize: 12, pageSizes: [12, 24, 48] })
 
 const runningCount = computed(() => courses.value.filter(course => computeStatus(course.startDate, course.endDate) === '进行中').length)
 const endedCount = computed(() => courses.value.filter(course => computeStatus(course.startDate, course.endDate) === '已结束').length)
@@ -78,8 +81,8 @@ const fetchCourses = async () => {
   loading.value = true
   try {
     const res = await courseApi.list({
-      page: 1,
-      size: 500,
+      page: page.value,
+      size: size.value,
       keyword: keyword.value,
       status: statusFilter.value
     })
@@ -93,6 +96,11 @@ const fetchCourses = async () => {
   } finally {
     loading.value = false
   }
+}
+
+const onFilterChange = () => {
+  resetPage()
+  fetchCourses()
 }
 
 onMounted(fetchCourses)

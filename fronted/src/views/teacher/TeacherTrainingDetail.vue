@@ -69,6 +69,7 @@
             </el-table-column>
           </el-table>
           <el-empty v-if="!materialLoading && materials.length === 0" description="暂无资料" :image-size="60" />
+          <PaginationWrapper v-model:page="matPage" v-model:size="matSize" :total="matTotal" @change="fetchMaterials" />
         </el-tab-pane>
 
         <!-- Tab 3: 任务 -->
@@ -91,6 +92,7 @@
             </el-table-column>
           </el-table>
           <el-empty v-if="!taskLoading && tasks.length === 0" description="暂无任务" :image-size="60" />
+          <PaginationWrapper v-model:page="taskPage" v-model:size="taskSize" :total="taskTotal" @change="fetchTasks" />
         </el-tab-pane>
 
         <!-- Tab 4: 文档提交 -->
@@ -247,6 +249,7 @@
         </el-table-column>
       </el-table>
       <el-empty v-if="!reportLoading && reports.length === 0" description="暂无学生提交" />
+      <PaginationWrapper v-model:page="rptPage" v-model:size="rptSize" :total="rptTotal" @change="refreshReports" />
       <template #footer><el-button @click="reportDialogVisible = false">关闭</el-button></template>
     </el-dialog>
 
@@ -293,6 +296,8 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { trainingApi, uploadApi } from '@/api'
 import { computeStatus, statusTagType } from '@/utils/status'
 import { useUserStore } from '@/stores/user'
+import { usePagination } from '@/composables/usePagination'
+import PaginationWrapper from '@/components/PaginationWrapper.vue'
 import FilePreview from '@/components/FilePreview.vue'
 
 const route = useRoute()
@@ -314,6 +319,7 @@ const planForm = reactive({ description: '', files: [] })
 // --- Materials ---
 const materials = ref([])
 const materialLoading = ref(false)
+const { page: matPage, size: matSize, total: matTotal } = usePagination({ defaultSize: 10 })
 const materialDialogVisible = ref(false)
 const materialSubmitting = ref(false)
 const materialUploadLoading = ref(false)
@@ -322,6 +328,7 @@ const materialForm = reactive({ title: '', fileUrl: '', fileName: '', fileSize: 
 // --- Tasks ---
 const tasks = ref([])
 const taskLoading = ref(false)
+const { page: taskPage, size: taskSize, total: taskTotal } = usePagination({ defaultSize: 10 })
 
 // --- Documents ---
 const documents = ref([])
@@ -340,6 +347,7 @@ const taskForm = reactive({ taskName: '', description: '', deadline: '', sortOrd
 const reportDialogVisible = ref(false)
 const reports = ref([])
 const reportLoading = ref(false)
+const { page: rptPage, size: rptSize, total: rptTotal } = usePagination({ defaultSize: 10 })
 const currentTask = ref(null)
 const reportGradeVisible = ref(false)
 const currentReport = ref(null)
@@ -406,16 +414,22 @@ const fetchPlanAttachments = async () => {
 const fetchMaterials = async () => {
   materialLoading.value = true
   try {
-    const res = await trainingApi.listMaterials(projectId.value, { page: 1, size: 100 })
-    if (res.data.code === 200) materials.value = res.data.data?.records || []
+    const res = await trainingApi.listMaterials(projectId.value, { page: matPage.value, size: matSize.value })
+    if (res.data.code === 200) {
+      materials.value = res.data.data?.records || []
+      matTotal.value = res.data.data?.total || 0
+    }
   } finally { materialLoading.value = false }
 }
 
 const fetchTasks = async () => {
   taskLoading.value = true
   try {
-    const res = await trainingApi.listTasks(projectId.value, { page: 1, size: 100, taskType: 'TASK' })
-    if (res.data.code === 200) tasks.value = res.data.data?.records || []
+    const res = await trainingApi.listTasks(projectId.value, { page: taskPage.value, size: taskSize.value, taskType: 'TASK' })
+    if (res.data.code === 200) {
+      tasks.value = res.data.data?.records || []
+      taskTotal.value = res.data.data?.total || 0
+    }
   } finally { taskLoading.value = false }
 }
 
@@ -596,11 +610,15 @@ const handleDeleteTask = async (task) => {
 // --- Reports ---
 const viewReports = async (task) => {
   currentTask.value = task
+  rptPage.value = 1
   reportDialogVisible.value = true
   reportLoading.value = true
   try {
-    const res = await trainingApi.listReports(task.id, { page: 1, size: 100 })
-    if (res.data.code === 200) reports.value = res.data.data?.records || []
+    const res = await trainingApi.listReports(task.id, { page: rptPage.value, size: rptSize.value })
+    if (res.data.code === 200) {
+      reports.value = res.data.data?.records || []
+      rptTotal.value = res.data.data?.total || 0
+    }
   } finally { reportLoading.value = false }
 }
 
@@ -634,8 +652,11 @@ const refreshReports = async () => {
   if (!currentTask.value?.id) return
   reportLoading.value = true
   try {
-    const res = await trainingApi.listReports(currentTask.value.id, { page: 1, size: 100 })
-    if (res.data.code === 200) reports.value = res.data.data?.records || []
+    const res = await trainingApi.listReports(currentTask.value.id, { page: rptPage.value, size: rptSize.value })
+    if (res.data.code === 200) {
+      reports.value = res.data.data?.records || []
+      rptTotal.value = res.data.data?.total || 0
+    }
   } finally { reportLoading.value = false }
 }
 

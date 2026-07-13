@@ -188,8 +188,10 @@
             </el-table-column>
           </el-table>
           <el-empty v-if="!annLoading && announcements.length === 0" description="暂无公告" :image-size="100" />
-          <el-pagination v-if="annTotal > annPageSize" :current-page="annPage" :page-size="annPageSize"
-            :total="annTotal" layout="prev, pager, next" @current-change="p => { annPage = p; fetchAnnouncements() }"
+          <el-pagination v-if="annTotal > annPageSize" v-model:current-page="annPage" v-model:page-size="annPageSize"
+            :page-sizes="[10, 20, 50]" :total="annTotal" background
+            layout="total, sizes, prev, pager, next, jumper"
+            @current-change="fetchAnnouncements" @size-change="fetchAnnouncements"
             style="margin-top:16px;justify-content:center" />
         </el-tab-pane>
       </el-tabs>
@@ -225,8 +227,10 @@
         </el-table-column>
       </el-table>
       <el-empty v-if="confirmList.length === 0" description="暂无学生确认" :image-size="80" />
-      <el-pagination v-if="confirmTotal > 10" :current-page="confirmPage" :page-size="10" :total="confirmTotal"
-        layout="prev, pager, next" @current-change="p => { confirmPage = p; viewConfirms(confirmCurrentRow) }"
+      <el-pagination v-if="confirmTotal > confirmPageSize" v-model:current-page="confirmPage" v-model:page-size="confirmPageSize"
+        :page-sizes="[10, 20, 50]" :total="confirmTotal" background
+        layout="total, sizes, prev, pager, next, jumper"
+        @current-change="viewConfirms(confirmCurrentRow)" @size-change="viewConfirms(confirmCurrentRow)"
         style="margin-top:16px;justify-content:center" />
       <template #footer>
         <el-button @click="confirmDialogVisible = false">关闭</el-button>
@@ -303,6 +307,7 @@ const confirmDialogVisible = ref(false)
 const confirmTitle = ref('')
 const confirmList = ref([])
 const confirmPage = ref(1)
+const confirmPageSize = ref(10)
 const confirmTotal = ref(0)
 const confirmCurrentRow = ref(null)
 
@@ -370,7 +375,7 @@ const viewConfirms = async (row) => {
   confirmCurrentRow.value = row
   confirmTitle.value = row.title || ''
   try {
-    const res = await announcementApi.getConfirms(row.id, { page: confirmPage.value, size: 10 })
+    const res = await announcementApi.getConfirms(row.id, { page: confirmPage.value, size: confirmPageSize.value })
     if (res.data.code === 200) {
       confirmList.value = res.data.data?.records || []
       confirmTotal.value = res.data.data?.total || 0

@@ -21,6 +21,7 @@
           </div>
         </div>
       </div>
+      <PaginationWrapper v-model:page="page" v-model:size="size" :total="total" @change="fetchEvaluations" />
     </div>
 
     <div class="panel empty-panel" v-else-if="!loading">
@@ -71,9 +72,13 @@ import { ref, onMounted } from 'vue'
 import { evaluationApi } from '@/api'
 import { ElMessage } from 'element-plus'
 import EmptyIllustration from '@/components/EmptyIllustration.vue'
+import { usePagination } from '@/composables/usePagination'
+import PaginationWrapper from '@/components/PaginationWrapper.vue'
 
 const evaluations = ref([])
 const loading = ref(false)
+
+const { page, size, total, resetPage } = usePagination({ defaultSize: 10 })
 
 // 评价填写
 const evalDialogVisible = ref(false)
@@ -85,10 +90,11 @@ const submittingEval = ref(false)
 const fetchEvaluations = async () => {
   loading.value = true
   try {
-    const res = await evaluationApi.list({ page: 1, size: 50 })
+    const res = await evaluationApi.list({ page: page.value, size: size.value })
     if (res.data.code === 200) {
       const d = res.data.data
       evaluations.value = Array.isArray(d?.records) ? d.records : Array.isArray(d) ? d : []
+      total.value = d?.total || 0
     }
   } catch (e) { /* ignore */ }
   finally { loading.value = false }

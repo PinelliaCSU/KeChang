@@ -56,7 +56,7 @@
                 <!-- 同班同学 -->
                 <el-tab-pane label="同班同学" name="students">
                     <div class="students-header">
-                        <span class="students-count">共 {{ students.length }} 位同学选课</span>
+                        <span class="students-count">共 {{ stuTotal }} 位同学选课</span>
                     </div>
                     <div v-if="students.length > 0" class="student-grid">
                         <div v-for="s in students" :key="s.id" class="student-card">
@@ -76,6 +76,7 @@
                         </div>
                     </div>
                     <el-empty v-else description="暂无同学选课" :image-size="90" />
+                    <PaginationWrapper v-bind="stuPaginationProps" @update:page="handleStuPageChange" @update:size="handleStuSizeChange" @change="fetchStudents" />
                 </el-tab-pane>
 
                 <!-- 课程公告 -->
@@ -101,6 +102,8 @@
                         </div>
                     </div>
                     <el-empty v-else description="暂无课程公告" :image-size="90" />
+
+                    <PaginationWrapper v-bind="annPaginationProps" @update:page="handleAnnPageChange" @update:size="handleAnnSizeChange" @change="fetchAnnouncements" />
 
                     <!-- 公告详情弹窗 -->
                     <el-dialog v-model="detailDialogVisible" :title="currentAnnouncement.title" width="650px"
@@ -174,6 +177,7 @@
                     </el-collapse>
 
                     <el-empty v-if="chapters.length === 0" description="暂无章节内容" :image-size="100" />
+                    <PaginationWrapper v-bind="assignPaginationProps" @update:page="handleAssignPageChange" @update:size="handleAssignSizeChange" @change="fetchAssignments" />
                 </el-tab-pane>
             </el-tabs>
         </div>
@@ -194,6 +198,8 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { Clock, User } from '@element-plus/icons-vue'
 import FilePreview from '@/components/FilePreview.vue'
 import { computeStatus, statusTagType } from '@/utils/status'
+import { usePagination } from '@/composables/usePagination'
+import PaginationWrapper from '@/components/PaginationWrapper.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -222,11 +228,17 @@ const detailDialogVisible = ref(false)
 const currentAnnouncement = ref({})
 const confirmingAnnouncement = ref(false)
 
+// 分页状态
+const { page: annPage, size: annSize, total: annTotal, resetPage: resetAnnPage, paginationProps: annPaginationProps, handleSizeChange: handleAnnSizeChange, handleCurrentChange: handleAnnPageChange } = usePagination({ defaultSize: 10 })
+const { page: assignPage, size: assignSize, total: assignTotal, resetPage: resetAssignPage, paginationProps: assignPaginationProps, handleSizeChange: handleAssignSizeChange, handleCurrentChange: handleAssignPageChange } = usePagination({ defaultSize: 10 })
+const { page: stuPage, size: stuSize, total: stuTotal, resetPage: resetStuPage, paginationProps: stuPaginationProps, handleSizeChange: handleStuSizeChange, handleCurrentChange: handleStuPageChange } = usePagination({ defaultSize: 10 })
+
 const fetchAnnouncements = async () => {
     try {
-        const res = await announcementApi.list({ page: 1, size: 50, courseId: courseId() })
+        const res = await announcementApi.list({ page: annPage.value, size: annSize.value, courseId: courseId() })
         if (res.data.code === 200) {
             announcements.value = res.data.data?.records || []
+            annTotal.value = res.data.data?.total || 0
         }
     } catch (e) { /* ignore */ }
 }
@@ -311,14 +323,20 @@ const fetchResources = async () => {
 
 /** 获取课程作业 */
 const fetchAssignments = async () => {
-    const res = await assignmentApi.list({ page: 1, size: 200, courseId: courseId() })
-    if (res.data.code === 200) assignments.value = res.data.data?.records || []
+    const res = await assignmentApi.list({ page: assignPage.value, size: assignSize.value, courseId: courseId() })
+    if (res.data.code === 200) {
+        assignments.value = res.data.data?.records || []
+        assignTotal.value = res.data.data?.total || 0
+    }
 }
 
 /** 获取选课同学 */
 const fetchStudents = async () => {
-    const res = await courseApi.getStudents(courseId(), { page: 1, size: 100 })
-    if (res.data.code === 200) students.value = res.data.data?.records || []
+    const res = await courseApi.getStudents(courseId(), { page: stuPage.value, size: stuSize.value })
+    if (res.data.code === 200) {
+        students.value = res.data.data?.records || []
+        stuTotal.value = res.data.data?.total || 0
+    }
 }
 
 const loadAll = async () => {

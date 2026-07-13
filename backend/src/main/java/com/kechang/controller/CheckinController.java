@@ -1,5 +1,6 @@
 package com.kechang.controller;
 
+import com.kechang.common.PageResult;
 import com.kechang.common.Result;
 import com.kechang.dto.CheckinCreateDTO;
 import com.kechang.dto.CheckinSubmitDTO;
@@ -42,8 +43,12 @@ public class CheckinController {
     // ==================== 教师端 ====================
     @GetMapping("/teacher")
     @PreAuthorize("hasAuthority('ROLE_TEACHER')")
-    public Result<List<Map<String, Object>>> teacherList(@RequestParam(required = false) Long courseId) {
-        return Result.success(checkinService.teacherList(getUserId(), courseId));
+    public Result<PageResult<Map<String, Object>>> teacherList(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) Long courseId) {
+        size = PageResult.clampSize(size);
+        return Result.success(checkinService.teacherList(getUserId(), courseId, page, size));
     }
 
     @PostMapping
@@ -85,8 +90,12 @@ public class CheckinController {
 
     // ==================== 课程维度 ====================
     @GetMapping("/course/{courseId}/records")
-    public Result<List<Map<String, Object>>> courseRecords(@PathVariable Long courseId) {
-        return Result.success(checkinService.courseRecords(courseId, getUserId(), currentRole()));
+    public Result<PageResult<Map<String, Object>>> courseRecords(
+            @PathVariable Long courseId,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        size = PageResult.clampSize(size);
+        return Result.success(checkinService.courseRecords(courseId, getUserId(), currentRole(), page, size));
     }
 
     @GetMapping("/course/{courseId}/stats")

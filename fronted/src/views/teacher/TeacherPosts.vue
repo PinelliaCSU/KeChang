@@ -8,10 +8,10 @@
     <div class="panel">
       <!-- 筛选与排序 -->
       <div class="search-bar">
-        <el-select v-model="courseFilter" placeholder="按课程筛选" clearable style="width:200px" @change="fetchPosts">
+        <el-select v-model="courseFilter" placeholder="按课程筛选" clearable style="width:200px" @change="resetPage(); fetchPosts()">
           <el-option v-for="c in courseList" :key="c.id" :label="c.courseName" :value="c.id" />
         </el-select>
-        <el-select v-model="orderBy" style="width:140px" @change="fetchPosts">
+        <el-select v-model="orderBy" style="width:140px" @change="resetPage(); fetchPosts()">
           <el-option label="最新发布" value="time" />
           <el-option label="最多回复" value="reply" />
           <el-option label="最多浏览" value="view" />
@@ -19,7 +19,7 @@
       </div>
 
       <!-- 类型筛选 Tab -->
-      <el-tabs v-model="postTypeFilter" @tab-change="fetchPosts" style="margin-bottom:8px">
+      <el-tabs v-model="postTypeFilter" @tab-change="resetPage(); fetchPosts()" style="margin-bottom:8px">
         <el-tab-pane label="全部" name="" />
         <el-tab-pane label="提问" name="提问" />
         <el-tab-pane label="讨论" name="讨论" />
@@ -59,9 +59,7 @@
       </div>
       <el-empty v-else description="暂无问答帖子" :image-size="100" />
 
-      <el-pagination v-if="total > pageSize" :current-page="page" :page-size="pageSize" :total="total"
-        layout="prev, pager, next" @current-change="p => { page = p; fetchPosts() }"
-        style="margin-top:16px;justify-content:center" />
+      <PaginationWrapper v-model:page="page" v-model:size="size" :total="total" @change="fetchPosts" />
     </div>
 
     <!-- 发布问题弹窗 -->
@@ -169,9 +167,7 @@
         </div>
         <el-empty v-else description="暂无回答" :image-size="60" />
 
-        <el-pagination v-if="answerTotal > answerPageSize" :current-page="answerPage" :page-size="answerPageSize"
-          :total="answerTotal" layout="prev, pager, next" @current-change="p => { answerPage = p; fetchAnswers() }"
-          style="margin-top:12px;justify-content:center" small />
+        <PaginationWrapper v-model:page="answerPage" v-model:size="answerSize" :total="answerTotal" :page-sizes="[5, 10, 20]" @change="fetchAnswers" />
 
         <!-- 写回答 -->
         <div class="reply-box">
@@ -192,18 +188,21 @@ import { ref, computed, onMounted } from 'vue'
 import { qaApi, courseApi } from '@/api'
 import { useUserStore } from '@/stores/user'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { usePagination } from '@/composables/usePagination'
+import PaginationWrapper from '@/components/PaginationWrapper.vue'
 import { ArrowDown, ArrowRight, User, Clock, View, ChatDotSquare, Collection, CircleCheck } from '@element-plus/icons-vue'
 
 const userStore = useUserStore()
 
 // ========== 列表 ==========
-const posts = ref([]); const page = ref(1); const pageSize = ref(10); const total = ref(0)
+const posts = ref([])
+const { page, size, total, resetPage } = usePagination({ defaultSize: 10 })
 const courseFilter = ref(null); const orderBy = ref('time'); const postTypeFilter = ref('')
 const courseList = ref([])
 
 const fetchPosts = async () => {
   try {
-    const res = await qaApi.listPosts({ page: page.value, size: pageSize.value, courseId: courseFilter.value || undefined, orderBy: orderBy.value })
+    const res = await qaApi.listPosts({ page: page.value, size: size.value, courseId: courseFilter.value || undefined, orderBy: orderBy.value })
     if (res.data.code === 200) {
       let records = res.data.data.records
       // 前端按类型筛选
@@ -246,7 +245,7 @@ const createPost = async () => {
 // ========== 详情 ==========
 const detailVisible = ref(false); const currentPost = ref(null)
 const answers = ref([]); const answerContent = ref(''); const answering = ref(false)
-const answerPage = ref(1); const answerPageSize = ref(5); const answerTotal = ref(0)
+const { page: answerPage, size: answerSize, total: answerTotal, resetPage: resetAnswerPage } = usePagination({ defaultSize: 5, pageSizes: [5, 10, 20] })
 
 const isPostOwner = computed(() => currentPost.value?.createBy === userStore.userId)
 const isTeacher = computed(() => userStore.isTeacher)
@@ -275,7 +274,7 @@ const viewPost = async (p) => {
 const fetchAnswers = async () => {
   if (!currentPost.value) return
   try {
-    const res = await qaApi.listAnswers(currentPost.value.id, { page: answerPage.value, size: answerPageSize.value })
+    const res = await qaApi.listAnswers(currentPost.value.id, { page: answerPage.value, size: answerSize.value })
     if (res.data.code === 200) {
       const d = res.data.data
       answers.value = (d.records || []).map(a => ({

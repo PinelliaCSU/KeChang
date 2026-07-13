@@ -1,5 +1,6 @@
 package com.kechang.controller.exam;
 
+import com.kechang.common.PageResult;
 import com.kechang.common.Result;
 import com.kechang.dto.ClassQuizAnswerDTO;
 import com.kechang.dto.ClassQuizCreateDTO;
@@ -38,8 +39,12 @@ public class ClassQuizController {
 
     @GetMapping("/teacher")
     @PreAuthorize("hasAuthority('ROLE_TEACHER')")
-    public Result<List<Map<String, Object>>> teacherList(@RequestParam(required = false) Long courseId) {
-        return Result.success(classQuizService.teacherList(getUserId(), courseId));
+    public Result<PageResult<Map<String, Object>>> teacherList(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) Long courseId) {
+        size = PageResult.clampSize(size);
+        return Result.success(classQuizService.teacherList(getUserId(), courseId, page, size));
     }
 
     @GetMapping("/student/active")

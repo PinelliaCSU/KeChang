@@ -1,9 +1,11 @@
 package com.kechang.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kechang.common.BusinessException;
+import com.kechang.common.PageResult;
 import com.kechang.dto.ClassQuizAnswerDTO;
 import com.kechang.dto.ClassQuizCreateDTO;
 import com.kechang.entity.*;
@@ -31,12 +33,14 @@ public class ClassQuizService {
     private final CourseStudentMapper courseStudentMapper;
     private final KnowledgeService knowledgeService;
 
-    public List<Map<String, Object>> teacherList(Long teacherId, Long courseId) {
+    public PageResult<Map<String, Object>> teacherList(Long teacherId, Long courseId, int page, int size) {
         LambdaQueryWrapper<ClassQuiz> wrapper = new LambdaQueryWrapper<ClassQuiz>()
                 .eq(ClassQuiz::getCreateBy, teacherId)
                 .eq(courseId != null, ClassQuiz::getCourseId, courseId)
                 .orderByDesc(ClassQuiz::getStartTime);
-        return quizMapper.selectList(wrapper).stream().map(this::toSummary).collect(Collectors.toList());
+        Page<ClassQuiz> mpPage = quizMapper.selectPage(new Page<>(page, size), wrapper);
+        List<Map<String, Object>> records = mpPage.getRecords().stream().map(this::toSummary).collect(Collectors.toList());
+        return PageResult.of(records, mpPage.getTotal(), mpPage.getCurrent(), mpPage.getSize());
     }
 
     public List<Map<String, Object>> studentActiveList(Long studentId) {

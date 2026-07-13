@@ -39,9 +39,7 @@
       </el-table>
 
       <el-empty v-if="!loading && exams.length === 0" description="暂无考试安排" :image-size="100" />
-      <el-pagination v-if="total > pageSize" :current-page="page" :page-size="pageSize" :total="total"
-        layout="prev, pager, next" @current-change="p => { page = p; fetchExams() }"
-        style="margin-top:16px;justify-content:center" />
+      <PaginationWrapper v-model:page="page" v-model:size="size" :total="total" @change="fetchExams" />
     </div>
 
     <!-- 创建/编辑弹窗 -->
@@ -171,9 +169,11 @@ import { ref, reactive, onMounted, computed, nextTick } from 'vue'
 import { examApi, courseApi } from '@/api'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { computeStatus, statusTagType } from '@/utils/status'
+import { usePagination } from '@/composables/usePagination'
+import PaginationWrapper from '@/components/PaginationWrapper.vue'
 
 const exams = ref([]); const loading = ref(false)
-const page = ref(1); const pageSize = ref(10); const total = ref(0)
+const { page, size, total, resetPage } = usePagination({ defaultSize: 10 })
 const courseFilter = ref(null); const statusFilter = ref('')
 const courseList = ref([]); const paperList = ref([])
 
@@ -211,7 +211,7 @@ const typeLabel = (t) => ({ SINGLE: '单选', MULTI: '多选', JUDGE: '判断', 
 const fetchExams = async () => {
   loading.value = true
   try {
-    const res = await examApi.listExams({ page: page.value, size: pageSize.value, courseId: courseFilter.value || undefined })
+    const res = await examApi.listExams({ page: page.value, size: size.value, courseId: courseFilter.value || undefined })
     if (res.data.code === 200) { exams.value = res.data.data.records; total.value = res.data.data.total }
   } catch (e) { /* ignore */ }
   finally { loading.value = false }

@@ -70,6 +70,7 @@
           </template>
         </el-table-column>
       </el-table>
+      <PaginationWrapper v-model:page="page" v-model:size="size" :total="total" @change="fetchAssignments" />
       <el-empty v-if="!loading && assignments.length === 0" description="暂无作业" :image-size="100" />
     </div>
 
@@ -159,6 +160,7 @@
           </template>
         </el-table-column>
       </el-table>
+      <PaginationWrapper v-model:page="submitPage" v-model:size="submitSize" :total="submitTotal" @change="fetchSubmits" />
       <el-empty v-if="!subLoading && submits.length === 0" description="暂无提交" :image-size="80" />
     </el-dialog>
 
@@ -227,6 +229,8 @@ import { School } from '@element-plus/icons-vue'
 import { assignmentApi, courseApi, uploadApi } from '@/api'
 import FilePreview from '@/components/FilePreview.vue'
 import DocumentAnnotator from '@/components/DocumentAnnotator.vue'
+import { usePagination } from '@/composables/usePagination'
+import PaginationWrapper from '@/components/PaginationWrapper.vue'
 
 const assignments = ref([])
 const loading = ref(false)
@@ -243,6 +247,8 @@ const uploadLoading = ref(false)
 const submitDialogVisible = ref(false)
 const submits = ref([])
 const subLoading = ref(false)
+const { page, size, total, resetPage } = usePagination({ defaultSize: 10 })
+const { page: submitPage, size: submitSize, total: submitTotal, resetPage: submitResetPage } = usePagination({ defaultSize: 10 })
 const gradeDialogVisible = ref(false)
 const grading = ref(false)
 const currentSubmit = ref(null)
@@ -281,8 +287,11 @@ const parseMarks = (value) => {
 const fetchAssignments = async () => {
   loading.value = true
   try {
-    const res = await assignmentApi.list({ page: 1, size: 100, courseId: courseFilter.value || undefined, chapterId: chapterFilter.value || undefined })
-    if (res.data.code === 200) assignments.value = res.data.data?.records || []
+    const res = await assignmentApi.list({ page: page.value, size: size.value, courseId: courseFilter.value || undefined, chapterId: chapterFilter.value || undefined })
+    if (res.data.code === 200) {
+      assignments.value = res.data.data?.records || []
+      total.value = res.data.data?.total || assignments.value.length
+    }
   } finally {
     loading.value = false
   }
@@ -301,6 +310,7 @@ const loadChaptersByCourse = async (courseId) => {
 const onFilterCourseChange = async () => {
   chapterFilter.value = null
   filterChapters.value = await loadChaptersByCourse(courseFilter.value)
+  resetPage()
   fetchAssignments()
 }
 const loadFormChapters = async () => {
@@ -374,17 +384,26 @@ const handleDelete = async (id) => {
   ElMessage.success('删除成功')
   fetchAssignments()
 }
-const viewSubmits = async (row) => {
-  currentAssignmentId.value = row.id
-  currentAssignmentTitle.value = row.title || '作业附件'
-  submitDialogVisible.value = true
+const fetchSubmits = async () => {
+  if (!currentAssignmentId.value) return
   subLoading.value = true
   try {
-    const res = await assignmentApi.getSubmitList(row.id, { page: 1, size: 100 })
-    if (res.data.code === 200) submits.value = res.data.data?.records || []
+    const res = await assignmentApi.getSubmitList(currentAssignmentId.value, { page: submitPage.value, size: submitSize.value })
+    if (res.data.code === 200) {
+      submits.value = res.data.data?.records || []
+      submitTotal.value = res.data.data?.total || submits.value.length
+    }
   } finally {
     subLoading.value = false
   }
+}
+
+const viewSubmits = async (row) => {
+  currentAssignmentId.value = row.id
+  currentAssignmentTitle.value = row.title || '作业附件'
+  submitResetPage()
+  submitDialogVisible.value = true
+  await fetchSubmits()
 }
 const downloadSubmitArchive = async () => {
   if (!currentAssignmentId.value) return
@@ -427,14 +446,7 @@ const doGrade = async () => {
   }
 }
 const refreshSubmits = async () => {
-  if (!currentAssignmentId.value) return
-  subLoading.value = true
-  try {
-    const res = await assignmentApi.getSubmitList(currentAssignmentId.value, { page: 1, size: 100 })
-    if (res.data.code === 200) submits.value = res.data.data?.records || []
-  } finally {
-    subLoading.value = false
-  }
+  await fetchSubmits()
 }
 const openNextSubmit = () => {
   if (!hasNextSubmit.value) return

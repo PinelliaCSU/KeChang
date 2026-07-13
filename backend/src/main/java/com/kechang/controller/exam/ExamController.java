@@ -54,6 +54,7 @@ public class ExamController {
             @RequestParam(required = false) Integer difficulty,
             @RequestParam(required = false) String knowledgePoint,
             @RequestParam(required = false) Long courseId) {
+        size = PageResult.clampSize(size);
         return Result.success(examService.getQuestionList(page, size, questionType, difficulty, knowledgePoint, courseId));
     }
 
@@ -85,6 +86,7 @@ public class ExamController {
     public Result<PageResult<ExamPaper>> listPapers(@RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) Long courseId) {
+        size = PageResult.clampSize(size);
         return Result.success(examService.getPaperList(page, size, courseId));
     }
 
@@ -118,6 +120,7 @@ public class ExamController {
     public Result<PageResult<ExamListVO>> listExams(@RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) Long courseId) {
+        size = PageResult.clampSize(size);
         return Result.success(examService.getExamList(page, size, courseId, getUserId(), currentRole()));
     }
 

@@ -23,6 +23,7 @@ public class OperationLogController {
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) String module,
             @RequestParam(required = false) String action) {
+        size = PageResult.clampSize(size);
         return Result.success(operationLogService.list(page, size, module, action));
     }
 

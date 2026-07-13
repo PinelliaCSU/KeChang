@@ -58,8 +58,9 @@
 
       <el-empty v-if="!loading && questions.length === 0" description="暂无试题，点击上方按钮创建" :image-size="100" />
 
-      <el-pagination v-if="total > pageSize" :current-page="page" :page-size="pageSize" :total="total"
-        layout="prev, pager, next" @current-change="p => { page = p; fetchQuestions() }"
+      <el-pagination v-if="total > pageSize" v-model:current-page="page" v-model:page-size="pageSize" :page-sizes="[10, 20, 50]"
+        :total="total" background layout="total, sizes, prev, pager, next, jumper"
+        @current-change="fetchQuestions" @size-change="fetchQuestions"
         style="margin-top:16px;justify-content:center" />
     </div>
 

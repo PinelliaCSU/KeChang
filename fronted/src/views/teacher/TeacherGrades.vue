@@ -43,7 +43,7 @@
     </div>
 
     <div class="panel">
-      <el-table v-if="grades.length > 0 || loading" :data="grades" stripe class="kechang-table" v-loading="loading"
+      <el-table v-if="grades.length > 0 || loading" :data="displayGrades" stripe class="kechang-table" v-loading="loading"
         style="width:100%">
         <el-table-column prop="studentNo" label="学号" width="130" />
         <el-table-column prop="studentName" label="姓名" min-width="120" />
@@ -66,6 +66,8 @@
         </el-table-column>
       </el-table>
 
+      <PaginationWrapper v-model:page="page" v-model:size="size" :total="total" />
+
       <el-empty v-if="!loading && !selectedCourse" description="请先选择课程查看成绩" :image-size="100" />
       <el-empty v-if="!loading && selectedCourse && grades.length === 0" description="该课程暂无成绩数据" :image-size="100" />
     </div>
@@ -75,6 +77,8 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
 import { courseApi, gradeApi } from '@/api'
+import { usePagination } from '@/composables/usePagination'
+import PaginationWrapper from '@/components/PaginationWrapper.vue'
 
 const courseList = ref([])
 const selectedCourse = ref(null)
@@ -82,6 +86,13 @@ const grades = ref([])
 const stats = ref(null)
 const distribution = ref([])
 const loading = ref(false)
+
+const { page, size, total, resetPage } = usePagination({ defaultSize: 10 })
+
+const displayGrades = computed(() => {
+  const start = (page.value - 1) * size.value
+  return grades.value.slice(start, start + size.value)
+})
 
 const hasExamScores = computed(() => grades.value.some(item => item.examAvgScore != null))
 const hasAssignmentScores = computed(() => grades.value.some(item => item.assignmentAvgScore != null))
@@ -142,15 +153,20 @@ const loadCourseGrades = async (courseId) => {
     grades.value = []
     stats.value = null
     distribution.value = []
+    total.value = 0
     return
   }
+  resetPage()
   loading.value = true
   try {
     const [gradeRes, statsRes] = await Promise.all([
       gradeApi.courseGrades(courseId),
       gradeApi.courseStats(courseId)
     ])
-    if (gradeRes.data.code === 200) grades.value = gradeRes.data.data || []
+    if (gradeRes.data.code === 200) {
+      grades.value = gradeRes.data.data || []
+      total.value = grades.value.length
+    }
     if (statsRes.data.code === 200) {
       stats.value = statsRes.data.data || {}
       buildDistribution(stats.value.distribution || {})

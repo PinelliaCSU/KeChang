@@ -58,10 +58,13 @@
       <div class="pager">
         <el-pagination
           v-model:current-page="query.page"
-          :page-size="query.size"
+          v-model:page-size="query.size"
+          :page-sizes="[10, 20, 50]"
           :total="total"
-          layout="prev, pager, next"
+          background
+          layout="total, sizes, prev, pager, next, jumper"
           @current-change="fetchLogs"
+          @size-change="fetchLogs"
         />
       </div>
     </DataPanel>

@@ -37,6 +37,7 @@ public class TrainingController {
     @GetMapping
     public Result<PageResult<TrainingProject>> listProjects(@RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size) {
+        size = PageResult.clampSize(size);
         return Result.success(trainingService.listProjects(page, size, uid(), hasRole("ROLE_TEACHER")));
     }
 
@@ -94,6 +95,7 @@ public class TrainingController {
     public Result<PageResult<TrainingMaterial>> listMaterials(@PathVariable Long id,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size) {
+        size = PageResult.clampSize(size);
         return Result.success(trainingService.listMaterials(id, page, size));
     }
 
@@ -125,6 +127,7 @@ public class TrainingController {
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) String taskType) {
+        size = PageResult.clampSize(size);
         return Result.success(trainingService.listTasks(id, page, size, uid(), hasRole("ROLE_STUDENT"), taskType));
     }
 
@@ -164,6 +167,7 @@ public class TrainingController {
     public Result<PageResult<TrainingReport>> listReports(@PathVariable Long taskId,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size) {
+        size = PageResult.clampSize(size);
         return Result.success(trainingService.listReports(taskId, page, size, uid()));
     }
 

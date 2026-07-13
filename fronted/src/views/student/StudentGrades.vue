@@ -20,7 +20,7 @@
     </div>
 
     <div class="panel">
-      <el-table v-if="grades.length > 0 || loading" :data="grades" stripe class="kechang-table" style="width:100%"
+      <el-table v-if="grades.length > 0 || loading" :data="displayGrades" stripe class="kechang-table" style="width:100%"
         v-loading="loading">
         <el-table-column prop="courseName" label="课程" min-width="180" />
         <el-table-column v-if="hasExamScores" prop="examAvgScore" label="考试均分" width="110">
@@ -42,6 +42,8 @@
         </el-table-column>
       </el-table>
 
+      <PaginationWrapper v-model:page="page" v-model:size="size" :total="total" />
+
       <el-empty v-if="!loading && grades.length === 0" description="暂无成绩数据" :image-size="100" />
     </div>
   </div>
@@ -50,9 +52,18 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
 import { gradeApi } from '@/api'
+import { usePagination } from '@/composables/usePagination'
+import PaginationWrapper from '@/components/PaginationWrapper.vue'
 
 const grades = ref([])
 const loading = ref(false)
+
+const { page, size, total } = usePagination({ defaultSize: 10 })
+
+const displayGrades = computed(() => {
+  const start = (page.value - 1) * size.value
+  return grades.value.slice(start, start + size.value)
+})
 
 const scoredGrades = computed(() => grades.value.filter(item => item.totalScore != null))
 const hasExamScores = computed(() => grades.value.some(item => item.examAvgScore != null))
@@ -79,7 +90,10 @@ const fetchGrades = async () => {
   loading.value = true
   try {
     const res = await gradeApi.myGrades()
-    if (res.data.code === 200) grades.value = res.data.data || []
+    if (res.data.code === 200) {
+      grades.value = res.data.data || []
+      total.value = grades.value.length
+    }
   } finally {
     loading.value = false
   }

@@ -1,7 +1,9 @@
 package com.kechang.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.kechang.common.BusinessException;
+import com.kechang.common.PageResult;
 import com.kechang.dto.CheckinCreateDTO;
 import com.kechang.dto.CheckinSubmitDTO;
 import com.kechang.entity.*;
@@ -87,16 +89,18 @@ public class CheckinService {
     }
 
     /**
-     * 教师查看签到列表
+     * 教师查看签到列表（分页）
      */
-    public List<Map<String, Object>> teacherList(Long teacherId, Long courseId) {
+    public PageResult<Map<String, Object>> teacherList(Long teacherId, Long courseId, int page, int size) {
         LambdaQueryWrapper<CheckinSession> wrapper = new LambdaQueryWrapper<CheckinSession>()
                 .eq(CheckinSession::getCreateBy, teacherId)
                 .eq(courseId != null, CheckinSession::getCourseId, courseId)
                 .orderByDesc(CheckinSession::getStartTime);
-        return sessionMapper.selectList(wrapper).stream()
+        Page<CheckinSession> mpPage = sessionMapper.selectPage(new Page<>(page, size), wrapper);
+        List<Map<String, Object>> records = mpPage.getRecords().stream()
                 .map(this::toSessionMapWithStats)
                 .collect(Collectors.toList());
+        return PageResult.of(records, mpPage.getTotal(), mpPage.getCurrent(), mpPage.getSize());
     }
 
     /**
@@ -297,9 +301,9 @@ public class CheckinService {
     }
 
     /**
-     * 课程维度出勤记录
+     * 课程维度出勤记录（分页）
      */
-    public List<Map<String, Object>> courseRecords(Long courseId, Long userId, String role) {
+    public PageResult<Map<String, Object>> courseRecords(Long courseId, Long userId, String role, int page, int size) {
         if ("ROLE_TEACHER".equals(role)) {
             Course course = courseMapper.selectById(courseId);
             if (course == null || !Objects.equals(course.getTeacherId(), userId)) {
@@ -307,12 +311,13 @@ public class CheckinService {
             }
         }
 
-        List<CheckinSession> sessions = sessionMapper.selectList(
+        Page<CheckinSession> mpPage = sessionMapper.selectPage(
+                new Page<>(page, size),
                 new LambdaQueryWrapper<CheckinSession>()
                         .eq(CheckinSession::getCourseId, courseId)
                         .orderByDesc(CheckinSession::getStartTime));
 
-        return sessions.stream().map(session -> {
+        List<Map<String, Object>> records = mpPage.getRecords().stream().map(session -> {
             Map<String, Object> map = toSessionMapWithStats(session);
             if ("ROLE_STUDENT".equals(role)) {
                 CheckinRecord myRecord = recordMapper.selectOne(
@@ -323,6 +328,8 @@ public class CheckinService {
             }
             return map;
         }).collect(Collectors.toList());
+
+        return PageResult.of(records, mpPage.getTotal(), mpPage.getCurrent(), mpPage.getSize());
     }
 
     /**

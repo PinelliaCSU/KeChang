@@ -32,7 +32,7 @@
         <!-- 历史签到记录 -->
         <div class="history-section" v-if="historySessions.length">
             <h3 class="section-title">签到记录</h3>
-            <el-table :data="historySessions" class="kechang-table is-borderless">
+            <el-table :data="paginatedHistory" class="kechang-table is-borderless">
                 <el-table-column prop="courseName" label="课程" width="160" />
                 <el-table-column prop="title" label="签到标题" min-width="160" />
                 <el-table-column label="时间" width="200">
@@ -48,6 +48,7 @@
                     </template>
                 </el-table-column>
             </el-table>
+            <PaginationWrapper v-model:page="historyPage" v-model:size="historySize" :total="historyTotal" />
         </div>
     </div>
 </template>
@@ -55,7 +56,9 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { checkinApi } from '@/api'
+import { checkinApi, courseApi } from '@/api'
+import { usePagination } from '@/composables/usePagination'
+import PaginationWrapper from '@/components/PaginationWrapper.vue'
 import CheckinSessionCard from '@/components/checkin/CheckinSessionCard.vue'
 import CheckinStudentPanel from '@/components/checkin/CheckinStudentPanel.vue'
 
@@ -65,6 +68,14 @@ const sessions = ref([])
 const historySessions = ref([])
 const selectedSession = ref(null)
 const dialogVisible = ref(false)
+
+const { page: historyPage, size: historySize, total: historyTotal, resetPage: resetHistoryPage } = usePagination({ defaultSize: 10 })
+
+const paginatedHistory = computed(() => {
+    const start = (historyPage.value - 1) * historySize.value
+    const end = start + historySize.value
+    return historySessions.value.slice(start, end)
+})
 
 const urlCode = computed(() => route.query.code || '')
 const urlSessionId = computed(() => route.query.sessionId || '')
@@ -107,7 +118,7 @@ const loadSessions = async () => {
 
     // 加载最近的签到记录（所有课程）
     try {
-        const courseRes = await import('@/api').then(m => m.courseApi.list({}))
+        const courseRes = await courseApi.list({})
         const courses = (courseRes.data.data?.records || courseRes.data.data || [])
         const allRecords = []
         for (const c of courses.slice(0, 5)) {
@@ -117,7 +128,8 @@ const loadSessions = async () => {
                 allRecords.push(...recs)
             } catch { /* skip */ }
         }
-        historySessions.value = allRecords.sort((a, b) => new Date(b.startTime || 0) - new Date(a.startTime || 0)).slice(0, 20)
+        historySessions.value = allRecords.sort((a, b) => new Date(b.startTime || 0) - new Date(a.startTime || 0))
+        historyTotal.value = historySessions.value.length
     } catch { /* ignore */ }
 }
 

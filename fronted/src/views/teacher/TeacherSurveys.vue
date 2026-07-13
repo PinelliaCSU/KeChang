@@ -7,7 +7,7 @@
 
     <div class="panel">
       <div class="search-bar">
-        <el-select v-model="courseFilter" placeholder="按课程筛选" clearable style="width:200px" @change="fetchSurveys">
+        <el-select v-model="courseFilter" placeholder="按课程筛选" clearable style="width:200px" @change="onFilterChange">
           <el-option v-for="c in courseList" :key="c.id" :label="c.courseName" :value="c.id" />
         </el-select>
       </div>
@@ -40,9 +40,7 @@
       </el-table>
 
       <el-empty v-if="!loading && surveys.length === 0" description="暂无问卷" :image-size="100" />
-      <el-pagination v-if="total > pageSize" :current-page="page" :page-size="pageSize" :total="total"
-        layout="prev, pager, next" @current-change="p => { page = p; fetchSurveys() }"
-        style="margin-top:16px;justify-content:center" />
+      <PaginationWrapper v-model:page="page" v-model:size="size" :total="total" @change="fetchSurveys" />
     </div>
 
     <!-- 创建/编辑问卷弹窗 -->
@@ -161,9 +159,11 @@ import { ref, reactive, onMounted } from 'vue'
 import { surveyApi, courseApi } from '@/api'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { computeStatus, statusTagType } from '@/utils/status'
+import { usePagination } from '@/composables/usePagination'
+import PaginationWrapper from '@/components/PaginationWrapper.vue'
 
 const surveys = ref([]); const loading = ref(false)
-const page = ref(1); const pageSize = ref(10); const total = ref(0)
+const { page, size, total, resetPage } = usePagination({ defaultSize: 10 })
 const courseFilter = ref(null)
 const courseList = ref([])
 
@@ -186,11 +186,13 @@ const percentStr = (count, total) => total > 0 ? (count / total * 100).toFixed(1
 const fetchSurveys = async () => {
   loading.value = true
   try {
-    const res = await surveyApi.list({ page: page.value, size: pageSize.value, courseId: courseFilter.value || undefined })
+    const res = await surveyApi.list({ page: page.value, size: size.value, courseId: courseFilter.value || undefined })
     if (res.data.code === 200) { surveys.value = res.data.data.records; total.value = res.data.data.total }
   } catch (e) { /* ignore */ }
   finally { loading.value = false }
 }
+
+const onFilterChange = () => { resetPage(); fetchSurveys() }
 
 const fetchCourses = async () => {
   try {

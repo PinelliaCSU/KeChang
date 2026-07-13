@@ -23,7 +23,7 @@
             </el-form-item>
             <div class="form-row">
               <el-form-item label="题型">
-                <el-select v-model="questionType" placeholder="全部" clearable style="width:100%" @change="loadQuestions">
+                <el-select v-model="questionType" placeholder="全部" clearable style="width:100%" @change="onQuestionTypeChange">
                   <el-option label="单选" value="SINGLE" />
                   <el-option label="多选" value="MULTI" />
                   <el-option label="判断" value="JUDGE" />
@@ -65,6 +65,7 @@
             </div>
             <el-empty v-if="!questionLoading && questions.length === 0" description="暂无题目" :image-size="80" />
           </div>
+          <PaginationWrapper v-bind="qPaginationProps" @update:page="handleQPageChange" @update:size="handleQSizeChange" @change="loadQuestions" />
         </div>
 
         <div class="panel">
@@ -175,6 +176,8 @@
 import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { classQuizApi, courseApi, examApi } from '@/api'
+import { usePagination } from '@/composables/usePagination'
+import PaginationWrapper from '@/components/PaginationWrapper.vue'
 
 const courses = ref([])
 const questions = ref([])
@@ -186,6 +189,9 @@ const creating = ref(false)
 const questionType = ref('')
 const selectedQuestionIds = ref([])
 let pollTimer = null
+
+// 题目分页
+const { page: qPage, size: qSize, total: qTotal, resetPage: resetQPage, paginationProps: qPaginationProps, handleSizeChange: handleQSizeChange, handleCurrentChange: handleQPageChange } = usePagination({ defaultSize: 10 })
 
 const form = reactive({
   courseId: null,
@@ -219,12 +225,15 @@ const loadQuestions = async () => {
   questionLoading.value = true
   try {
     const res = await examApi.listQuestions({
-      page: 1,
-      size: 50,
+      page: qPage.value,
+      size: qSize.value,
       courseId: form.courseId,
       questionType: questionType.value || undefined
     })
-    if (res.data.code === 200) questions.value = res.data.data?.records || []
+    if (res.data.code === 200) {
+      questions.value = res.data.data?.records || []
+      qTotal.value = res.data.data?.total || 0
+    }
   } finally {
     questionLoading.value = false
   }
@@ -237,8 +246,14 @@ const loadQuizzes = async () => {
 
 const onCourseChange = async () => {
   selectedQuestionIds.value = []
+  resetQPage()
   await loadQuestions()
   await loadQuizzes()
+}
+
+const onQuestionTypeChange = () => {
+  resetQPage()
+  loadQuestions()
 }
 
 const toggleQuestion = (question) => {

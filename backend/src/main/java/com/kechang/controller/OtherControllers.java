@@ -47,6 +47,7 @@ class QAController {
     @GetMapping("/posts")
     public Result<PageResult<QuestionPost>> listPosts(@RequestParam(defaultValue = "1") int page, @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) Long courseId, @RequestParam(defaultValue = "time") String orderBy) {
+        size = PageResult.clampSize(size);
         return Result.success(qaService.listPosts(page, size, courseId, orderBy));
     }
 
@@ -83,6 +84,7 @@ class QAController {
 
     @GetMapping("/posts/{id}/answers")
     public Result<PageResult<Answer>> listAnswers(@PathVariable Long id, @RequestParam(defaultValue = "1") int page, @RequestParam(defaultValue = "10") int size) {
+        size = PageResult.clampSize(size);
         return Result.success(qaService.listAnswers(id, page, size));
     }
 
@@ -114,11 +116,13 @@ class QAController {
 
     @GetMapping("/posts/{id}/comments")
     public Result<PageResult<Comment>> listPostComments(@PathVariable Long id, @RequestParam(defaultValue = "1") int page, @RequestParam(defaultValue = "10") int size) {
+        size = PageResult.clampSize(size);
         return Result.success(qaService.listComments("POST", id, page, size));
     }
 
     @GetMapping("/answers/{id}/comments")
     public Result<PageResult<Comment>> listAnswerComments(@PathVariable Long id, @RequestParam(defaultValue = "1") int page, @RequestParam(defaultValue = "10") int size) {
+        size = PageResult.clampSize(size);
         return Result.success(qaService.listComments("ANSWER", id, page, size));
     }
 }
@@ -144,6 +148,7 @@ class EvaluationController {
     public Result<PageResult<EvaluationVO>> list(@RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) Long courseId) {
+        size = PageResult.clampSize(size);
         return Result.success(evalService.list(page, size, courseId, uid(), role()));
     }
 
@@ -236,6 +241,7 @@ class SurveyController {
     public Result<PageResult<SurveyVO>> list(@RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) Long courseId) {
+        size = PageResult.clampSize(size);
         return Result.success(surveyService.list(page, size, courseId, uid(), role()));
     }
 
@@ -344,6 +350,7 @@ class KnowledgeController {
 
     @GetMapping("/knowledge/articles")
     public Result<PageResult<KnowledgeArticle>> listArticles(@RequestParam(defaultValue = "1") int page, @RequestParam(defaultValue = "10") int size, @RequestParam(required = false) String keyword) {
+        size = PageResult.clampSize(size);
         return Result.success(knowledgeService.listArticles(page, size, keyword));
     }
 
@@ -363,6 +370,7 @@ class KnowledgeController {
     @GetMapping("/notes")
     @PreAuthorize("hasAuthority('ROLE_STUDENT')")
     public Result<PageResult<LearningNote>> listNotes(@RequestParam(defaultValue = "1") int page, @RequestParam(defaultValue = "10") int size) {
+        size = PageResult.clampSize(size);
         return Result.success(knowledgeService.listNotes(uid(), page, size));
     }
 
@@ -404,6 +412,7 @@ class KnowledgeController {
             @RequestParam(defaultValue = "12") int size,
             @RequestParam(required = false) Long courseId,
             @RequestParam(required = false) String keyword) {
+        size = PageResult.clampSize(size);
         return Result.success(knowledgeService.listMaterials(uid(), page, size, courseId, keyword));
     }
 
@@ -439,6 +448,7 @@ class KnowledgeController {
             @RequestParam(required = false) Long courseId,
             @RequestParam(required = false) Integer isMastered,
             @RequestParam(required = false) String keyword) {
+        size = PageResult.clampSize(size);
         return Result.success(knowledgeService.listWrongQuestions(uid(), page, size, courseId, isMastered, keyword));
     }
 
@@ -479,6 +489,7 @@ class NotificationController {
 
     @GetMapping
     public Result<PageResult<Map<String, Object>>> list(@RequestParam(defaultValue = "1") int page, @RequestParam(defaultValue = "10") int size) {
+        size = PageResult.clampSize(size);
         return Result.success(notifService.list(uid(), page, size));
     }
 
@@ -547,6 +558,7 @@ class AnnouncementController {
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) Long courseId) {
+        size = PageResult.clampSize(size);
         return Result.success(notifService.listAnnouncements(page, size, courseId, uid(), role()));
     }
 
@@ -594,6 +606,7 @@ class AnnouncementController {
     public Result<PageResult<Map<String, Object>>> listAdmin(
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size) {
+        size = PageResult.clampSize(size);
         return Result.success(notifService.listAllAnnouncements(page, size));
     }
 
@@ -610,6 +623,7 @@ class AnnouncementController {
             @PathVariable Long id,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size) {
+        size = PageResult.clampSize(size);
         return Result.success(notifService.getConfirmList(id, page, size, uid()));
     }
 }
@@ -684,6 +698,7 @@ class MessageController {
     public Result<PageResult<Map<String, Object>>> listConversations(
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "20") int size) {
+        size = PageResult.clampSize(size);
         return Result.success(messageService.listConversations(uid(), page, size));
     }
 
@@ -695,6 +710,7 @@ class MessageController {
             @PathVariable Long otherUserId,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "30") int size) {
+        size = PageResult.clampSize(size);
         return Result.success(messageService.getMessages(uid(), otherUserId, page, size));
     }
 

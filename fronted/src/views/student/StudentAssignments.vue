@@ -2,7 +2,7 @@
   <div class="page-shell">
     <div class="page-title-bar">
       <h2 class="page-title">我的作业</h2>
-      <el-select v-model="statusFilter" placeholder="状态筛选" style="width:140px" clearable>
+      <el-select v-model="statusFilter" placeholder="状态筛选" style="width:140px" clearable @change="onStatusFilterChange">
         <el-option label="全部" value="" />
         <el-option label="未提交" value="pending" />
         <el-option label="已提交" value="submitted" />
@@ -54,6 +54,7 @@
           </template>
         </el-table-column>
       </el-table>
+      <PaginationWrapper v-model:page="page" v-model:size="size" :total="total" @change="fetchAssignments" />
     </div>
     <div class="panel empty-panel" v-else>
       <EmptyIllustration text="暂无作业任务" />
@@ -198,9 +199,12 @@ import { School } from '@element-plus/icons-vue'
 import { assignmentApi, courseApi, uploadApi } from '@/api'
 import EmptyIllustration from '@/components/EmptyIllustration.vue'
 import FilePreview from '@/components/FilePreview.vue'
+import { usePagination } from '@/composables/usePagination'
+import PaginationWrapper from '@/components/PaginationWrapper.vue'
 
 const assignments = ref([])
 const statusFilter = ref('')
+const { page, size, total, resetPage } = usePagination({ defaultSize: 10 })
 const detailVisible = ref(false)
 const currentAssignment = ref(null)
 const submitting = ref(false)
@@ -311,13 +315,19 @@ const chapterName = (row) => {
 }
 
 const fetchAssignments = async () => {
-  const res = await assignmentApi.list({ page: 1, size: 100 })
+  const res = await assignmentApi.list({ page: page.value, size: size.value })
   if (res.data.code === 200) {
     assignments.value = res.data.data?.records || []
+    total.value = res.data.data?.total || assignments.value.length
     // 异步加载各课程的章节信息，用于解析章节名称
     const courseIds = [...new Set(assignments.value.map(a => a.courseId).filter(Boolean))]
     await Promise.all(courseIds.map(id => loadChaptersForCourse(id)))
   }
+}
+
+const onStatusFilterChange = () => {
+  resetPage()
+  fetchAssignments()
 }
 const submitAssignment = async () => {
   if (!currentAssignment.value) return

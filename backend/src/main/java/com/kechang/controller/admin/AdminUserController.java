@@ -39,6 +39,7 @@ public class AdminUserController {
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) Long roleId,
             @RequestParam(required = false) Integer status) {
+        size = PageResult.clampSize(size);
         return Result.success(adminUserService.list(page, size, keyword, roleId, status));
     }
 

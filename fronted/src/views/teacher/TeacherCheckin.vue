@@ -53,57 +53,60 @@
         <!-- 历史签到列表 -->
         <div class="history-section" v-else>
             <div class="panel-toolbar">
-                <el-select v-model="filterCourseId" placeholder="筛选课程" clearable @change="loadSessions"
+                <el-select v-model="filterCourseId" placeholder="筛选课程" clearable @change="resetPage(); loadSessions()"
                     style="width:200px">
                     <el-option v-for="c in courses" :key="c.id" :label="c.courseName" :value="c.id" />
                 </el-select>
                 <el-input v-model="searchKeyword" placeholder="搜索签到标题" clearable style="width:200px;margin-left:12px"
-                    @input="loadSessions" />
+                    @change="onKeywordChange" @clear="onKeywordChange" />
             </div>
 
-            <el-table v-if="sessions.length" :data="filteredSessions" class="kechang-table is-borderless"
-                @row-click="selectSession" style="cursor:pointer">
-                <el-table-column prop="courseName" label="课程" width="160" />
-                <el-table-column prop="title" label="签到标题" min-width="180" />
-                <el-table-column label="方式" width="120">
-                    <template #default="{ row }">
-                        <el-tag :type="row.checkinType === 'LOCATION' ? 'warning' : ''" size="small" effect="plain">
-                            {{ typeLabel(row.checkinType) }}
-                        </el-tag>
-                    </template>
-                </el-table-column>
-                <el-table-column label="签到码" width="100">
-                    <template #default="{ row }">{{ row.code }}</template>
-                </el-table-column>
-                <el-table-column label="时间" width="180">
-                    <template #default="{ row }">
-                        <span>{{ formatShort(row.startTime) }} - {{ formatShort(row.endTime) }}</span>
-                    </template>
-                </el-table-column>
-                <el-table-column label="签到情况" width="160">
-                    <template #default="{ row }">
-                        <div class="cell-stats">
-                            <span class="cs-item success">{{ row.successCount || 0 }}</span>
-                            <span class="cs-sep">/</span>
-                            <span class="cs-item late">{{ row.lateCount || 0 }}</span>
-                            <span class="cs-sep">/</span>
-                            <span class="cs-item total">{{ row.totalStudents || 0 }}</span>
-                        </div>
-                    </template>
-                </el-table-column>
-                <el-table-column label="状态" width="90">
-                    <template #default="{ row }">
-                        <el-tag :type="row.status === 'ACTIVE' ? 'danger' : 'info'" size="small">
-                            {{ row.status === 'ACTIVE' ? '签到中' : '已结束' }}
-                        </el-tag>
-                    </template>
-                </el-table-column>
-                <el-table-column label="操作" width="100">
-                    <template #default="{ row }">
-                        <el-button text type="primary" size="small" @click.stop="selectSession(row)">详情</el-button>
-                    </template>
-                </el-table-column>
-            </el-table>
+            <template v-if="sessions.length">
+              <el-table :data="sessions" class="kechang-table is-borderless"
+                  @row-click="selectSession" style="cursor:pointer">
+                  <el-table-column prop="courseName" label="课程" width="160" />
+                  <el-table-column prop="title" label="签到标题" min-width="180" />
+                  <el-table-column label="方式" width="120">
+                      <template #default="{ row }">
+                          <el-tag :type="row.checkinType === 'LOCATION' ? 'warning' : ''" size="small" effect="plain">
+                              {{ typeLabel(row.checkinType) }}
+                          </el-tag>
+                      </template>
+                  </el-table-column>
+                  <el-table-column label="签到码" width="100">
+                      <template #default="{ row }">{{ row.code }}</template>
+                  </el-table-column>
+                  <el-table-column label="时间" width="180">
+                      <template #default="{ row }">
+                          <span>{{ formatShort(row.startTime) }} - {{ formatShort(row.endTime) }}</span>
+                      </template>
+                  </el-table-column>
+                  <el-table-column label="签到情况" width="160">
+                      <template #default="{ row }">
+                          <div class="cell-stats">
+                              <span class="cs-item success">{{ row.successCount || 0 }}</span>
+                              <span class="cs-sep">/</span>
+                              <span class="cs-item late">{{ row.lateCount || 0 }}</span>
+                              <span class="cs-sep">/</span>
+                              <span class="cs-item total">{{ row.totalStudents || 0 }}</span>
+                          </div>
+                      </template>
+                  </el-table-column>
+                  <el-table-column label="状态" width="90">
+                      <template #default="{ row }">
+                          <el-tag :type="row.status === 'ACTIVE' ? 'danger' : 'info'" size="small">
+                              {{ row.status === 'ACTIVE' ? '签到中' : '已结束' }}
+                          </el-tag>
+                      </template>
+                  </el-table-column>
+                  <el-table-column label="操作" width="100">
+                      <template #default="{ row }">
+                          <el-button text type="primary" size="small" @click.stop="selectSession(row)">详情</el-button>
+                      </template>
+                  </el-table-column>
+              </el-table>
+              <PaginationWrapper v-model:page="page" v-model:size="size" :total="total" @change="loadSessions" />
+            </template>
             <el-empty v-else description="暂无签到记录" :image-size="120" />
         </div>
 
@@ -140,6 +143,8 @@ import { useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Refresh, FullScreen, SwitchButton } from '@element-plus/icons-vue'
 import { checkinApi, courseApi } from '@/api'
+import { usePagination } from '@/composables/usePagination'
+import PaginationWrapper from '@/components/PaginationWrapper.vue'
 import CheckinCreator from '@/components/checkin/CheckinCreator.vue'
 import CheckinCodeDisplay from '@/components/checkin/CheckinCodeDisplay.vue'
 import CheckinResultPanel from '@/components/checkin/CheckinResultPanel.vue'
@@ -159,15 +164,12 @@ const activeSession = ref(null)
 const activeStats = ref({})
 const detailStats = ref({})
 let pollTimer = null
+const { page, size, total, resetPage } = usePagination({ defaultSize: 10 })
 
-const filteredSessions = computed(() => {
-    let list = sessions.value
-    if (searchKeyword.value) {
-        const kw = searchKeyword.value.toLowerCase()
-        list = list.filter(s => (s.title || '').toLowerCase().includes(kw))
-    }
-    return list
-})
+const onKeywordChange = () => {
+    resetPage()
+    loadSessions()
+}
 
 const typeLabel = (t) => ({ QR_CODE: '二维码', NUMERIC_CODE: '数字码', LOCATION: '位置签到' })[t] || t
 const formatShort = (t) => {
@@ -185,8 +187,9 @@ const loadCourses = async () => {
 
 const loadSessions = async () => {
     try {
-        const res = await checkinApi.teacherList({ courseId: filterCourseId.value || undefined })
-        sessions.value = res.data.data || []
+        const res = await checkinApi.teacherList({ page: page.value, size: size.value, courseId: filterCourseId.value || undefined, keyword: searchKeyword.value || undefined })
+        sessions.value = res.data.data?.records || []
+        total.value = res.data.data?.total || 0
         // 检查是否有活跃签到
         const active = sessions.value.find(s => s.status === 'ACTIVE')
         if (active && !activeSession.value) {

@@ -43,9 +43,7 @@
                     </div>
                 </div>
             </div>
-            <el-pagination v-if="total > pageSize" :current-page="page" :page-size="pageSize" :total="total"
-                layout="prev, pager, next" @current-change="p => { page = p; fetchSurveys() }"
-                style="margin-top:16px;justify-content:center" />
+            <PaginationWrapper v-model:page="page" v-model:size="size" :total="total" @change="fetchSurveys" />
         </div>
 
         <div class="panel empty-panel" v-else-if="!loading">
@@ -98,9 +96,11 @@ import { ElMessage } from 'element-plus'
 import { School, Calendar, Document, User } from '@element-plus/icons-vue'
 import EmptyIllustration from '@/components/EmptyIllustration.vue'
 import { computeStatus, statusTagType } from '@/utils/status'
+import { usePagination } from '@/composables/usePagination'
+import PaginationWrapper from '@/components/PaginationWrapper.vue'
 
 const surveys = ref([]); const loading = ref(false)
-const page = ref(1); const pageSize = ref(10); const total = ref(0)
+const { page, size, total, resetPage } = usePagination({ defaultSize: 10 })
 
 // 填写问卷
 const fillDialogVisible = ref(false); const currentSurvey = ref({})
@@ -116,7 +116,7 @@ const parseOptions = (opts) => {
 const fetchSurveys = async () => {
     loading.value = true
     try {
-        const res = await surveyApi.list({ page: page.value, size: pageSize.value })
+        const res = await surveyApi.list({ page: page.value, size: size.value })
         if (res.data.code === 200) { surveys.value = res.data.data.records; total.value = res.data.data.total }
     } catch (e) { /* ignore */ }
     finally { loading.value = false }

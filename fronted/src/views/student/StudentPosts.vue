@@ -50,9 +50,7 @@
       </div>
       <el-empty v-else description="暂无问答帖子" :image-size="100" />
 
-      <el-pagination v-if="total > pageSize" :current-page="page" :page-size="pageSize" :total="total"
-        layout="prev, pager, next" @current-change="p => { page = p; fetchPosts() }"
-        style="margin-top:16px;justify-content:center" />
+      <PaginationWrapper v-model:page="page" v-model:size="size" :total="total" @change="fetchPosts" />
     </div>
 
     <!-- 发布问题弹窗 -->
@@ -161,9 +159,7 @@
         </div>
         <el-empty v-else description="暂无回答" :image-size="60" />
 
-        <el-pagination v-if="answerTotal > answerPageSize" :current-page="answerPage" :page-size="answerPageSize"
-          :total="answerTotal" layout="prev, pager, next" @current-change="p => { answerPage = p; fetchAnswers() }"
-          style="margin-top:12px;justify-content:center" small />
+        <PaginationWrapper v-model:page="answerPage" v-model:size="answerSize" :total="answerTotal" :page-sizes="[5, 10, 20]" @change="fetchAnswers" />
 
         <!-- 写回答 -->
         <div class="reply-box">
@@ -185,17 +181,19 @@ import { qaApi, courseApi } from '@/api'
 import { useUserStore } from '@/stores/user'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { ArrowDown, ArrowRight, User, Clock, View, ChatDotSquare, Collection, CircleCheck } from '@element-plus/icons-vue'
+import { usePagination } from '@/composables/usePagination'
+import PaginationWrapper from '@/components/PaginationWrapper.vue'
 
 const userStore = useUserStore()
 
 // ========== 列表 ==========
-const posts = ref([]); const page = ref(1); const pageSize = ref(10); const total = ref(0)
+const posts = ref([]); const { page, size, total, resetPage } = usePagination({ defaultSize: 10 })
 const courseFilter = ref(null); const orderBy = ref('time')
 const courseList = ref([])
 
 const fetchPosts = async () => {
   try {
-    const res = await qaApi.listPosts({ page: page.value, size: pageSize.value, courseId: courseFilter.value || undefined, orderBy: orderBy.value })
+    const res = await qaApi.listPosts({ page: page.value, size: size.value, courseId: courseFilter.value || undefined, orderBy: orderBy.value })
     if (res.data.code === 200) { posts.value = res.data.data.records; total.value = res.data.data.total }
   } catch (e) { /* ignore */ }
 }
@@ -230,7 +228,7 @@ const createPost = async () => {
 // ========== 详情 ==========
 const detailVisible = ref(false); const currentPost = ref(null)
 const answers = ref([]); const answerContent = ref(''); const answering = ref(false)
-const answerPage = ref(1); const answerPageSize = ref(5); const answerTotal = ref(0)
+const { page: answerPage, size: answerSize, total: answerTotal, resetPage: resetAnswerPage } = usePagination({ defaultSize: 5, pageSizes: [5, 10, 20] })
 
 const isPostOwner = computed(() => currentPost.value?.createBy === userStore.userId)
 const isTeacher = computed(() => userStore.isTeacher)
@@ -259,7 +257,7 @@ const viewPost = async (p) => {
 const fetchAnswers = async () => {
   if (!currentPost.value) return
   try {
-    const res = await qaApi.listAnswers(currentPost.value.id, { page: answerPage.value, size: answerPageSize.value })
+    const res = await qaApi.listAnswers(currentPost.value.id, { page: answerPage.value, size: answerSize.value })
     if (res.data.code === 200) {
       const d = res.data.data
       answers.value = (d.records || []).map(a => ({

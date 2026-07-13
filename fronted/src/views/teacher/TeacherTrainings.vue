@@ -9,34 +9,37 @@
     </div>
 
     <div class="panel training-panel">
-      <div v-if="projects.length > 0" class="training-grid">
-        <article v-for="p in projects" :key="p.id" class="training-card" @click="viewProject(p)">
-          <div class="card-accent"></div>
-          <div class="card-main">
-            <div class="card-header">
-              <div class="title-wrap">
-                <h3>{{ p.projectName }}</h3>
-                <p>{{ p.description || '暂无项目说明' }}</p>
+      <template v-if="projects.length > 0">
+        <div class="training-grid">
+          <article v-for="p in projects" :key="p.id" class="training-card" @click="viewProject(p)">
+            <div class="card-accent"></div>
+            <div class="card-main">
+              <div class="card-header">
+                <div class="title-wrap">
+                  <h3>{{ p.projectName }}</h3>
+                  <p>{{ p.description || '暂无项目说明' }}</p>
+                </div>
+                <el-tag :type="statusTagType(computeStatus(p.startDate, p.endDate))" effect="plain">
+                  {{ computeStatus(p.startDate, p.endDate) }}
+                </el-tag>
               </div>
-              <el-tag :type="statusTagType(computeStatus(p.startDate, p.endDate))" effect="plain">
-                {{ computeStatus(p.startDate, p.endDate) }}
-              </el-tag>
-            </div>
 
-            <div class="meta-row">
-              <span>任务 {{ p.taskCount || 0 }}</span>
-              <span>报告 {{ p.reportCount || 0 }}</span>
-              <span>{{ formatRange(p.startDate, p.endDate) }}</span>
-            </div>
+              <div class="meta-row">
+                <span>任务 {{ p.taskCount || 0 }}</span>
+                <span>报告 {{ p.reportCount || 0 }}</span>
+                <span>{{ formatRange(p.startDate, p.endDate) }}</span>
+              </div>
 
-            <div class="card-footer" @click.stop>
-              <el-button size="small" type="primary" plain @click="viewProject(p)">查看详情</el-button>
-              <el-button size="small" @click="openEditProject(p)">编辑</el-button>
-              <el-button size="small" type="danger" plain @click="handleDeleteProject(p)">删除</el-button>
+              <div class="card-footer" @click.stop>
+                <el-button size="small" type="primary" plain @click="viewProject(p)">查看详情</el-button>
+                <el-button size="small" @click="openEditProject(p)">编辑</el-button>
+                <el-button size="small" type="danger" plain @click="handleDeleteProject(p)">删除</el-button>
+              </div>
             </div>
-          </div>
-        </article>
-      </div>
+          </article>
+        </div>
+        <PaginationWrapper v-model:page="page" v-model:size="size" :total="total" :page-sizes="[12, 24, 48]" @change="fetchProjects" />
+      </template>
       <el-empty v-else description="暂无实训项目，点击右上角创建" :image-size="110" />
     </div>
 
@@ -83,9 +86,13 @@ import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { trainingApi } from '@/api'
 import { computeStatus, statusTagType } from '@/utils/status'
+import { usePagination } from '@/composables/usePagination'
+import PaginationWrapper from '@/components/PaginationWrapper.vue'
 
 const router = useRouter()
 const projects = ref([])
+
+const { page, size, total, resetPage } = usePagination({ defaultSize: 12 })
 
 const projDialogVisible = ref(false)
 const isEditProj = ref(false)
@@ -103,8 +110,11 @@ const resetProjectForm = () => {
 }
 
 const fetchProjects = async () => {
-  const res = await trainingApi.listProjects({ page: 1, size: 100 })
-  if (res.data.code === 200) projects.value = res.data.data?.records || []
+  const res = await trainingApi.listProjects({ page: page.value, size: size.value })
+  if (res.data.code === 200) {
+    projects.value = res.data.data?.records || []
+    total.value = res.data.data?.total || 0
+  }
 }
 
 const openCreateProject = () => {

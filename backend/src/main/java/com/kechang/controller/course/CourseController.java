@@ -50,6 +50,7 @@ public class CourseController {
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) String status,
             @RequestParam(defaultValue = "false") Boolean onlyEnrolled) {
+        size = PageResult.clampSize(size);
         return Result.success(courseService.getCourseList(page, size, keyword, status, currentUserId(), currentRole(), onlyEnrolled));
     }
 
@@ -165,7 +166,8 @@ public class CourseController {
     @GetMapping("/{id}/students")
     public Result<PageResult<StudentProfile>> students(@PathVariable Long id,
             @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "100") int size) {
+            @RequestParam(defaultValue = "20") int size) {
+        size = PageResult.clampSize(size);
         return Result.success(courseService.getStudents(id, page, size, currentUserId(), currentRole()));
     }
 

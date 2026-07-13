@@ -2,7 +2,7 @@
   <div class="page-shell">
     <div class="page-title-bar">
       <h2 class="page-title">在线考试</h2>
-      <el-select v-model="statusFilter" placeholder="状态筛选" clearable style="width: 140px">
+      <el-select v-model="statusFilter" placeholder="状态筛选" clearable style="width: 140px" @change="onStatusFilterChange">
         <el-option label="全部" value="" />
         <el-option label="未开始" value="pending" />
         <el-option label="进行中" value="ongoing" />
@@ -12,7 +12,7 @@
     </div>
 
     <div class="panel">
-      <el-table v-if="filteredExams.length > 0 || loading" :data="filteredExams" stripe class="kechang-table"
+      <el-table v-if="exams.length > 0 || loading" :data="exams" stripe class="kechang-table"
         style="width:100%" v-loading="loading">
         <el-table-column prop="examName" label="考试名称" min-width="180" />
         <el-table-column prop="courseName" label="所属课程" min-width="140" />
@@ -50,7 +50,8 @@
         </el-table-column>
       </el-table>
 
-      <el-empty v-if="!loading && filteredExams.length === 0" description="暂无考试安排" :image-size="100" />
+      <el-empty v-if="!loading && exams.length === 0" description="暂无考试安排" :image-size="100" />
+      <PaginationWrapper v-model:page="page" v-model:size="size" :total="total" @change="fetchExams" />
     </div>
 
     <el-dialog v-model="resultVisible" title="考试结果" width="760px">
@@ -84,9 +85,11 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { examApi } from '@/api'
+import { usePagination } from '@/composables/usePagination'
+import PaginationWrapper from '@/components/PaginationWrapper.vue'
 
 const router = useRouter()
 const exams = ref([])
@@ -96,6 +99,7 @@ const resultVisible = ref(false)
 const resultLoading = ref(false)
 const resultAnswers = ref([])
 const currentExam = ref(null)
+const { page, size, total, resetPage } = usePagination({ defaultSize: 10 })
 
 const statusLabel = (row) => {
   if (row.submitted === 1) {
@@ -124,11 +128,6 @@ const statusTag = (row) => {
   return { pending: 'info', ongoing: 'success', ended: 'warning', submitted: 'primary' }[key] || 'info'
 }
 
-const filteredExams = computed(() => {
-  if (!statusFilter.value) return exams.value
-  return exams.value.filter(exam => statusKey(exam) === statusFilter.value)
-})
-
 const canStart = (row) => statusKey(row) === 'ongoing' && (row.submitted !== 1 || row.allowRetry === 1)
 const enterExam = (row) => router.push(`/student/exams/${row.id}`)
 const formatTime = (value) => value ? String(value).replace('T', ' ').slice(0, 16) : '--'
@@ -145,13 +144,19 @@ const displayAnswer = (value) => {
 const fetchExams = async () => {
   loading.value = true
   try {
-    const res = await examApi.listExams({ page: 1, size: 100 })
+    const res = await examApi.listExams({ page: page.value, size: size.value, status: statusFilter.value || undefined })
     if (res.data.code === 200) {
       exams.value = res.data.data?.records || []
+      total.value = res.data.data?.total || exams.value.length
     }
   } finally {
     loading.value = false
   }
+}
+
+const onStatusFilterChange = () => {
+  resetPage()
+  fetchExams()
 }
 
 const openResult = async (row) => {

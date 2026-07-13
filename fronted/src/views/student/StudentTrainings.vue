@@ -34,6 +34,7 @@
           </div>
         </article>
       </div>
+      <PaginationWrapper v-model:page="page" v-model:size="size" :total="total" :page-sizes="[12, 24, 48]" @change="fetchProjects" />
     </div>
 
     <div class="panel empty-panel" v-else>
@@ -47,13 +48,19 @@ import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { trainingApi } from '@/api'
 import { computeStatus, statusTagType } from '@/utils/status'
+import { usePagination } from '@/composables/usePagination'
+import PaginationWrapper from '@/components/PaginationWrapper.vue'
 
 const router = useRouter()
 const trainings = ref([])
+const { page, size, total, resetPage } = usePagination({ defaultSize: 12, pageSizes: [12, 24, 48] })
 
 const fetchProjects = async () => {
-  const res = await trainingApi.listProjects({ page: 1, size: 100 })
-  if (res.data.code === 200) trainings.value = res.data.data?.records || []
+  const res = await trainingApi.listProjects({ page: page.value, size: size.value })
+  if (res.data.code === 200) {
+    trainings.value = res.data.data?.records || []
+    total.value = res.data.data?.total || trainings.value.length
+  }
 }
 
 const formatRange = (start, end) => {

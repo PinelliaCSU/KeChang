@@ -44,8 +44,9 @@
 
       <el-empty v-else description="暂无课程，点击上方按钮创建" :image-size="120" />
 
-      <el-pagination v-if="total > pageSize" v-model:current-page="page" :page-size="pageSize" :total="total"
-        layout="prev, pager, next" style="margin-top:20px;justify-content:center" @current-change="fetchCourses" />
+      <el-pagination v-if="total > pageSize" v-model:current-page="page" v-model:page-size="pageSize" :page-sizes="[10, 20, 50]"
+        :total="total" background layout="total, sizes, prev, pager, next, jumper"
+        style="margin-top:20px;justify-content:center" @current-change="fetchCourses" @size-change="fetchCourses" />
     </div>
 
     <CourseEditDialog v-model="dialogVisible" :course="editingCourse" @saved="fetchCourses" />

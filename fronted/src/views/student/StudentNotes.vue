@@ -25,6 +25,7 @@
           </div>
         </div>
       </div>
+      <PaginationWrapper v-model:page="page" v-model:size="size" :total="total" :page-sizes="[12, 24, 48]" @change="fetchNotes" />
     </div>
 
     <div class="panel empty-panel" v-else>
@@ -62,6 +63,8 @@ import { ref, onMounted } from 'vue'
 import { knowledgeApi } from '@/api'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import EmptyIllustration from '@/components/EmptyIllustration.vue'
+import { usePagination } from '@/composables/usePagination'
+import PaginationWrapper from '@/components/PaginationWrapper.vue'
 
 const notes = ref([])
 const showCreate = ref(false)
@@ -72,12 +75,15 @@ const editId = ref(null)
 const submitting = ref(false)
 const saving = ref(false)
 
+const { page, size, total, resetPage } = usePagination({ defaultSize: 12 })
+
 const fetchNotes = async () => {
   try {
-    const res = await knowledgeApi.listNotes({ page: 1, size: 50 })
+    const res = await knowledgeApi.listNotes({ page: page.value, size: size.value })
     if (res.data.code === 200) {
       const d = res.data.data
       notes.value = Array.isArray(d?.records) ? d.records : Array.isArray(d) ? d : []
+      total.value = d?.total || 0
     }
   } catch (e) { /* ignore */ }
 }

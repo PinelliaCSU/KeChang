@@ -62,6 +62,7 @@
             </el-table-column>
           </el-table>
           <el-empty v-if="!materialLoading && materials.length === 0" description="暂无资料" :image-size="60" />
+          <PaginationWrapper v-model:page="matPage" v-model:size="matSize" :total="matTotal" @change="fetchMaterials" />
         </el-tab-pane>
 
         <!-- Tab 3: 任务 -->
@@ -88,6 +89,7 @@
             </el-table-column>
           </el-table>
           <el-empty v-if="!taskLoading && tasks.length === 0" description="暂无任务" :image-size="60" />
+          <PaginationWrapper v-model:page="taskPage" v-model:size="taskSize" :total="taskTotal" @change="fetchTasks" />
         </el-tab-pane>
 
         <!-- Tab 4: 文档提交 -->
@@ -114,6 +116,7 @@
             </el-table-column>
           </el-table>
           <el-empty v-if="!docLoading && documents.length === 0" description="暂无文档要求" :image-size="60" />
+          <PaginationWrapper v-model:page="docPage" v-model:size="docSize" :total="docTotal" @change="fetchDocuments" />
         </el-tab-pane>
       </el-tabs>
     </div>
@@ -180,6 +183,8 @@ import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { trainingApi, uploadApi } from '@/api'
 import { computeStatus, statusTagType } from '@/utils/status'
+import { usePagination } from '@/composables/usePagination'
+import PaginationWrapper from '@/components/PaginationWrapper.vue'
 import FilePreview from '@/components/FilePreview.vue'
 
 const route = useRoute()
@@ -195,14 +200,17 @@ const planAttachments = ref([])
 // --- Materials ---
 const materials = ref([])
 const materialLoading = ref(false)
+const { page: matPage, size: matSize, total: matTotal } = usePagination({ defaultSize: 10 })
 
 // --- Tasks ---
 const tasks = ref([])
 const taskLoading = ref(false)
+const { page: taskPage, size: taskSize, total: taskTotal } = usePagination({ defaultSize: 10 })
 
 // --- Documents ---
 const documents = ref([])
 const docLoading = ref(false)
+const { page: docPage, size: docSize, total: docTotal } = usePagination({ defaultSize: 10 })
 
 // --- Submit ---
 const submitDialogVisible = ref(false)
@@ -266,24 +274,33 @@ const fetchPlanAttachments = async () => {
 const fetchMaterials = async () => {
   materialLoading.value = true
   try {
-    const res = await trainingApi.listMaterials(projectId.value, { page: 1, size: 100 })
-    if (res.data.code === 200) materials.value = res.data.data?.records || []
+    const res = await trainingApi.listMaterials(projectId.value, { page: matPage.value, size: matSize.value })
+    if (res.data.code === 200) {
+      materials.value = res.data.data?.records || []
+      matTotal.value = res.data.data?.total || 0
+    }
   } finally { materialLoading.value = false }
 }
 
 const fetchTasks = async () => {
   taskLoading.value = true
   try {
-    const res = await trainingApi.listTasks(projectId.value, { page: 1, size: 100, taskType: 'TASK' })
-    if (res.data.code === 200) tasks.value = res.data.data?.records || []
+    const res = await trainingApi.listTasks(projectId.value, { page: taskPage.value, size: taskSize.value, taskType: 'TASK' })
+    if (res.data.code === 200) {
+      tasks.value = res.data.data?.records || []
+      taskTotal.value = res.data.data?.total || 0
+    }
   } finally { taskLoading.value = false }
 }
 
 const fetchDocuments = async () => {
   docLoading.value = true
   try {
-    const res = await trainingApi.listTasks(projectId.value, { page: 1, size: 100, taskType: 'DOCUMENT' })
-    if (res.data.code === 200) documents.value = res.data.data?.records || []
+    const res = await trainingApi.listTasks(projectId.value, { page: docPage.value, size: docSize.value, taskType: 'DOCUMENT' })
+    if (res.data.code === 200) {
+      documents.value = res.data.data?.records || []
+      docTotal.value = res.data.data?.total || 0
+    }
   } finally { docLoading.value = false }
 }
 

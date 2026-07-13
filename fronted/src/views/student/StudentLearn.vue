@@ -84,6 +84,7 @@
         </div>
       </div>
       <el-empty v-else description="暂无课程公告" :image-size="100" />
+      <PaginationWrapper v-bind="annPaginationProps" @update:page="handleAnnPageChange" @update:size="handleAnnSizeChange" @change="fetchAnnouncements" />
     </div>
 
     <!-- 课件 -->
@@ -112,6 +113,7 @@
         </div>
       </div>
       <el-empty v-else description="暂无作业" :image-size="100" />
+      <PaginationWrapper v-bind="assignPaginationProps" @update:page="handleAssignPageChange" @update:size="handleAssignSizeChange" @change="fetchAssignments" />
     </div>
 
     <!-- 笔记 -->
@@ -136,6 +138,8 @@ import { useRoute, useRouter } from 'vue-router'
 import { assignmentApi, courseApi, knowledgeApi, announcementApi } from '@/api'
 import { ElMessage } from 'element-plus'
 import FilePreview from '@/components/FilePreview.vue'
+import { usePagination } from '@/composables/usePagination'
+import PaginationWrapper from '@/components/PaginationWrapper.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -152,13 +156,15 @@ const activeTab = ref('chapter')
 
 const courseId = () => route.params.id
 
+// 分页状态
+const { page: assignPage, size: assignSize, total: assignTotal, resetPage: resetAssignPage, paginationProps: assignPaginationProps, handleSizeChange: handleAssignSizeChange, handleCurrentChange: handleAssignPageChange } = usePagination({ defaultSize: 10 })
+const { page: annPage, size: annSize, total: annTotal, resetPage: resetAnnPage, paginationProps: annPaginationProps, handleSizeChange: handleAnnSizeChange, handleCurrentChange: handleAnnPageChange } = usePagination({ defaultSize: 10 })
+
 const fetchCourseData = async () => {
   try {
-    const [courseRes, resourceRes, assignmentRes, announcementRes] = await Promise.all([
+    const [courseRes, resourceRes] = await Promise.all([
       courseApi.detail(courseId()),
-      courseApi.getResources(courseId()),
-      assignmentApi.list({ page: 1, size: 200, courseId: courseId() }),
-      announcementApi.list({ page: 1, size: 50, courseId: courseId() })
+      courseApi.getResources(courseId())
     ])
     if (courseRes.data.code === 200) {
       course.value = courseRes.data.data || {}
@@ -166,11 +172,29 @@ const fetchCourseData = async () => {
       openChapterNames.value = chapters.value.slice(0, 1).map(chapter => String(chapter.id))
     }
     if (resourceRes.data.code === 200) resources.value = resourceRes.data.data || []
-    if (assignmentRes.data.code === 200) assignments.value = assignmentRes.data.data?.records || []
-    if (announcementRes.data.code === 200) announcements.value = announcementRes.data.data?.records || []
   } catch (e) {
     ElMessage.error('课程内容加载失败')
   }
+}
+
+const fetchAssignments = async () => {
+  try {
+    const res = await assignmentApi.list({ page: assignPage.value, size: assignSize.value, courseId: courseId() })
+    if (res.data.code === 200) {
+      assignments.value = res.data.data?.records || []
+      assignTotal.value = res.data.data?.total || 0
+    }
+  } catch (e) { /* ignore */ }
+}
+
+const fetchAnnouncements = async () => {
+  try {
+    const res = await announcementApi.list({ page: annPage.value, size: annSize.value, courseId: courseId() })
+    if (res.data.code === 200) {
+      announcements.value = res.data.data?.records || []
+      annTotal.value = res.data.data?.total || 0
+    }
+  } catch (e) { /* ignore */ }
 }
 
 // 使用 computed 按章节分组为 Map，O(1) 查找替代每次渲染时 O(n) filter
@@ -244,7 +268,10 @@ const handleConfirm = async (announcement) => {
   } catch (e) { /* ignore */ }
 }
 
-onMounted(fetchCourseData)
+onMounted(async () => {
+  await fetchCourseData()
+  await Promise.all([fetchAssignments(), fetchAnnouncements()])
+})
 </script>
 
 <style scoped>

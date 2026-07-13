@@ -7,10 +7,10 @@
 
     <div class="panel">
       <div class="search-bar">
-        <el-select v-model="courseFilter" placeholder="按课程筛选" clearable style="width:200px" @change="fetchEvaluations">
+        <el-select v-model="courseFilter" placeholder="按课程筛选" clearable style="width:200px" @change="onFilterChange">
           <el-option v-for="c in courseList" :key="c.id" :label="c.courseName" :value="c.id" />
         </el-select>
-        <el-tabs v-model="typeFilter" @tab-change="fetchEvaluations" style="margin-left:16px">
+        <el-tabs v-model="typeFilter" @tab-change="onFilterChange" style="margin-left:16px">
           <el-tab-pane label="全部" name="" />
           <el-tab-pane label="学生评教" name="学生评教" />
           <el-tab-pane label="教师评学" name="教师评学" />
@@ -44,9 +44,7 @@
       </el-table>
 
       <el-empty v-if="!loading && evaluations.length === 0" description="暂无教学评价" :image-size="100" />
-      <el-pagination v-if="total > pageSize" :current-page="page" :page-size="pageSize" :total="total"
-        layout="prev, pager, next" @current-change="p => { page = p; fetchEvaluations() }"
-        style="margin-top:16px;justify-content:center" />
+      <PaginationWrapper v-model:page="page" v-model:size="size" :total="total" @change="fetchEvaluations" />
     </div>
 
     <!-- 创建/编辑评价弹窗 -->
@@ -156,9 +154,11 @@ import { evaluationApi, courseApi } from '@/api'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { ArrowDown } from '@element-plus/icons-vue'
 import { computeStatus, statusTagType } from '@/utils/status'
+import { usePagination } from '@/composables/usePagination'
+import PaginationWrapper from '@/components/PaginationWrapper.vue'
 
 const evaluations = ref([]); const loading = ref(false)
-const page = ref(1); const pageSize = ref(10); const total = ref(0)
+const { page, size, total, resetPage } = usePagination({ defaultSize: 10 })
 const courseFilter = ref(null); const typeFilter = ref('')
 const courseList = ref([])
 
@@ -189,7 +189,7 @@ const resultLoading = ref(false)
 const fetchEvaluations = async () => {
   loading.value = true
   try {
-    const res = await evaluationApi.list({ page: page.value, size: pageSize.value, courseId: courseFilter.value || undefined })
+    const res = await evaluationApi.list({ page: page.value, size: size.value, courseId: courseFilter.value || undefined })
     if (res.data.code === 200) {
       let data = res.data.data.records
       if (typeFilter.value) data = data.filter(e => e.evaluationType === typeFilter.value)
@@ -199,6 +199,8 @@ const fetchEvaluations = async () => {
   } catch (e) { /* ignore */ }
   finally { loading.value = false }
 }
+
+const onFilterChange = () => { resetPage(); fetchEvaluations() }
 
 const fetchCourses = async () => {
   try {

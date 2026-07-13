@@ -44,4 +44,16 @@ public class PageResult<T> {
     public static <T> PageResult<T> of(List<T> records, long total, long page, long size) {
         return new PageResult<>(records, total, page, size);
     }
+
+    /** 最大每页条数 */
+    public static final int MAX_PAGE_SIZE = 100;
+
+    /**
+     * 校验并修正分页大小，防止恶意或误操作请求超大页码
+     */
+    public static int clampSize(int size) {
+        if (size <= 0) return 10;
+        if (size > MAX_PAGE_SIZE) return MAX_PAGE_SIZE;
+        return size;
+    }
 }

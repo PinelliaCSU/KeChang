@@ -9,13 +9,13 @@
       </div>
       <div class="title-actions">
         <el-input v-model="keyword" placeholder="搜索题目或知识点..." size="default" style="width:240px" clearable
-          @clear="searchQuestions" />
+          @clear="onFilterChange" />
         <el-select v-model="filterCourse" placeholder="全部课程" size="default" style="width:160px" clearable
-          @change="searchQuestions">
+          @change="onFilterChange">
           <el-option v-for="c in courses" :key="c.id" :label="c.courseName" :value="c.id" />
         </el-select>
         <el-select v-model="filterMastered" placeholder="掌握状态" size="default" style="width:140px" clearable
-          @change="searchQuestions">
+          @change="onFilterChange">
           <el-option label="未掌握" :value="0" />
           <el-option label="已掌握" :value="1" />
         </el-select>
@@ -82,10 +82,7 @@
           </div>
         </div>
       </div>
-      <div class="pagination-wrap" v-if="total > size">
-        <el-pagination background layout="prev, pager, next" :total="total" :page-size="size"
-          v-model:current-page="page" @current-change="fetchWrongQuestions" />
-      </div>
+      <PaginationWrapper v-model:page="page" v-model:size="size" :total="total" :page-sizes="[12, 24, 48]" @change="fetchWrongQuestions" />
     </div>
 
     <div class="panel empty-panel" v-else-if="!loading">
@@ -99,6 +96,8 @@ import { ref, onMounted, watch } from 'vue'
 import { knowledgeApi, courseApi } from '@/api'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import EmptyIllustration from '@/components/EmptyIllustration.vue'
+import { usePagination } from '@/composables/usePagination'
+import PaginationWrapper from '@/components/PaginationWrapper.vue'
 
 const wrongQuestions = ref([])
 const courses = ref([])
@@ -106,9 +105,7 @@ const loading = ref(false)
 const keyword = ref('')
 const filterCourse = ref(null)
 const filterMastered = ref(null)
-const page = ref(1)
-const size = ref(12)
-const total = ref(0)
+const { page, size, total, resetPage } = usePagination({ defaultSize: 12 })
 const unmasteredCount = ref(0)
 
 const typeMap = { SINGLE: '单选', MULTI: '多选', JUDGE: '判断', FILL: '填空', ESSAY: '简答' }
@@ -128,14 +125,11 @@ const parseOptions = (options) => {
 }
 
 let searchTimer = null
-const searchQuestions = () => {
-  page.value = 1
-  fetchWrongQuestions()
-}
+const onFilterChange = () => { resetPage(); fetchWrongQuestions() }
 
 watch(keyword, () => {
   clearTimeout(searchTimer)
-  searchTimer = setTimeout(() => searchQuestions(), 300)
+  searchTimer = setTimeout(() => onFilterChange(), 300)
 })
 
 const fetchWrongQuestions = async () => {

@@ -38,9 +38,7 @@
 
       <el-empty v-if="!loading && papers.length === 0" description="暂无试卷，点击上方按钮创建" :image-size="100" />
 
-      <el-pagination v-if="total > pageSize" :current-page="page" :page-size="pageSize" :total="total"
-        layout="prev, pager, next" @current-change="p => { page = p; fetchPapers() }"
-        style="margin-top:16px;justify-content:center" />
+      <PaginationWrapper v-model:page="page" v-model:size="size" :total="total" @change="fetchPapers" />
     </div>
 
     <!-- 手动组卷弹窗 -->
@@ -256,10 +254,11 @@
 import { ref, reactive, onMounted, computed } from 'vue'
 import { examApi, courseApi } from '@/api'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { usePagination } from '@/composables/usePagination'
+import PaginationWrapper from '@/components/PaginationWrapper.vue'
 
-const papers = ref([])
-const loading = ref(false)
-const page = ref(1); const pageSize = ref(10); const total = ref(0)
+const papers = ref([]); const loading = ref(false)
+const { page, size, total, resetPage } = usePagination({ defaultSize: 10 })
 const courseFilter = ref(null)
 const courseList = ref([])
 
@@ -304,7 +303,7 @@ const typeLabel = (t) => ({ SINGLE: '单选', MULTI: '多选', JUDGE: '判断', 
 const fetchPapers = async () => {
   loading.value = true
   try {
-    const res = await examApi.listPapers({ page: page.value, size: pageSize.value, courseId: courseFilter.value || undefined })
+    const res = await examApi.listPapers({ page: page.value, size: size.value, courseId: courseFilter.value || undefined })
     if (res.data.code === 200) {
       // 将 courseId 映射为 courseName，以便表格显示"所属课程"
       const courseMap = Object.fromEntries(courseList.value.map(c => [c.id, c.courseName]))
