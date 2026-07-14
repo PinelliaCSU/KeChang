@@ -226,7 +226,7 @@ const handleLogout = () => {
 }
 
 const fetchCheckinCount = async () => {
-    if (!userStore.isLoggedIn) return
+    if (!userStore.isLoggedIn || userStore.isAdmin) return
     try {
         if (userStore.isTeacher) {
             const res = await checkinApi.teacherList({})

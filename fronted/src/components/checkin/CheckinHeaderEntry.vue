@@ -67,7 +67,9 @@ const isTeacher = computed(() => userStore.isTeacher)
 const fetchSessions = async () => {
     loading.value = true
     try {
-        if (isTeacher.value) {
+        if (userStore.isAdmin) {
+            sessions.value = []
+        } else if (isTeacher.value) {
             const res = await checkinApi.teacherList({})
             const data = res.data.data || []
             sessions.value = data.filter(s => s.status === 'ACTIVE').slice(0, 5)
