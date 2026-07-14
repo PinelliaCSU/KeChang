@@ -85,7 +85,7 @@
             <span class="selected-count">已选: {{ selectedQuestions.length }} 题 / 合计 {{ selectedTotalScore }} 分</span>
           </div>
           <el-table :data="bankQuestions" v-loading="qLoading" stripe class="kechang-table" max-height="300"
-            style="width:100%" @selection-change="onSelectionChange" ref="qTableRef">
+            style="width:100%" row-key="id" @selection-change="onSelectionChange" ref="qTableRef">
             <el-table-column type="selection" width="45" />
             <el-table-column prop="content" label="题目" min-width="240" show-overflow-tooltip />
             <el-table-column label="题型" width="70">
@@ -251,7 +251,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, computed, watch } from 'vue'
+import { ref, reactive, onMounted, computed, watch, nextTick } from 'vue'
 import { examApi, courseApi } from '@/api'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { usePagination } from '@/composables/usePagination'
@@ -281,6 +281,7 @@ const selectedIds = computed(() => new Set(selectedQuestions.value.map(q => q.id
 const selectedScoreMap = reactive({})
 const selectedTotalScore = computed(() => selectedQuestions.value.reduce((s, q) => s + (selectedScoreMap[q.id] || q.score || 5), 0))
 const qTableRef = ref(null)
+const syncingSelection = ref(false)
 
 // AI
 const aiDialogVisible = ref(false)
@@ -340,24 +341,63 @@ const loadQuestions = async () => {
       courseId: paperForm.courseId || undefined,
       knowledgePoint: qKeyword.value || undefined
     })
-    if (res.data.code === 200) bankQuestions.value = res.data.data.records
+    if (res.data.code === 200) {
+      bankQuestions.value = res.data.data.records
+      syncQuestionTableSelection()
+    }
   } catch (e) { /* ignore */ }
   finally { qLoading.value = false }
 }
 
-const onCourseChange = () => { bankQuestions.value = []; selectedQuestions.value = []; loadQuestions() }
+const clearSelectedQuestions = () => {
+  selectedQuestions.value = []
+  Object.keys(selectedScoreMap).forEach(k => delete selectedScoreMap[k])
+  qTableRef.value?.clearSelection?.()
+}
+
+const onCourseChange = () => { bankQuestions.value = []; clearSelectedQuestions(); loadQuestions() }
 
 const openCreateDialog = () => {
   paperForm.paperName = ''; paperForm.courseId = null; paperForm.totalScore = 100; paperForm.duration = 90
   passScoreManual.value = false; paperForm.passScore = Math.round(paperForm.totalScore * 0.6)
-  bankQuestions.value = []; selectedQuestions.value = []
-  Object.keys(selectedScoreMap).forEach(k => delete selectedScoreMap[k])
+  bankQuestions.value = []; clearSelectedQuestions()
   createDialogVisible.value = true
 }
 
 const onSelectionChange = (rows) => {
-  selectedQuestions.value = rows
-  rows.forEach(r => { if (!selectedScoreMap[r.id]) selectedScoreMap[r.id] = r.score || 5 })
+  if (syncingSelection.value) return
+
+  const visibleIds = new Set(bankQuestions.value.map(q => q.id))
+  const checkedIds = new Set(rows.map(q => q.id))
+  const selectedMap = new Map(selectedQuestions.value.map(q => [q.id, q]))
+
+  bankQuestions.value.forEach(q => {
+    if (checkedIds.has(q.id)) {
+      selectedMap.set(q.id, q)
+      if (!selectedScoreMap[q.id]) selectedScoreMap[q.id] = q.score || 5
+    } else if (visibleIds.has(q.id)) {
+      selectedMap.delete(q.id)
+      delete selectedScoreMap[q.id]
+    }
+  })
+
+  selectedQuestions.value = Array.from(selectedMap.values())
+}
+
+const syncQuestionTableSelection = async () => {
+  await nextTick()
+  if (!qTableRef.value) return
+  syncingSelection.value = true
+  try {
+    const selectedIdSet = selectedIds.value
+    qTableRef.value.clearSelection()
+    bankQuestions.value.forEach(q => {
+      if (selectedIdSet.has(q.id)) qTableRef.value.toggleRowSelection(q, true)
+    })
+  } finally {
+    await nextTick()
+    syncingSelection.value = false
+  }
 }
 
 const handleCreatePaper = async () => {
