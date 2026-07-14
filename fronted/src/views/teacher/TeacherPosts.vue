@@ -89,110 +89,19 @@
       </template>
     </el-dialog>
 
-    <!-- 帖子详情弹窗 -->
-    <el-dialog v-model="detailVisible" :title="currentPost?.title" width="750px">
-      <div v-if="currentPost" class="post-detail">
-        <!-- 头部信息 -->
-        <div class="detail-header">
-          <el-tag size="small" :type="currentPost.postType === '提问' ? 'warning' : 'info'">{{ currentPost.postType ||
-            '提问'
-            }}</el-tag>
-          <span v-if="currentPost.courseName" style="font-size:13px;color:#7a9fb5"><el-icon>
-              <Collection />
-            </el-icon> {{ currentPost.courseName }}</span>
-          <el-button v-if="canDeletePost" size="small" type="danger" plain @click="doDeletePost"
-            style="margin-left:auto">删除帖子</el-button>
-        </div>
-
-        <div class="post-content" v-html="currentPost.content || '暂无内容'"></div>
-        <div class="post-info">
-          <span><el-icon>
-              <User />
-            </el-icon> {{ currentPost.createByName || '匿名' }}</span>
-          <span><el-icon>
-              <Clock />
-            </el-icon> {{ currentPost.createTime }}</span>
-          <span><el-icon>
-              <View />
-            </el-icon> {{ currentPost.viewCount || 0 }}</span>
-        </div>
-
-        <el-divider>回答 ({{ answerTotal }})</el-divider>
-
-        <!-- 回答列表 -->
-        <div class="answer-list" v-if="answers.length > 0">
-          <div v-for="a in answers" :key="a.id" class="answer-item" :class="{ accepted: a.isAccepted === 1 }">
-            <div class="answer-content">{{ a.content }}</div>
-            <div class="answer-footer">
-              <span><el-icon>
-                  <User />
-                </el-icon> {{ a.createByName || '匿名' }}</span>
-              <span><el-icon>
-                  <Clock />
-                </el-icon> {{ a.createTime }}</span>
-              <el-tag v-if="a.isAccepted === 1" type="success" size="small"><el-icon>
-                  <CircleCheck />
-                </el-icon> 已采纳</el-tag>
-              <el-button v-else size="small" type="success" @click="doAccept(a.id)">采纳</el-button>
-              <el-button v-if="canDeleteAnswer(a)" size="small" type="danger" plain
-                @click="doDeleteAnswer(a.id)">删除</el-button>
-            </div>
-
-            <!-- 评论区域 -->
-            <div class="comment-section">
-              <el-button link type="primary" size="small" @click="toggleComments(a)">
-                评论 ({{ a._commentCount || 0 }})
-                <el-icon>
-                  <ArrowDown v-if="a._showComments" />
-                  <ArrowRight v-else />
-                </el-icon>
-              </el-button>
-              <div v-if="a._showComments" class="comment-box">
-                <div v-if="a._comments && a._comments.length > 0" class="comment-list">
-                  <div v-for="c in a._comments" :key="c.id" class="comment-item">
-                    <span class="comment-author">{{ c.createByName || '匿名' }}</span>：
-                    <span>{{ c.content }}</span>
-                    <span class="comment-time">{{ c.createTime }}</span>
-                  </div>
-                </div>
-                <div v-else class="comment-empty">暂无评论</div>
-                <div class="comment-input-row">
-                  <el-input v-model="a._commentText" size="small" placeholder="添加评论..."
-                    @keyup.enter="doAddComment(a)" />
-                  <el-button size="small" type="primary" @click="doAddComment(a)">评论</el-button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <el-empty v-else description="暂无回答" :image-size="60" />
-
-        <PaginationWrapper v-model:page="answerPage" v-model:size="answerSize" :total="answerTotal" :page-sizes="[5, 10, 20]" @change="fetchAnswers" />
-
-        <!-- 写回答 -->
-        <div class="reply-box">
-          <el-input v-model="answerContent" type="textarea" :rows="3" placeholder="输入你的回答..." />
-          <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:8px">
-            <el-button plain type="primary" @click="doAiAnswer">智能辅助</el-button>
-            <el-button type="primary" :loading="answering" @click="doAnswer">发表回答</el-button>
-          </div>
-        </div>
-      </div>
-      <template #footer><el-button @click="detailVisible = false">关闭</el-button></template>
-    </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { qaApi, courseApi } from '@/api'
-import { useUserStore } from '@/stores/user'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage } from 'element-plus'
 import { usePagination } from '@/composables/usePagination'
 import PaginationWrapper from '@/components/PaginationWrapper.vue'
-import { ArrowDown, ArrowRight, User, Clock, View, ChatDotSquare, Collection, CircleCheck } from '@element-plus/icons-vue'
+import { User, Clock, View, ChatDotSquare, Collection } from '@element-plus/icons-vue'
 
-const userStore = useUserStore()
+const router = useRouter()
 
 // ========== 列表 ==========
 const posts = ref([])
@@ -205,10 +114,7 @@ const fetchPosts = async () => {
     const res = await qaApi.listPosts({ page: page.value, size: size.value, courseId: courseFilter.value || undefined, orderBy: orderBy.value })
     if (res.data.code === 200) {
       let records = res.data.data.records
-      // 前端按类型筛选
-      if (postTypeFilter.value) {
-        records = records.filter(p => p.postType === postTypeFilter.value)
-      }
+      if (postTypeFilter.value) records = records.filter(p => p.postType === postTypeFilter.value)
       posts.value = records
       total.value = postTypeFilter.value ? records.length : res.data.data.total
     }
@@ -242,126 +148,9 @@ const createPost = async () => {
   submitting.value = false
 }
 
-// ========== 详情 ==========
-const detailVisible = ref(false); const currentPost = ref(null)
-const answers = ref([]); const answerContent = ref(''); const answering = ref(false)
-const { page: answerPage, size: answerSize, total: answerTotal, resetPage: resetAnswerPage } = usePagination({ defaultSize: 5, pageSizes: [5, 10, 20] })
-
-const isPostOwner = computed(() => currentPost.value?.createBy === userStore.userId)
-const isTeacher = computed(() => userStore.isTeacher)
-const canDeletePost = computed(() => isPostOwner.value || isTeacher.value)
-const canDeleteAnswer = (a) => a.createBy === userStore.userId || isTeacher.value
-
-const viewPost = async (p) => {
-  currentPost.value = p
-  detailVisible.value = true
-  answerContent.value = ''
-  answerPage.value = 1
-  try {
-    const [postRes] = await Promise.all([
-      qaApi.getPost(p.id),
-      fetchAnswers()
-    ])
-    if (postRes.data.code === 200) {
-      currentPost.value = postRes.data.data
-      // 同步浏览量到列表
-      const idx = posts.value.findIndex(item => item.id === p.id)
-      if (idx !== -1) posts.value[idx].viewCount = postRes.data.data.viewCount
-    }
-  } catch (e) { /* ignore */ }
-}
-
-const fetchAnswers = async () => {
-  if (!currentPost.value) return
-  try {
-    const res = await qaApi.listAnswers(currentPost.value.id, { page: answerPage.value, size: answerSize.value })
-    if (res.data.code === 200) {
-      const d = res.data.data
-      answers.value = (d.records || []).map(a => ({
-        ...a, _comments: [], _showComments: false, _commentCount: a.commentCount || 0, _commentText: ''
-      }))
-      answerTotal.value = d.total || 0
-    }
-  } catch (e) { /* ignore */ }
-}
-
-// ========== 回答操作 ==========
-const doAnswer = async () => {
-  if (!answerContent.value.trim()) { ElMessage.warning('请输入回答内容'); return }
-  answering.value = true
-  try {
-    await qaApi.createAnswer(currentPost.value.id, { content: answerContent.value })
-    ElMessage.success('回答发表成功')
-    answerContent.value = ''
-    fetchAnswers()
-    fetchPosts()
-  } catch (e) { /* ignore */ }
-  finally { answering.value = false }
-}
-
-const doAiAnswer = async () => {
-  try {
-    const res = await qaApi.aiAnswer(currentPost.value.id)
-    if (res.data.code === 200) {
-      answerContent.value = res.data.data.content || 'AI 暂时无法回答此问题'
-      ElMessage.success('AI 回复已生成')
-    }
-  } catch (e) { /* ignore */ }
-}
-
-const doAccept = async (answerId) => {
-  try {
-    await qaApi.acceptAnswer(answerId)
-    ElMessage.success('已采纳该回答')
-    fetchAnswers()
-    fetchPosts()
-  } catch (e) { /* ignore */ }
-}
-
-const doDeletePost = async () => {
-  try {
-    await ElMessageBox.confirm('确定要删除此帖子吗？', '确认删除', { type: 'warning' })
-    await qaApi.deletePost(currentPost.value.id)
-    ElMessage.success('帖子已删除')
-    detailVisible.value = false
-    fetchPosts()
-  } catch (e) { /* ignore */ }
-}
-
-const doDeleteAnswer = async (answerId) => {
-  try {
-    await ElMessageBox.confirm('确定要删除此回答吗？', '确认删除', { type: 'warning' })
-    await qaApi.deleteAnswer(answerId)
-    ElMessage.success('回答已删除')
-    fetchAnswers()
-    fetchPosts()
-  } catch (e) { /* ignore */ }
-}
-
-// ========== 评论 ==========
-const toggleComments = async (a) => {
-  if (a._showComments) { a._showComments = false; return }
-  a._showComments = true
-  try {
-    const res = await qaApi.listComments('ANSWER', a.id, { page: 1, size: 50 })
-    if (res.data.code === 200) {
-      a._comments = res.data.data.records || []
-      a._commentCount = res.data.data.total || 0
-    }
-  } catch (e) { /* ignore */ }
-}
-
-const doAddComment = async (a) => {
-  if (!a._commentText || !a._commentText.trim()) return
-  try {
-    await qaApi.addComment(a.id, { content: a._commentText })
-    a._commentText = ''
-    const res = await qaApi.listComments('ANSWER', a.id, { page: 1, size: 50 })
-    if (res.data.code === 200) {
-      a._comments = res.data.data.records || []
-      a._commentCount = res.data.data.total || 0
-    }
-  } catch (e) { /* ignore */ }
+// ========== 导航到详情页 ==========
+const viewPost = (p) => {
+  router.push(`/teacher/posts/${p.id}`)
 }
 
 onMounted(() => { fetchCourses(); fetchPosts() })
@@ -442,105 +231,5 @@ onMounted(() => { fetchCourses(); fetchPosts() })
   font-size: 12px;
   color: #909399;
   flex-wrap: wrap;
-}
-
-/* 详情 */
-.detail-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 12px;
-}
-
-.post-content {
-  padding: 16px;
-  background: #f5f7fa;
-  border-radius: 8px;
-  margin-bottom: 12px;
-  line-height: 1.6;
-}
-
-.post-info {
-  display: flex;
-  gap: 16px;
-  font-size: 13px;
-  color: #909399;
-  margin-bottom: 8px;
-}
-
-.answer-item {
-  padding: 12px;
-  margin-bottom: 8px;
-  background: #fafafa;
-  border-radius: 8px;
-  border-left: 3px solid #e4e7ed;
-}
-
-.answer-item.accepted {
-  border-left-color: var(--bio-primary);
-  background: var(--bio-primary-soft);
-}
-
-.answer-content {
-  line-height: 1.5;
-  margin-bottom: 8px;
-}
-
-.answer-footer {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 12px;
-  color: #909399;
-  flex-wrap: wrap;
-}
-
-/* 评论 */
-.comment-section {
-  margin-top: 8px;
-  padding-top: 8px;
-  border-top: 1px dashed #ebeef5;
-}
-
-.comment-box {
-  margin-top: 8px;
-}
-
-.comment-list {
-  margin-bottom: 8px;
-}
-
-.comment-item {
-  padding: 4px 0;
-  font-size: 13px;
-  color: #606266;
-  line-height: 1.5;
-}
-
-.comment-author {
-  color: #7a9fb5;
-  font-weight: 500;
-}
-
-.comment-time {
-  font-size: 11px;
-  color: #c0c4cc;
-  margin-left: 8px;
-}
-
-.comment-empty {
-  font-size: 12px;
-  color: #c0c4cc;
-  padding: 8px 0;
-}
-
-.comment-input-row {
-  display: flex;
-  gap: 8px;
-  margin-top: 8px;
-}
-
-.reply-box {
-  margin-top: 16px;
 }
 </style>
