@@ -379,6 +379,8 @@ onMounted(loadCourses)
   display: flex;
   flex-direction: column;
   gap: 10px;
+  max-height: 420px;
+  overflow-y: auto;
 }
 
 .course-item,
@@ -402,8 +404,12 @@ onMounted(loadCourses)
 }
 
 .course-item strong,
-.doc-item strong,
 .reference-item strong {
+  display: block;
+  margin-bottom: 5px;
+}
+
+.doc-item strong {
   display: block;
   margin-bottom: 5px;
 }
@@ -444,6 +450,8 @@ onMounted(loadCourses)
 
 .answer-content {
   line-height: 1.75;
+  max-height: 400px;
+  overflow-y: auto;
 }
 
 .answer-content :deep(ul) {
@@ -463,6 +471,8 @@ onMounted(loadCourses)
   margin: 6px 0 0;
   color: #4b5563;
   line-height: 1.6;
+  max-height: 120px;
+  overflow-y: auto;
 }
 
 .ask-bar {

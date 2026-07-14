@@ -175,6 +175,37 @@ public class BailianApiService {
         return aiResponse != null && !aiResponse.isBlank() ? aiResponse.trim() : "AI 暂时没有生成回答，请稍后重试。";
     }
 
+    public String generateQaAnswer(String title, String content, String courseName) {
+        String safeTitle = title == null || title.isBlank() ? "未命名问题" : title.trim();
+        String safeContent = content == null || content.isBlank() ? "用户没有补充详细描述。" : stripHtml(content).trim();
+        String safeCourse = courseName == null || courseName.isBlank() ? "未指定课程" : courseName.trim();
+
+        String fallback = fallbackQaAnswer(safeTitle, safeCourse);
+        if (config.getApiKey() == null || config.getApiKey().isBlank()) {
+            return fallback;
+        }
+
+        String systemPrompt = """
+                你是课畅平台互动问答区的智能辅助回答助手。
+                你的任务是根据问题标题和描述生成一段可供教师或学生修改后发布的参考回答。
+                回答要准确、清晰、像真实课程讨论区里的回答，不要编造具体教材页码、教师姓名或不存在的课程资料。
+                如果题目信息不足，应先解释核心概念，再提醒提问者补充上下文。
+                输出中文，控制在 250 到 500 字之间，可以分点说明，但不要使用夸张营销语。
+                """;
+        String userPrompt = "课程：" + safeCourse
+                + "\n问题标题：" + safeTitle
+                + "\n问题描述：" + safeContent
+                + "\n\n请生成一段互动问答区的参考回答。";
+
+        try {
+            String aiResponse = callChatApiText(systemPrompt, userPrompt);
+            return aiResponse != null && !aiResponse.isBlank() ? aiResponse.trim() : fallback;
+        } catch (RuntimeException e) {
+            log.warn("QA assistant answer fallback, title={}, error={}", safeTitle, e.getMessage());
+            return fallback;
+        }
+    }
+
     public List<Double> embedText(String text) {
         if (text == null || text.isBlank()) {
             return List.of();
@@ -251,6 +282,16 @@ public class BailianApiService {
             normalized.add((value == null ? 0.0 : value) / norm);
         }
         return normalized;
+    }
+
+    private String fallbackQaAnswer(String title, String courseName) {
+        return "关于“" + title + "”，可以先从概念定义和适用场景两个角度理解。\n\n"
+                + "如果这是“" + courseName + "”课程中的问题，建议先回到对应章节，确认相关概念的基本定义、核心性质以及常见应用条件。然后再对比题目中容易混淆的部分，分别说明它们在结构、作用或使用条件上的差异。\n\n"
+                + "目前问题描述较简略，如果需要更精确的回答，可以补充具体题目、代码片段、图示或你不理解的步骤。这样后续回答可以针对卡住的地方展开，而不是只给出泛泛解释。";
+    }
+
+    private String stripHtml(String text) {
+        return text == null ? "" : text.replaceAll("<[^>]+>", " ").replaceAll("\\s+", " ");
     }
 
     /**
