@@ -22,7 +22,7 @@
     <!-- AI 总结面板 -->
     <div v-if="summaryVisible" class="summary-panel">
       <div class="summary-header">
-        <span class="summary-title">🤖 AI 课件总结</span>
+        <span class="summary-title">AI 课件总结</span>
         <el-button size="small" text @click="summaryVisible = false">✕</el-button>
       </div>
       <div class="summary-body" v-loading="summaryLoading">

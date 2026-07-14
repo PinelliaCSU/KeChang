@@ -20,13 +20,15 @@
             <p class="subtitle">登录你的课畅账号</p>
             <el-form ref="formRef" :model="form" :rules="rules" size="large">
               <el-form-item prop="username">
-                <el-input v-model="form.username" placeholder="用户名 / 邮箱" :prefix-icon="User" clearable class="input-animated" />
+                <el-input v-model="form.username" placeholder="用户名 / 邮箱" :prefix-icon="User" clearable
+                  class="input-animated" />
               </el-form-item>
               <el-form-item prop="password">
                 <el-input v-model="form.password" type="password" placeholder="密码" :prefix-icon="Lock" show-password
                   @keyup.enter="handleLogin" class="input-animated" />
               </el-form-item>
-              <el-button type="primary" class="submit-btn btn-shimmer" :loading="loading" @click="handleLogin">登录</el-button>
+              <el-button type="primary" class="submit-btn btn-shimmer" :loading="loading"
+                @click="handleLogin">登录</el-button>
             </el-form>
             <p class="switch-text">还没有账号？<a href="javascript:;" @click="isRegisterMode = true">立即注册</a></p>
           </div>
@@ -39,18 +41,22 @@
                 <el-segmented v-model="registerForm.roleType" :options="roleOptions" style="width:100%" />
               </el-form-item>
               <el-form-item prop="email">
-                <el-input v-model="registerForm.email" placeholder="邮箱" :prefix-icon="Message" clearable class="input-animated" />
+                <el-input v-model="registerForm.email" placeholder="邮箱" :prefix-icon="Message" clearable
+                  class="input-animated" />
               </el-form-item>
               <el-form-item prop="nickname">
-                <el-input v-model="registerForm.nickname" placeholder="昵称（可选）" :prefix-icon="User" clearable class="input-animated" />
+                <el-input v-model="registerForm.nickname" placeholder="昵称（可选）" :prefix-icon="User" clearable
+                  class="input-animated" />
               </el-form-item>
               <el-form-item prop="realName">
-                <el-input v-model="registerForm.realName" placeholder="真实姓名" :prefix-icon="User" clearable class="input-animated" />
+                <el-input v-model="registerForm.realName" placeholder="真实姓名" :prefix-icon="User" clearable
+                  class="input-animated" />
               </el-form-item>
 
               <template v-if="registerForm.roleType === 'student'">
                 <el-form-item prop="studentNo">
-                  <el-input v-model="registerForm.studentNo" placeholder="学号（可选，不填自动生成）" clearable class="input-animated" />
+                  <el-input v-model="registerForm.studentNo" placeholder="学号（可选，不填自动生成）" clearable
+                    class="input-animated" />
                 </el-form-item>
                 <el-form-item prop="grade">
                   <el-input v-model="registerForm.grade" placeholder="年级，如 2024级" clearable class="input-animated" />
@@ -80,7 +86,8 @@
                 <el-input v-model="registerForm.confirmPassword" type="password" placeholder="确认密码" :prefix-icon="Lock"
                   show-password @keyup.enter="handleRegister" class="input-animated" />
               </el-form-item>
-              <el-button type="primary" class="submit-btn btn-shimmer" :loading="loading" @click="handleRegister">注册并登录</el-button>
+              <el-button type="primary" class="submit-btn btn-shimmer" :loading="loading"
+                @click="handleRegister">注册并登录</el-button>
             </el-form>
             <p class="switch-text">已有账号？<a href="javascript:;" @click="isRegisterMode = false">立即登录</a></p>
           </div>
@@ -154,9 +161,11 @@ const handleLogin = async () => {
       userStore.setLoginData(res.data.data)
       ElMessage.success('登录成功')
       router.push(roleHome())
+    } else {
+      ElMessage.error(res.data.message || '登录失败，请检查用户名和密码')
     }
   } catch (e) {
-    ElMessage.error(e.response?.data?.message || '登录失败')
+    ElMessage.error(e.response?.data?.message || '登录失败，请检查用户名和密码')
   } finally {
     loading.value = false
   }
@@ -215,8 +224,13 @@ const roleHome = () => {
 }
 
 @keyframes page-in {
-  from { opacity: 0; }
-  to   { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 /* ---------- 品牌面板 ---------- */
@@ -236,8 +250,15 @@ const roleHome = () => {
 
 /* 背景呼吸 — 渐变缓慢流动 */
 @keyframes bg-breathe {
-  0%, 100% { background-position: 0% 50%; }
-  50%      { background-position: 100% 50%; }
+
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
 }
 
 /* ---------- 装饰浮球 ---------- */
@@ -250,38 +271,59 @@ const roleHome = () => {
 }
 
 .orb-1 {
-  width: 160px; height: 160px;
-  top: 10%; left: -10%;
+  width: 160px;
+  height: 160px;
+  top: 10%;
+  left: -10%;
   animation-delay: 0s;
   animation-duration: 8s;
 }
 
 .orb-2 {
-  width: 100px; height: 100px;
-  bottom: 25%; right: -5%;
+  width: 100px;
+  height: 100px;
+  bottom: 25%;
+  right: -5%;
   animation-delay: 1.5s;
   animation-duration: 7s;
 }
 
 .orb-3 {
-  width: 200px; height: 200px;
-  top: 50%; left: 40%;
+  width: 200px;
+  height: 200px;
+  top: 50%;
+  left: 40%;
   animation-delay: 3s;
   animation-duration: 9s;
 }
 
 .orb-4 {
-  width: 60px; height: 60px;
-  top: 5%; right: 20%;
+  width: 60px;
+  height: 60px;
+  top: 5%;
+  right: 20%;
   animation-delay: 4s;
   animation-duration: 6.5s;
 }
 
 @keyframes float-orb {
-  0%, 100% { transform: translateY(0) translateX(0) scale(1); }
-  25%      { transform: translateY(-20px) translateX(10px) scale(1.05); }
-  50%      { transform: translateY(-8px) translateX(-8px) scale(0.95); }
-  75%      { transform: translateY(-25px) translateX(5px) scale(1.08); }
+
+  0%,
+  100% {
+    transform: translateY(0) translateX(0) scale(1);
+  }
+
+  25% {
+    transform: translateY(-20px) translateX(10px) scale(1.05);
+  }
+
+  50% {
+    transform: translateY(-8px) translateX(-8px) scale(0.95);
+  }
+
+  75% {
+    transform: translateY(-25px) translateX(5px) scale(1.08);
+  }
 }
 
 /* ---------- Logo 弹性入场 ---------- */
@@ -300,6 +342,7 @@ const roleHome = () => {
     opacity: 0;
     transform: scale(0.3) rotate(-10deg);
   }
+
   to {
     opacity: 1;
     transform: scale(1) rotate(0deg);
@@ -320,14 +363,20 @@ const roleHome = () => {
   animation: char-rise 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
 
-.char-ke  { animation-delay: 0.15s; }
-.char-chang { animation-delay: 0.3s; }
+.char-ke {
+  animation-delay: 0.15s;
+}
+
+.char-chang {
+  animation-delay: 0.3s;
+}
 
 @keyframes char-rise {
   from {
     opacity: 0;
     transform: translateY(24px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -344,8 +393,15 @@ const roleHome = () => {
 }
 
 @keyframes fade-up {
-  from { opacity: 0; transform: translateY(10px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* ---------- 表单面板 ---------- */
@@ -373,6 +429,7 @@ const roleHome = () => {
     opacity: 0;
     transform: translateY(50px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -393,7 +450,7 @@ const roleHome = () => {
 /* ---------- 输入框聚焦微动效 ---------- */
 .input-animated :deep(.el-input__wrapper) {
   transition: transform 0.25s var(--bio-ease-out, cubic-bezier(0.25, 0.8, 0.25, 1)),
-              box-shadow 0.25s var(--bio-ease-out, cubic-bezier(0.25, 0.8, 0.25, 1));
+    box-shadow 0.25s var(--bio-ease-out, cubic-bezier(0.25, 0.8, 0.25, 1));
 }
 
 .input-animated :deep(.el-input__wrapper):focus-within {
@@ -416,12 +473,10 @@ const roleHome = () => {
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(
-    105deg,
-    transparent 30%,
-    rgba(255, 255, 255, 0.25) 50%,
-    transparent 70%
-  );
+  background: linear-gradient(105deg,
+      transparent 30%,
+      rgba(255, 255, 255, 0.25) 50%,
+      transparent 70%);
   transform: translateX(-100%);
   pointer-events: none;
 }
@@ -431,8 +486,13 @@ const roleHome = () => {
 }
 
 @keyframes shimmer-slide {
-  from { transform: translateX(-100%); }
-  to   { transform: translateX(100%); }
+  from {
+    transform: translateX(-100%);
+  }
+
+  to {
+    transform: translateX(100%);
+  }
 }
 
 /* ---------- 底部切换文字 ---------- */
@@ -467,6 +527,7 @@ const roleHome = () => {
     opacity: 0;
     transform: scale(0.94) translateY(12px);
   }
+
   to {
     opacity: 1;
     transform: scale(1) translateY(0);
@@ -478,6 +539,7 @@ const roleHome = () => {
     opacity: 1;
     transform: scale(1);
   }
+
   to {
     opacity: 0;
     transform: scale(0.96) translateY(-8px);
