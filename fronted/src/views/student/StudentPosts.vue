@@ -165,7 +165,7 @@
         <div class="reply-box">
           <el-input v-model="answerContent" type="textarea" :rows="3" placeholder="输入你的回答..." />
           <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:8px">
-            <el-button plain type="primary" @click="doAiAnswer">智能辅助</el-button>
+            <el-button plain type="primary" :loading="aiAnswering" @click="doAiAnswer">智能辅助</el-button>
             <el-button type="primary" :loading="answering" @click="doAnswer">发表回答</el-button>
           </div>
         </div>
@@ -227,7 +227,7 @@ const createPost = async () => {
 
 // ========== 详情 ==========
 const detailVisible = ref(false); const currentPost = ref(null)
-const answers = ref([]); const answerContent = ref(''); const answering = ref(false)
+const answers = ref([]); const answerContent = ref(''); const answering = ref(false); const aiAnswering = ref(false)
 const { page: answerPage, size: answerSize, total: answerTotal, resetPage: resetAnswerPage } = usePagination({ defaultSize: 5, pageSizes: [5, 10, 20] })
 
 const isPostOwner = computed(() => currentPost.value?.createBy === userStore.userId)
@@ -283,6 +283,8 @@ const doAnswer = async () => {
 }
 
 const doAiAnswer = async () => {
+  if (!currentPost.value?.id) return
+  aiAnswering.value = true
   try {
     const res = await qaApi.aiAnswer(currentPost.value.id)
     if (res.data.code === 200) {
@@ -290,6 +292,7 @@ const doAiAnswer = async () => {
       ElMessage.success('AI 回复已生成')
     }
   } catch (e) { /* ignore */ }
+  finally { aiAnswering.value = false }
 }
 
 const doAccept = async (answerId) => {

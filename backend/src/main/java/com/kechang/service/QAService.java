@@ -21,6 +21,7 @@ public class QAService {
     private final CommentMapper commentMapper;
     private final SysUserMapper sysUserMapper;
     private final CourseMapper courseMapper;
+    private final BailianApiService bailianApiService;
 
     // ==================== 用户名 & 课程名回填工具方法 ====================
 
@@ -236,10 +237,9 @@ public class QAService {
         if (p == null) {
             throw BusinessException.notFound("帖子不存在");
         }
-        return "【AI 智能回复】关于「" + p.getTitle() + "」的问题，以下是参考建议：\n\n"
-                + "1. 请先查阅课程相关章节的讲义和视频资料。\n"
-                + "2. 建议在论坛中搜索类似问题的已有讨论。\n"
-                + "3. 如需进一步帮助，可以联系课程教师。\n\n（注：此回复由 AI 自动生成，仅供参考。）";
+        Course course = p.getCourseId() == null ? null : courseMapper.selectById(p.getCourseId());
+        String courseName = course == null ? null : course.getCourseName();
+        return bailianApiService.generateQaAnswer(p.getTitle(), p.getContent(), courseName);
     }
 
     // ==================== 采纳回答 ====================
