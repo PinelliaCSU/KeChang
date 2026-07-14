@@ -303,8 +303,42 @@ onBeforeUnmount(() => {
 .question-index { color: var(--bio-primary); font-weight: 700; }
 .question-box p { color: var(--bio-ink); font-size: 21px; line-height: 1.7; font-weight: 600; margin: 0 0 18px; }
 .answer-area { background: #fff; border-radius: 8px; padding: 14px; border: 1px solid var(--bio-border); }
-.option-group { display: flex; flex-direction: column; gap: 14px; align-items: flex-start; }
-.option-item { font-size: 15px; white-space: normal; line-height: 1.6; }
+.option-group {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 14px;
+}
+
+.option-item {
+  width: 100%;
+  margin-right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  font-size: 15px;
+  white-space: normal;
+  line-height: 1.6;
+  padding: 8px 10px;
+  border-radius: 8px;
+}
+
+.option-item:hover {
+  background: var(--bio-primary-soft);
+}
+
+:deep(.option-item .el-radio__input),
+:deep(.option-item .el-checkbox__input) {
+  flex-shrink: 0;
+}
+
+:deep(.option-item .el-radio__label),
+:deep(.option-item .el-checkbox__label) {
+  white-space: normal;
+  line-height: 1.6;
+  text-align: left;
+}
 .submit-bar { display: flex; justify-content: flex-end; align-items: center; gap: 12px; margin: 18px 0; }
 .submitted-text { flex: 1; color: var(--bio-ink-soft); background: #f7f8fa; border: 1px solid var(--bio-border); border-radius: 8px; padding: 12px; }
 .stats-box { border-top: 1px solid var(--bio-border); padding-top: 16px; }
