@@ -9,7 +9,9 @@ import com.kechang.entity.Question;
 import com.kechang.mapper.QuestionMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -27,6 +29,12 @@ public class CodeExecutionService {
 
     private final QuestionMapper questionMapper;
     private final ObjectMapper objectMapper;
+
+    @Value("${kechang.code.sandbox-work-dir:${CODE_SANDBOX_WORK_DIR:}}")
+    private String sandboxWorkDir;
+
+    @Value("${kechang.code.sandbox-volume:${CODE_SANDBOX_VOLUME:}}")
+    private String sandboxVolume;
 
     /**
      * 编译超时（秒）
@@ -174,9 +182,10 @@ public class CodeExecutionService {
     // ==================== 编译 ====================
     private String compileCode(String workDir, String image, String fileName, String language) {
         String compiler = "c".equals(language) ? "gcc" : "g++";
+        String codeDir = containerCodeDir(workDir);
         String compileCmd = String.format(
-                "%s /code/%s -o /code/program -O2 -Wall -lm 2>/code/compile_error.txt",
-                compiler, fileName);
+                "%s %s/%s -o %s/program -O2 -Wall -lm 2>%s/compile_error.txt",
+                compiler, codeDir, fileName, codeDir, codeDir);
 
         int exitCode = runDocker(workDir, image, "sh", "-c", compileCmd, String.valueOf(COMPILE_TIMEOUT));
 
@@ -217,11 +226,14 @@ public class CodeExecutionService {
             String execCmd;
             if ("sql".equals(language)) {
                 // SQL: 用 sqlite3 执行（输入仅用于创建表的场景，直接执行 SQL 文件）
-                execCmd = String.format("timeout %d sqlite3 :memory: < /code/main.sql > /code/output.txt 2>/code/error.txt", execTimeout);
+                execCmd = String.format("timeout %d sqlite3 :memory: < %s/main.sql > %s/output.txt 2>%s/error.txt",
+                        execTimeout, containerCodeDir(workDir), containerCodeDir(workDir), containerCodeDir(workDir));
             } else if ("python".equals(language)) {
-                execCmd = String.format("timeout %d python3 /code/main.py < /code/input.txt > /code/output.txt 2>/code/error.txt", execTimeout);
+                execCmd = String.format("timeout %d python3 %s/main.py < %s/input.txt > %s/output.txt 2>%s/error.txt",
+                        execTimeout, containerCodeDir(workDir), containerCodeDir(workDir), containerCodeDir(workDir), containerCodeDir(workDir));
             } else {
-                execCmd = String.format("timeout %d /code/program < /code/input.txt > /code/output.txt 2>/code/error.txt", execTimeout);
+                execCmd = String.format("timeout %d %s/program < %s/input.txt > %s/output.txt 2>%s/error.txt",
+                        execTimeout, containerCodeDir(workDir), containerCodeDir(workDir), containerCodeDir(workDir), containerCodeDir(workDir));
             }
 
             int exitCode = runDocker(workDir, image, "sh", "-c", execCmd, String.valueOf(execTimeout + 5));
@@ -291,8 +303,8 @@ public class CodeExecutionService {
                 "--security-opt=no-new-privileges",
                 "--pids-limit=100",
                 "-u", "1000:1000",
-                "-v", workDir + ":/code",
-                "-w", "/code",
+                "-v", dockerVolumeMount(workDir),
+                "-w", containerCodeDir(workDir),
                 image
         ));
         command.addAll(Arrays.asList(cmdArgs));
@@ -339,11 +351,32 @@ public class CodeExecutionService {
     // ==================== 辅助方法 ====================
     private String createTempWorkDir() {
         try {
-            Path dir = Files.createTempDirectory("kechang-code-");
+            Path dir;
+            if (StringUtils.hasText(sandboxWorkDir)) {
+                Path base = Path.of(sandboxWorkDir);
+                Files.createDirectories(base);
+                dir = Files.createTempDirectory(base, "kechang-code-");
+            } else {
+                dir = Files.createTempDirectory("kechang-code-");
+            }
             return dir.toString();
         } catch (IOException e) {
             throw new RuntimeException("无法创建临时工作目录", e);
         }
+    }
+
+    private String dockerVolumeMount(String workDir) {
+        if (StringUtils.hasText(sandboxVolume)) {
+            return sandboxVolume + ":/code";
+        }
+        return workDir + ":/code";
+    }
+
+    private String containerCodeDir(String workDir) {
+        if (StringUtils.hasText(sandboxVolume)) {
+            return "/code/" + Path.of(workDir).getFileName();
+        }
+        return "/code";
     }
 
     private void cleanupWorkDir(String workDir) {

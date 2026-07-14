@@ -37,11 +37,12 @@ public class MessageService {
         // 1. 收集所有有过私信往来的 partner ID
         Set<Long> partnerIdSet = new LinkedHashSet<>(); // 保持插入顺序（按时间降序需要后面排序）
 
-        // 1a. 我发给别人的消息 → partner = notification_user.user_id
+        // 1a. 我发给别人的消息（排除我已删除的）→ partner = 接收方的 user_id
         List<Notification> sentMsgs = notifMapper.selectList(
                 new LambdaQueryWrapper<Notification>()
                         .eq(Notification::getSenderId, userId)
                         .eq(Notification::getNotificationType, "私信")
+                        .apply("id NOT IN (SELECT notification_id FROM notification_user WHERE user_id = {0} AND is_deleted = 1)", userId)
                         .select(Notification::getId));
         if (!sentMsgs.isEmpty()) {
             List<Long> sentIds = sentMsgs.stream().map(Notification::getId).toList();
@@ -49,7 +50,9 @@ public class MessageService {
                     new LambdaQueryWrapper<NotificationUser>()
                             .in(NotificationUser::getNotificationId, sentIds));
             for (NotificationUser nu : nus) {
-                partnerIdSet.add(nu.getUserId());
+                if (!nu.getUserId().equals(userId)) {
+                    partnerIdSet.add(nu.getUserId());
+                }
             }
         }
 
@@ -119,7 +122,7 @@ public class MessageService {
 
             Map<String, Object> conv = new HashMap<>();
             conv.put("partnerId", partnerId);
-            conv.put("partnerName", partner != null ? partner.getNickname() : "");
+            conv.put("partnerName", getUserDisplayName(partnerId));
             conv.put("partnerAvatar", partner != null ? partner.getAvatar() : "");
             conv.put("partnerUsername", partner != null ? partner.getUsername() : "");
             conv.put("lastContent", latest.getContent());
@@ -161,15 +164,16 @@ public class MessageService {
     @Transactional
     public PageResult<Map<String, Object>> getMessages(Long userId, Long otherUserId, int page, int size) {
         // 1. 查询双方之间的所有消息（分页，按发送时间降序）
+        // 排除当前用户已删除的消息：w1(我发的)检查我的 notification_user 未被软删除；w2(发给我的)检查我的 notification_user 未被软删除
         Page<Notification> p = notifMapper.selectPage(new Page<>(page, size),
                 new LambdaQueryWrapper<Notification>()
                         .eq(Notification::getNotificationType, "私信")
                         .and(w -> w
                         .and(w1 -> w1.eq(Notification::getSenderId, userId)
-                        .apply("id IN (SELECT notification_id FROM notification_user WHERE user_id = {0})",
-                                otherUserId))
+                        .apply("id IN (SELECT notification_id FROM notification_user WHERE user_id = {0})", otherUserId)
+                        .apply("id NOT IN (SELECT notification_id FROM notification_user WHERE user_id = {0} AND is_deleted = 1)", userId))
                         .or(w2 -> w2.eq(Notification::getSenderId, otherUserId)
-                        .apply("id IN (SELECT notification_id FROM notification_user WHERE user_id = {0})",
+                        .apply("id IN (SELECT notification_id FROM notification_user WHERE user_id = {0} AND is_deleted = 0)",
                                 userId)))
                         .orderByDesc(Notification::getSendTime));
 
@@ -199,7 +203,7 @@ public class MessageService {
 
             // 发送者信息
             SysUser sender = sysUserMapper.selectById(n.getSenderId());
-            item.put("senderName", sender != null ? sender.getNickname() : "");
+            item.put("senderName", getUserDisplayName(n.getSenderId()));
             item.put("senderAvatar", sender != null ? sender.getAvatar() : "");
 
             // 已读状态：查接收方的 notification_user.is_read
@@ -211,11 +215,8 @@ public class MessageService {
                                 .eq(NotificationUser::getUserId, userId));
                 item.put("isRead", nu != null && nu.getIsRead() != null ? nu.getIsRead() : 0);
             } else {
-                // 我发给对方的 → 查对方的已读状态
-                NotificationUser nu = notifUserMapper.selectOne(
-                        new LambdaQueryWrapper<NotificationUser>()
-                                .eq(NotificationUser::getNotificationId, n.getId())
-                                .eq(NotificationUser::getUserId, otherUserId));
+                // 我发给对方的 → 查对方的已读状态（绕过 @TableLogic，对方可能已删除但仍需显示已读）
+                NotificationUser nu = notifUserMapper.selectByNotifIdAndUserIdAll(n.getId(), otherUserId);
                 item.put("isRead", nu != null && nu.getIsRead() != null ? nu.getIsRead() : 0);
             }
 
@@ -258,7 +259,7 @@ public class MessageService {
         Map<String, Object> result = new HashMap<>();
         result.put("id", n.getId());
         result.put("senderId", senderId);
-        result.put("senderName", sender != null ? sender.getNickname() : "");
+        result.put("senderName", getUserDisplayName(n.getSenderId()));
         result.put("senderAvatar", sender != null ? sender.getAvatar() : "");
         result.put("content", n.getContent());
         result.put("sendTime", n.getSendTime());
@@ -399,7 +400,7 @@ public class MessageService {
                         .apply("id IN (SELECT notification_id FROM notification_user WHERE user_id = {0})",
                                 otherUserId))
                         .or(w2 -> w2.eq(Notification::getSenderId, otherUserId)
-                        .apply("id IN (SELECT notification_id FROM notification_user WHERE user_id = {0})",
+                        .apply("id IN (SELECT notification_id FROM notification_user WHERE user_id = {0} AND is_deleted = 0)",
                                 userId))));
 
         if (notifications.isEmpty()) {
@@ -408,17 +409,46 @@ public class MessageService {
 
         List<Long> notifIds = notifications.stream().map(Notification::getId).toList();
 
-        // 2. 删除 notification_user 记录（@TableLogic 自动软删除）
+        // 2. 删除当前用户已有的 notification_user 记录（接收的消息 + 新发送的消息）
         List<NotificationUser> nus = notifUserMapper.selectList(
                 new LambdaQueryWrapper<NotificationUser>()
-                        .in(NotificationUser::getNotificationId, notifIds));
+                        .in(NotificationUser::getNotificationId, notifIds)
+                        .eq(NotificationUser::getUserId, userId));
         for (NotificationUser nu : nus) {
             notifUserMapper.deleteById(nu.getId());
         }
 
-        // 3. 删除通知记录（@TableLogic 自动软删除）
+        // 3. 为没有 notification_user 记录的消息（用户发送的）插入软删除标记
         for (Notification n : notifications) {
-            notifMapper.deleteById(n.getId());
+            if (n.getSenderId().equals(userId)
+                    && notifUserMapper.countByNotifIdAndUserIdAll(n.getId(), userId) == 0) {
+                notifUserMapper.insertDeletedMarker(n.getId(), userId);
+            }
         }
+    }
+
+    // ==================== 辅助方法 ====================
+
+    /** 获取用户真实姓名，优先 StudentProfile，其次 TeacherProfile，最后回退到昵称 */
+    private String getUserDisplayName(Long userId) {
+        SysUser user = sysUserMapper.selectById(userId);
+        if (user == null) return "";
+
+        // 尝试学生档案
+        StudentProfile sp = studentProfileMapper.selectOne(
+                new LambdaQueryWrapper<StudentProfile>().eq(StudentProfile::getUserId, userId));
+        if (sp != null && sp.getRealName() != null && !sp.getRealName().isBlank()) {
+            return sp.getRealName();
+        }
+
+        // 尝试教师档案
+        TeacherProfile tp = teacherProfileMapper.selectOne(
+                new LambdaQueryWrapper<TeacherProfile>().eq(TeacherProfile::getUserId, userId));
+        if (tp != null && tp.getRealName() != null && !tp.getRealName().isBlank()) {
+            return tp.getRealName();
+        }
+
+        // 回退到昵称
+        return user.getNickname() != null ? user.getNickname() : "";
     }
 }
