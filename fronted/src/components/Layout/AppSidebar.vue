@@ -44,7 +44,18 @@ import { useUserStore } from '@/stores/user'
 const route = useRoute()
 const userStore = useUserStore()
 const collapsed = ref(false)
-const activeMenu = computed(() => route.path)
+const activeMenu = computed(() => {
+  // 子页面路径高亮父级菜单
+  const path = route.path
+  if (path.startsWith('/teacher/posts/')) return '/teacher/posts'
+  if (path.startsWith('/student/posts/')) return '/student/posts'
+  if (path.startsWith('/teacher/trainings/')) return '/teacher/trainings'
+  if (path.startsWith('/student/trainings/')) return '/student/trainings'
+  if (path.startsWith('/teacher/courses/')) return '/teacher/courses'
+  if (path.startsWith('/student/courses/')) return '/student/courses'
+  if (path.startsWith('/student/exams/')) return '/student/exams'
+  return path
+})
 
 // 侧边栏拖拽调整宽度
 const SIDEBAR_MIN_WIDTH = 112
