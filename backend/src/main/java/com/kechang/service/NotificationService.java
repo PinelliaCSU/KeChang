@@ -257,9 +257,7 @@ public class NotificationService {
             }
 
             // 确认人数
-            long confirmCount = notifUserMapper.selectCount(new LambdaQueryWrapper<NotificationUser>()
-                    .eq(NotificationUser::getNotificationId, n.getId())
-                    .eq(NotificationUser::getIsRead, 1));
+            long confirmCount = notifUserMapper.countConfirmations(n.getId());
             item.put("confirmCount", (int) confirmCount);
 
             // 当前学生是否已确认
@@ -412,7 +410,6 @@ public class NotificationService {
                         .eq(NotificationUser::getUserId, userId));
         if (nu != null) {
             notifUserMapper.deleteById(nu.getId());
-            notifMapper.deleteById(id);
         }
     }
 
@@ -635,9 +632,7 @@ public class NotificationService {
             }
 
             // 确认人数
-            long confirmCount = notifUserMapper.selectCount(new LambdaQueryWrapper<NotificationUser>()
-                    .eq(NotificationUser::getNotificationId, n.getId())
-                    .eq(NotificationUser::getIsRead, 1));
+            long confirmCount = notifUserMapper.countConfirmations(n.getId());
             item.put("confirmCount", (int) confirmCount);
 
             records.add(item);
