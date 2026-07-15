@@ -5,7 +5,8 @@
         <h2>课程智能知识库</h2>
         <p>{{ isTeacher ? '维护课程资料沉淀，支持学生基于课程内容智能答疑' : '从已选课程知识库中提问，答案会附带参考来源' }}</p>
       </div>
-      <el-button v-if="isTeacher && activeCourse" type="primary" :loading="rebuilding" :disabled="stats?.storageReady === false" @click="rebuild">
+      <el-button v-if="isTeacher && activeCourse" type="primary" :loading="rebuilding"
+        :disabled="stats?.storageReady === false" @click="rebuild">
         重建知识库
       </el-button>
     </div>
@@ -37,27 +38,30 @@
         <el-alert v-if="stats?.storageReady === false" class="storage-alert" type="warning" show-icon :closable="false"
           title="课程知识库表还没有初始化或字段不完整，请先执行 database/migration_add_course_knowledge_rag.sql 和 database/migration_add_course_knowledge_chunk_metadata.sql，再重建知识库。" />
 
-        <div class="answer-box" v-loading="asking">
-          <div v-if="answer" class="answer-content" v-html="renderMarkdown(answer)"></div>
-          <el-empty v-else description="选择课程后输入问题，开始课程知识库问答" :image-size="96" />
-        </div>
+        <div class="chat-body">
+          <div class="answer-box" v-loading="asking">
+            <div v-if="answer" class="answer-content" v-html="renderMarkdown(answer)"></div>
+            <el-empty v-else description="选择课程后输入问题，开始课程知识库问答" :image-size="96" />
+          </div>
 
-        <div v-if="references.length" class="reference-list">
-          <div class="reference-title">参考来源</div>
-          <div v-for="ref in references" :key="ref.chunkId" class="reference-item">
-            <div>
-              <strong>{{ ref.title }}</strong>
-              <span>{{ sourceLabel(ref.sourceType) }}{{ refLocator(ref) }} · 相似度 {{ Math.round((ref.score || 0) * 100) }}%</span>
+          <div v-if="references.length" class="reference-list">
+            <div class="reference-title">参考来源</div>
+            <div v-for="ref in references" :key="ref.chunkId" class="reference-item">
+              <div>
+                <strong>{{ ref.title }}</strong>
+                <span>{{ sourceLabel(ref.sourceType) }}{{ refLocator(ref) }} · 相似度 {{ Math.round((ref.score || 0) * 100)
+                }}%</span>
+              </div>
+              <p>{{ ref.snippet }}</p>
             </div>
-            <p>{{ ref.snippet }}</p>
           </div>
         </div>
 
         <div class="ask-bar">
           <el-input v-model="question" type="textarea" :rows="3" resize="none"
-            placeholder="比如：这节课的重点是什么？某道题为什么选这个答案？作业要求里需要注意什么？"
-            @keydown.ctrl.enter.prevent="ask" />
-          <el-button type="primary" :disabled="!activeCourseId || !question.trim() || stats?.storageReady === false" :loading="asking" @click="ask">
+            placeholder="比如：这节课的重点是什么？某道题为什么选这个答案？作业要求里需要注意什么？" @keydown.ctrl.enter.prevent="ask" />
+          <el-button type="primary" :disabled="!activeCourseId || !question.trim() || stats?.storageReady === false"
+            :loading="asking" @click="ask">
             提问
           </el-button>
         </div>
@@ -67,8 +71,10 @@
         <div class="panel-title">知识内容维护</div>
         <div class="manual-box">
           <el-input v-model="manual.title" placeholder="手动知识标题" />
-          <el-input v-model="manual.content" type="textarea" :rows="5" resize="none" placeholder="补充课程说明、课堂经验、常见问题答案..." />
-          <el-button type="primary" plain :disabled="!activeCourseId || !manual.title.trim() || !manual.content.trim() || stats?.storageReady === false"
+          <el-input v-model="manual.content" type="textarea" :rows="5" resize="none"
+            placeholder="补充课程说明、课堂经验、常见问题答案..." />
+          <el-button type="primary" plain
+            :disabled="!activeCourseId || !manual.title.trim() || !manual.content.trim() || stats?.storageReady === false"
             :loading="adding" @click="addManual">
             添加到知识库
           </el-button>
@@ -81,7 +87,8 @@
               <span>{{ sourceLabel(doc.sourceType) }} · {{ doc.chunkCount || 0 }} 片段</span>
               <em v-if="doc.errorMessage">{{ doc.errorMessage }}</em>
             </div>
-            <el-tag size="small" :type="doc.status === 'READY' ? 'success' : doc.status === 'FAILED' ? 'danger' : 'warning'">
+            <el-tag size="small"
+              :type="doc.status === 'READY' ? 'success' : doc.status === 'FAILED' ? 'danger' : 'warning'">
               {{ statusLabel(doc.status) }}
             </el-tag>
             <el-button v-if="doc.sourceType === 'MANUAL'" size="small" text type="danger" @click="removeDoc(doc.id)">
@@ -431,7 +438,9 @@ onMounted(loadCourses)
 }
 
 .chat-panel {
-  min-height: 680px;
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 140px);
   overflow: hidden;
 }
 
@@ -441,17 +450,22 @@ onMounted(loadCourses)
   gap: 12px;
   padding: 18px;
   border-bottom: 1px solid var(--bio-border, #dcdfe6);
+  flex-shrink: 0;
+}
+
+.chat-body {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
 }
 
 .answer-box {
-  min-height: 260px;
+  min-height: 200px;
   padding: 18px;
 }
 
 .answer-content {
   line-height: 1.75;
-  max-height: 400px;
-  overflow-y: auto;
 }
 
 .answer-content :deep(ul) {
@@ -481,6 +495,7 @@ onMounted(loadCourses)
   gap: 10px;
   padding: 16px 18px 18px;
   border-top: 1px solid var(--bio-border, #dcdfe6);
+  flex-shrink: 0;
 }
 
 .manual-box {
@@ -509,7 +524,7 @@ onMounted(loadCourses)
   }
 
   .chat-panel {
-    min-height: 520px;
+    max-height: calc(100vh - 180px);
   }
 }
 </style>
