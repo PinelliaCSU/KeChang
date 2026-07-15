@@ -108,35 +108,52 @@
               </div>
 
               <div class="content-group">
-                <h4 class="group-title">资源</h4>
-                <div v-if="resourcesByChapter(chapter.id).length" class="item-list">
-                  <div v-for="resource in resourcesByChapter(chapter.id)" :key="resource.id" class="content-item">
-                    <span class="item-kind">{{ resource.resourceType || '课件' }}</span>
-                    <span class="item-title">{{ resource.resourceName }}</span>
-                    <span class="item-meta">{{ formatFileSize(resource.fileSize) }}</span>
-                    <div class="item-actions">
-                      <el-button v-if="resource.fileUrl" size="small" type="primary" link
-                        @click="previewFile(resource)">预览</el-button>
-                      <el-button size="small" type="danger" @click="deleteResource(resource)">删除</el-button>
+                <div class="group-title-bar" @click="toggleSection(chapter.id, 'resource')">
+                  <h4 class="group-title">资源</h4>
+                  <el-icon :size="16" class="collapse-arrow"
+                    :class="{ rotated: isSectionExpanded(chapter.id, 'resource') }">
+                    <ArrowDown />
+                  </el-icon>
+                </div>
+                <div v-show="isSectionExpanded(chapter.id, 'resource')">
+                  <div v-if="resourcesByChapter(chapter.id).length" class="item-list">
+                    <div v-for="resource in resourcesByChapter(chapter.id)" :key="resource.id" class="content-item">
+                      <span class="item-kind">{{ resource.resourceType || '课件' }}</span>
+                      <span class="item-title">{{ resource.resourceName }}</span>
+                      <span class="item-meta">{{ formatFileSize(resource.fileSize) }}</span>
+                      <div class="item-actions">
+                        <el-button v-if="resource.fileUrl" size="small" type="primary" link
+                          @click="previewFile(resource)">预览</el-button>
+                        <el-button size="small" type="danger" @click="deleteResource(resource)">删除</el-button>
+                      </div>
                     </div>
                   </div>
+                  <el-empty v-else description="本章节暂无资源" :image-size="70" />
                 </div>
-                <el-empty v-else description="本章节暂无资源" :image-size="70" />
               </div>
 
               <div class="content-group">
-                <h4 class="group-title">作业</h4>
-                <div v-if="assignmentsByChapter(chapter.id).length" class="item-list">
-                  <div v-for="assignment in assignmentsByChapter(chapter.id)" :key="assignment.id" class="content-item">
-                    <span class="item-kind assignment">作业</span>
-                    <span class="item-title">{{ assignment.title }}</span>
-                    <span class="item-meta">截止 {{ formatDate(assignment.deadline) }} · {{ assignment.submitCount || 0
-                    }}/{{
-                        assignment.totalStudents || 0 }}</span>
-                    <el-button size="small" @click="router.push('/teacher/assignments')">管理</el-button>
-                  </div>
+                <div class="group-title-bar" @click="toggleSection(chapter.id, 'assignment')">
+                  <h4 class="group-title">作业</h4>
+                  <el-icon :size="16" class="collapse-arrow"
+                    :class="{ rotated: isSectionExpanded(chapter.id, 'assignment') }">
+                    <ArrowDown />
+                  </el-icon>
                 </div>
-                <el-empty v-else description="本章节暂无作业" :image-size="70" />
+                <div v-show="isSectionExpanded(chapter.id, 'assignment')">
+                  <div v-if="assignmentsByChapter(chapter.id).length" class="item-list">
+                    <div v-for="assignment in assignmentsByChapter(chapter.id)" :key="assignment.id"
+                      class="content-item">
+                      <span class="item-kind assignment">作业</span>
+                      <span class="item-title">{{ assignment.title }}</span>
+                      <span class="item-meta">截止 {{ formatDate(assignment.deadline) }} · {{ assignment.submitCount || 0
+                      }}/{{
+                          assignment.totalStudents || 0 }}</span>
+                      <el-button size="small" @click="router.push('/teacher/assignments')">管理</el-button>
+                    </div>
+                  </div>
+                  <el-empty v-else description="本章节暂无作业" :image-size="70" />
+                </div>
               </div>
             </el-collapse-item>
           </el-collapse>
@@ -176,7 +193,7 @@
             <el-table-column label="确认人数" width="100" align="center">
               <template #default="{ row }">
                 <el-tag :type="row.confirmCount > 0 ? 'success' : 'info'" size="small">{{ row.confirmCount || 0
-                  }}</el-tag>
+                }}</el-tag>
               </template>
             </el-table-column>
             <el-table-column label="操作" width="260" fixed="right">
@@ -189,8 +206,7 @@
           </el-table>
           <el-empty v-if="!annLoading && announcements.length === 0" description="暂无公告" :image-size="100" />
           <el-pagination v-if="annTotal > annPageSize" v-model:current-page="annPage" v-model:page-size="annPageSize"
-            :page-sizes="[10, 20, 50]" :total="annTotal" background
-            layout="total, sizes, prev, pager, next, jumper"
+            :page-sizes="[10, 20, 50]" :total="annTotal" background layout="total, sizes, prev, pager, next, jumper"
             @current-change="fetchAnnouncements" @size-change="fetchAnnouncements"
             style="margin-top:16px;justify-content:center" />
         </el-tab-pane>
@@ -227,11 +243,10 @@
         </el-table-column>
       </el-table>
       <el-empty v-if="confirmList.length === 0" description="暂无学生确认" :image-size="80" />
-      <el-pagination v-if="confirmTotal > confirmPageSize" v-model:current-page="confirmPage" v-model:page-size="confirmPageSize"
-        :page-sizes="[10, 20, 50]" :total="confirmTotal" background
-        layout="total, sizes, prev, pager, next, jumper"
-        @current-change="viewConfirms(confirmCurrentRow)" @size-change="viewConfirms(confirmCurrentRow)"
-        style="margin-top:16px;justify-content:center" />
+      <el-pagination v-if="confirmTotal > confirmPageSize" v-model:current-page="confirmPage"
+        v-model:page-size="confirmPageSize" :page-sizes="[10, 20, 50]" :total="confirmTotal" background
+        layout="total, sizes, prev, pager, next, jumper" @current-change="viewConfirms(confirmCurrentRow)"
+        @size-change="viewConfirms(confirmCurrentRow)" style="margin-top:16px;justify-content:center" />
       <template #footer>
         <el-button @click="confirmDialogVisible = false">关闭</el-button>
       </template>
@@ -273,6 +288,7 @@ import { assignmentApi, courseApi, gradeApi, announcementApi } from '@/api'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import FilePreview from '@/components/FilePreview.vue'
 import CourseEditDialog from '@/components/CourseEditDialog.vue'
+import { ArrowDown } from '@element-plus/icons-vue'
 import { computeStatus, statusTagType } from '@/utils/status'
 import { resolveFileUrl } from '@/utils/fileUrl'
 
@@ -290,6 +306,19 @@ const courseDialogVisible = ref(false)
 const savingChapter = ref(false)
 const uploading = ref(false)
 const editingChapterId = ref(null)
+
+// 资源/作业折叠状态
+const expandedSections = reactive({})
+
+const toggleSection = (chapterId, type) => {
+  const key = `${chapterId}-${type}`
+  expandedSections[key] = !expandedSections[key]
+}
+
+const isSectionExpanded = (chapterId, type) => {
+  const key = `${chapterId}-${type}`
+  return expandedSections[key] !== false // 默认展开
+}
 const previewVisible = ref(false)
 const previewResource = ref(null)
 
@@ -727,6 +756,36 @@ onMounted(loadAll)
   margin-top: 20px;
   display: flex;
   justify-content: center;
+}
+
+/* ---------- 子区域折叠 ---------- */
+.group-title-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  user-select: none;
+  padding: 4px 6px;
+  border-radius: 4px;
+  transition: background 0.2s;
+  margin-bottom: 10px;
+}
+
+.group-title-bar:hover {
+  background: var(--bio-primary-soft);
+}
+
+.group-title-bar .group-title {
+  margin: 0;
+}
+
+.collapse-arrow {
+  transition: transform 0.25s ease;
+  color: var(--bio-ink-muted);
+}
+
+.collapse-arrow.rotated {
+  transform: rotate(-180deg);
 }
 
 .cover-display {
