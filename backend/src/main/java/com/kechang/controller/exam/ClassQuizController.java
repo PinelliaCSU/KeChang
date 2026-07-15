@@ -53,6 +53,16 @@ public class ClassQuizController {
         return Result.success(classQuizService.studentActiveList(getUserId()));
     }
 
+    @GetMapping("/student")
+    @PreAuthorize("hasAuthority('ROLE_STUDENT')")
+    public Result<PageResult<Map<String, Object>>> studentList(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) Long courseId) {
+        size = PageResult.clampSize(size);
+        return Result.success(classQuizService.studentList(getUserId(), courseId, page, size));
+    }
+
     @PostMapping
     @PreAuthorize("hasAuthority('ROLE_TEACHER')")
     public Result<Map<String, Object>> create(@RequestBody ClassQuizCreateDTO dto) {

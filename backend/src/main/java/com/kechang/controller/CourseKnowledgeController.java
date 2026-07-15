@@ -4,6 +4,7 @@ import com.kechang.common.Result;
 import com.kechang.dto.CourseKnowledgeAskDTO;
 import com.kechang.dto.CourseKnowledgeManualDTO;
 import com.kechang.entity.CourseKnowledgeDocument;
+import com.kechang.entity.CourseKnowledgeQaHistory;
 import com.kechang.service.CourseKnowledgeService;
 import com.kechang.vo.CourseKnowledgeAskVO;
 import com.kechang.vo.CourseKnowledgeStatsVO;
@@ -65,6 +66,12 @@ public class CourseKnowledgeController {
     @PreAuthorize("hasAnyAuthority('ROLE_STUDENT','ROLE_TEACHER','ROLE_ADMIN')")
     public Result<CourseKnowledgeAskVO> ask(@Valid @RequestBody CourseKnowledgeAskDTO dto) {
         return Result.success(courseKnowledgeService.ask(dto, uid(), role()));
+    }
+
+    @GetMapping("/courses/{courseId}/history")
+    @PreAuthorize("hasAnyAuthority('ROLE_STUDENT','ROLE_TEACHER','ROLE_ADMIN')")
+    public Result<List<CourseKnowledgeQaHistory>> history(@PathVariable Long courseId) {
+        return Result.success(courseKnowledgeService.listHistory(courseId, uid(), role()));
     }
 
     private Long uid() {

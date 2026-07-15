@@ -49,7 +49,7 @@
     <div class="content-row">
       <div class="main-stack">
         <div class="panel chart-panel">
-          <h4 class="section-title">学习动态 · 本周完成: {{ weeklyActivityTotal }} 项</h4>
+          <h4 class="section-title">学习动态 · 近7日学习/互动: {{ weeklyActivityTotal }} 次</h4>
           <div ref="chartRef" style="height:280px"></div>
         </div>
 
@@ -290,7 +290,7 @@ onMounted(async () => {
     chartInstance.setOption({
       tooltip: { trigger: 'axis' },
       xAxis: { type: 'category', data: activeTrend.value.map(item => String(item.date || '').slice(5)) },
-      yAxis: { type: 'value', name: '完成项' },
+      yAxis: { type: 'value', name: '次数' },
       series: [{
         data: activeTrend.value.map(item => item.count || 0),
         type: 'bar', barWidth: '50%',

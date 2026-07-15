@@ -48,7 +48,7 @@
 
     <div class="content-row">
       <div class="panel chart-panel">
-        <h4 class="section-title">近7日学生活跃度</h4>
+        <h4 class="section-title">近7日学生学习/互动活跃度</h4>
         <div class="chart-center">
           <div ref="chartRef" class="active-chart"></div>
         </div>

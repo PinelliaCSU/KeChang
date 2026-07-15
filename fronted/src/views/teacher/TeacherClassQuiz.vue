@@ -239,13 +239,29 @@ const loadQuestions = async () => {
   }
 }
 
-const loadQuizzes = async () => {
+const loadQuizzes = async (autoSelect = true) => {
   const res = await classQuizApi.teacherList({ courseId: form.courseId || undefined })
-  if (res.data.code === 200) quizzes.value = res.data.data || []
+  if (res.data.code === 200) {
+    quizzes.value = res.data.data?.records || []
+    if (!autoSelect) return
+    const current = selectedQuiz.value?.id ? quizzes.value.find(quiz => quiz.id === selectedQuiz.value.id) : null
+    if (current) {
+      await selectQuiz(current)
+    } else if (quizzes.value.length) {
+      await selectQuiz(quizzes.value[0])
+    } else {
+      selectedQuiz.value = null
+      stats.value = null
+      clearInterval(pollTimer)
+    }
+  }
 }
 
 const onCourseChange = async () => {
   selectedQuestionIds.value = []
+  selectedQuiz.value = null
+  stats.value = null
+  clearInterval(pollTimer)
   resetQPage()
   await loadQuestions()
   await loadQuizzes()
@@ -290,7 +306,7 @@ const startQuiz = async () => {
       stats.value = res.data.data
       form.title = ''
       selectedQuestionIds.value = []
-      await loadQuizzes()
+      await loadQuizzes(false)
       startPolling()
     }
   } finally {
@@ -380,6 +396,7 @@ onBeforeUnmount(() => clearInterval(pollTimer))
 .layout { display: grid; grid-template-columns: 420px minmax(0, 1fr); gap: 18px; align-items: start; }
 .left-col { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
 .panel { background: #fff; border: 1px solid var(--bio-border); border-radius: 8px; box-shadow: none; padding: 18px; }
+.launch-panel { overflow: hidden; }
 .panel-title { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
 .panel-title h3 { margin: 0; color: var(--bio-ink); font-size: 17px; }
 .panel-title span { color: var(--bio-ink-muted); font-size: 12px; }
@@ -392,6 +409,11 @@ onBeforeUnmount(() => clearInterval(pollTimer))
 .question-card.selected::after { content: ''; position: absolute; right: 8px; top: 8px; width: 42px; height: 42px; border-radius: 50%; background: rgba(107, 142, 78, .12); pointer-events: none; }
 .question-card p { margin: 8px 0 0; color: var(--bio-ink); line-height: 1.6; white-space: normal; overflow-wrap: anywhere; word-break: break-word; padding-right: 4px; }
 .question-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding-right: 58px; color: var(--bio-ink-muted); font-size: 12px; }
+.launch-panel :deep(.pagination-wrap) { margin-top: 14px; overflow: hidden; }
+.launch-panel :deep(.el-pagination) { justify-content: center; flex-wrap: wrap; gap: 8px 10px; white-space: normal; }
+.launch-panel :deep(.el-pagination__sizes),
+.launch-panel :deep(.el-pagination__jump) { margin: 0; }
+.launch-panel :deep(.el-pagination__total) { margin-right: 0; }
 .selected-order { color: #3f6b30; font-weight: 700; background: rgba(107, 142, 78, .13); padding: 2px 7px; border-radius: 999px; }
 .selected-mark { position: absolute; right: 12px; top: 12px; color: #3f6b30; font-weight: 700; font-size: 12px; background: #f1f7ea; border: 1px solid rgba(107, 142, 78, .28); border-radius: 999px; padding: 3px 9px; z-index: 1; }
 .quiz-list { display: flex; flex-direction: column; gap: 8px; max-height: 260px; overflow: auto; }

@@ -183,7 +183,7 @@ const unsupportedTip = computed(() => {
 const loadPreview = async () => {
   previewUrl.value = ''
   previewFailed.value = false
-  if (!['doc', 'docx'].includes(extension.value) || !props.url) return
+  if (!['doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx'].includes(extension.value) || !props.url) return
   loading.value = true
   try {
     const res = await uploadApi.preview({ url: props.url, name: fileName.value })

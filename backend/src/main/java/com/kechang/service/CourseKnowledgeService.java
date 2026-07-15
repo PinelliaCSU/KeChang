@@ -37,6 +37,7 @@ public class CourseKnowledgeService {
     private final AnswerMapper answerMapper;
     private final CourseKnowledgeDocumentMapper documentMapper;
     private final CourseKnowledgeChunkMapper chunkMapper;
+    private final CourseKnowledgeQaHistoryMapper qaHistoryMapper;
     private final FileProcessingService fileProcessingService;
     private final BailianApiService bailianApiService;
     private final CourseVectorStore vectorStore;
@@ -137,6 +138,7 @@ public class CourseKnowledgeService {
             CourseKnowledgeAskVO vo = new CourseKnowledgeAskVO();
             vo.setAnswer("这个课程知识库还没有可检索的内容。请先让教师重建知识库或添加资料。");
             vo.setReferences(List.of());
+            saveQaHistory(dto.getCourseId(), userId, dto.getQuestion(), vo);
             return vo;
         }
 
@@ -174,7 +176,30 @@ public class CourseKnowledgeService {
         CourseKnowledgeAskVO vo = new CourseKnowledgeAskVO();
         vo.setAnswer(bailianApiService.answerWithContext(dto.getQuestion(), context.toString(), course.getCourseName()));
         vo.setReferences(references);
+        saveQaHistory(dto.getCourseId(), userId, dto.getQuestion(), vo);
         return vo;
+    }
+
+    public List<CourseKnowledgeQaHistory> listHistory(Long courseId, Long userId, String role) {
+        checkReadable(courseId, userId, role);
+        return qaHistoryMapper.selectList(new LambdaQueryWrapper<CourseKnowledgeQaHistory>()
+                .eq(CourseKnowledgeQaHistory::getCourseId, courseId)
+                .eq(CourseKnowledgeQaHistory::getUserId, userId)
+                .orderByDesc(CourseKnowledgeQaHistory::getCreateTime)
+                .last("limit 30"));
+    }
+
+    private void saveQaHistory(Long courseId, Long userId, String question, CourseKnowledgeAskVO vo) {
+        if (courseId == null || userId == null || !StringUtils.hasText(question) || vo == null) {
+            return;
+        }
+        CourseKnowledgeQaHistory history = new CourseKnowledgeQaHistory();
+        history.setCourseId(courseId);
+        history.setUserId(userId);
+        history.setQuestion(question);
+        history.setAnswer(vo.getAnswer());
+        history.setReferencesJson(toJson((Map<String, Object>) vo.getReferences()));
+        qaHistoryMapper.insert(history);
     }
 
     private CourseKnowledgeDocument indexSource(Long courseId, KnowledgeSource source, Long createBy) {

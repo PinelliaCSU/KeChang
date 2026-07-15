@@ -61,6 +61,24 @@ public class ClassQuizService {
                 .collect(Collectors.toList());
     }
 
+    public PageResult<Map<String, Object>> studentList(Long studentId, Long courseId, int page, int size) {
+        List<Long> courseIds = courseStudentMapper.selectList(new LambdaQueryWrapper<CourseStudent>()
+                        .eq(CourseStudent::getStudentId, studentId))
+                .stream().map(CourseStudent::getCourseId).collect(Collectors.toList());
+        if (courseIds.isEmpty()) {
+            return PageResult.of(List.of(), 0, page, size);
+        }
+        LambdaQueryWrapper<ClassQuiz> wrapper = new LambdaQueryWrapper<ClassQuiz>()
+                .in(ClassQuiz::getCourseId, courseIds)
+                .eq(courseId != null, ClassQuiz::getCourseId, courseId)
+                .orderByDesc(ClassQuiz::getStartTime);
+        Page<ClassQuiz> mpPage = quizMapper.selectPage(new Page<>(page, size), wrapper);
+        List<Map<String, Object>> records = mpPage.getRecords().stream()
+                .map(quiz -> sanitizeForStudent(withMyAnswer(toSummary(quiz), quiz.getId(), studentId)))
+                .collect(Collectors.toList());
+        return PageResult.of(records, mpPage.getTotal(), mpPage.getCurrent(), mpPage.getSize());
+    }
+
     @Transactional
     public Map<String, Object> create(ClassQuizCreateDTO dto, Long teacherId) {
         List<Long> questionIds = new ArrayList<>();

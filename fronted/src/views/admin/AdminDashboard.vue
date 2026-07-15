@@ -25,11 +25,11 @@
       </div>
       <div class="stat-card">
         <div class="stat-num info">{{ stats.todayActiveOps || 0 }}</div>
-        <div class="stat-label">今日活跃操作</div>
+        <div class="stat-label">今日平台活跃</div>
       </div>
     </div>
 
-    <DataPanel title="近7日活跃趋势" max-width="1400px">
+    <DataPanel title="近7日平台活跃趋势" max-width="1400px">
       <div ref="chartRef" class="chart-container"></div>
     </DataPanel>
 

@@ -67,6 +67,7 @@ export const codeApi = {
 /** 随堂测验 API */
 export const classQuizApi = {
   teacherList: (params) => request.get('/class-quizzes/teacher', { params }),
+  studentList: (params) => request.get('/class-quizzes/student', { params }),
   studentActiveList: () => request.get('/class-quizzes/student/active'),
   create: (data) => request.post('/class-quizzes', data),
   detail: (id) => request.get(`/class-quizzes/${id}`),
@@ -243,6 +244,7 @@ export const courseKnowledgeApi = {
   courses: () => request.get('/course-knowledge/courses'),
   stats: (courseId) => request.get(`/course-knowledge/courses/${courseId}/stats`),
   documents: (courseId) => request.get(`/course-knowledge/courses/${courseId}/documents`),
+  history: (courseId) => request.get(`/course-knowledge/courses/${courseId}/history`),
   rebuild: (courseId) => request.post(`/course-knowledge/courses/${courseId}/rebuild`),
   addManual: (data) => request.post('/course-knowledge/documents', data),
   deleteDocument: (id) => request.delete(`/course-knowledge/documents/${id}`),

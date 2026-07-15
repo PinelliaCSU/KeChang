@@ -13,6 +13,8 @@ import org.apache.pdfbox.pdmodel.common.PDRectangle;
 import org.apache.pdfbox.pdmodel.font.PDFont;
 import org.apache.pdfbox.pdmodel.font.PDType0Font;
 import org.apache.pdfbox.pdmodel.font.PDType1Font;
+import org.apache.pdfbox.pdmodel.graphics.image.LosslessFactory;
+import org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject;
 import org.apache.pdfbox.rendering.PDFRenderer;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import org.apache.poi.xwpf.usermodel.XWPFParagraph;
@@ -59,7 +61,7 @@ public class FileProcessingService {
         if ("pdf".equals(ext)) {
             return fileUrl;
         }
-        if (!"docx".equals(ext) && !"doc".equals(ext)) {
+        if (!isOfficePreviewExt(ext) && !isImagePreviewExt(ext)) {
             return fileUrl;
         }
 
@@ -77,16 +79,26 @@ public class FileProcessingService {
                     && Files.getLastModifiedTime(preview).toMillis() >= Files.getLastModifiedTime(source).toMillis()) {
                 return "/uploads/previews/" + previewName;
             }
+            if (isImagePreviewExt(ext)) {
+                createImagePreviewPdf(source, preview);
+                Files.writeString(marker, "image");
+                return "/uploads/previews/" + previewName;
+            }
             boolean converted = convertWithLibreOffice(source, previewDir, preview);
             if (converted) {
                 Files.writeString(marker, "libreoffice");
             }
             if (!converted && !Files.exists(preview)) {
-                createWordPreviewPdf(source, preview, displayName);
+                if ("docx".equals(ext) || "doc".equals(ext)) {
+                    createWordPreviewPdf(source, preview, displayName);
+                    Files.writeString(marker, "word-fallback");
+                } else {
+                    throw new IOException("Office 文件转换失败，请确认已安装 LibreOffice 并配置 soffice");
+                }
             }
             return "/uploads/previews/" + previewName;
         } catch (IOException e) {
-            throw new BusinessException("生成 Word PDF 预览失败：" + e.getMessage());
+            throw new BusinessException("生成 PDF 预览失败：" + e.getMessage());
         }
     }
 
@@ -261,6 +273,31 @@ public class FileProcessingService {
         }
     }
 
+    private void createImagePreviewPdf(Path source, Path target) throws IOException {
+        BufferedImage image = ImageIO.read(source.toFile());
+        if (image == null) {
+            throw new IOException("无法读取图片内容");
+        }
+        try (PDDocument document = new PDDocument()) {
+            PDPage page = new PDPage(PDRectangle.A4);
+            document.addPage(page);
+            PDRectangle box = page.getMediaBox();
+            float margin = 36f;
+            float maxWidth = box.getWidth() - margin * 2;
+            float maxHeight = box.getHeight() - margin * 2;
+            float scale = Math.min(maxWidth / image.getWidth(), maxHeight / image.getHeight());
+            float drawWidth = image.getWidth() * scale;
+            float drawHeight = image.getHeight() * scale;
+            float x = (box.getWidth() - drawWidth) / 2f;
+            float y = (box.getHeight() - drawHeight) / 2f;
+            PDImageXObject pdImage = LosslessFactory.createFromImage(document, image);
+            try (PDPageContentStream cs = new PDPageContentStream(document, page)) {
+                cs.drawImage(pdImage, x, y, drawWidth, drawHeight);
+            }
+            document.save(target.toFile());
+        }
+    }
+
     private boolean convertWithLibreOffice(Path source, Path previewDir, Path target) {
         List<String> candidates = new ArrayList<>();
         if (StringUtils.hasText(configuredSofficePath)) {
@@ -363,6 +400,14 @@ public class FileProcessingService {
         String clean = name.split("\\?")[0].toLowerCase(Locale.ROOT);
         int index = clean.lastIndexOf('.');
         return index >= 0 ? clean.substring(index + 1) : "";
+    }
+
+    private boolean isOfficePreviewExt(String ext) {
+        return List.of("doc", "docx", "ppt", "pptx", "xls", "xlsx").contains(ext);
+    }
+
+    private boolean isImagePreviewExt(String ext) {
+        return List.of("png", "jpg", "jpeg", "gif", "webp", "bmp").contains(ext);
     }
 
     private String stripExtension(String name) {
