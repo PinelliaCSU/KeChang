@@ -198,7 +198,7 @@ public class CourseKnowledgeService {
         history.setUserId(userId);
         history.setQuestion(question);
         history.setAnswer(vo.getAnswer());
-        history.setReferencesJson(toJson((Map<String, Object>) vo.getReferences()));
+        history.setReferencesJson(toJsonValue(vo.getReferences()));
         qaHistoryMapper.insert(history);
     }
 
@@ -709,6 +709,17 @@ public class CourseKnowledgeService {
         }
         try {
             return objectMapper.writeValueAsString(metadata);
+        } catch (JsonProcessingException e) {
+            return null;
+        }
+    }
+
+    private String toJsonValue(Object value) {
+        if (value == null) {
+            return null;
+        }
+        try {
+            return objectMapper.writeValueAsString(value);
         } catch (JsonProcessingException e) {
             return null;
         }
