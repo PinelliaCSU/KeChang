@@ -385,8 +385,6 @@ public class AssignmentService {
         vo.setStatus(computeAssignmentStatus(assignment, studentId));
         vo.setCreateBy(assignment.getCreateBy());
         vo.setCreateTime(assignment.getCreateTime());
-        vo.setExcellentSubmits(getExcellentSubmits(assignment.getId()));
-
         Course course = courseMapper.selectById(assignment.getCourseId());
         if (course != null) {
             vo.setCourseName(course.getCourseName());
@@ -399,6 +397,11 @@ public class AssignmentService {
         vo.setSubmitCount(Math.toIntExact(submitCount));
         vo.setTotalStudents(Math.toIntExact(Math.max(enrolledCount, submitCount)));
         fillMySubmission(vo, assignment.getId(), studentId);
+        if (studentId == null || Boolean.TRUE.equals(vo.getSubmitted())) {
+            vo.setExcellentSubmits(getExcellentSubmits(assignment.getId()));
+        } else {
+            vo.setExcellentSubmits(List.of());
+        }
         return vo;
     }
 

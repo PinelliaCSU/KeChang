@@ -230,6 +230,9 @@ const submitFiles = (row) => {
 }
 const feedbackFiles = (row) => row?.feedbackAttachments || []
 const excellentFiles = (row) => {
+  if (row?.feedbackAttachments?.length) {
+    return row.feedbackAttachments.map(att => ({ url: att.fileUrl, name: att.fileName, size: att.fileSize }))
+  }
   if (row?.attachments?.length) return row.attachments.map(att => ({ url: att.fileUrl, name: att.fileName, size: att.fileSize }))
   return row?.attachmentUrl ? [{ url: row.attachmentUrl, name: row.attachmentUrl.split('/').pop(), size: 0 }] : []
 }

@@ -19,7 +19,7 @@ RUN apk add --no-cache \
     libreoffice \
     font-noto-cjk \
     font-noto \
-    ttf-dejavu
+    tfrontedtf-dejavu
 RUN apk add --no-cache docker-cli
 COPY --from=build /app/target/*.jar app.jar
 EXPOSE 8080
