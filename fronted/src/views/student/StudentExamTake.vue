@@ -315,7 +315,7 @@ async function submitExam() {
 }
 
 .exam-sidebar {
-  width: 200px;
+  width: 250px;
   flex-shrink: 0;
 }
 
@@ -345,13 +345,15 @@ async function submitExam() {
 
 .index-grid {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 8px;
+  grid-template-columns: repeat(auto-fill, minmax(36px, 36px));
+  justify-content: start;
+  gap: 10px;
+  max-width: 100%;
 }
 
 .index-item {
-  width: 30px;
-  height: 30px;
+  width: 36px;
+  height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -362,6 +364,7 @@ async function submitExam() {
   color: #909399;
   transition: all 0.2s;
   font-weight: 500;
+  box-sizing: border-box;
 }
 
 .index-item.answered {
@@ -432,13 +435,40 @@ async function submitExam() {
 }
 
 .option-group {
+  width: 100%;
   display: flex;
   flex-direction: column;
+  align-items: stretch;
   gap: 14px;
 }
 
 .option-item {
+  width: 100%;
+  margin-right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
   font-size: 15px;
+  white-space: normal;
+  line-height: 1.6;
+  padding: 8px 10px;
+  border-radius: 8px;
+}
+
+.option-item:hover {
+  background: #f7fbff;
+}
+
+:deep(.option-item .el-radio__input),
+:deep(.option-item .el-checkbox__input) {
+  flex-shrink: 0;
+}
+
+:deep(.option-item .el-radio__label),
+:deep(.option-item .el-checkbox__label) {
+  white-space: normal;
+  line-height: 1.6;
+  text-align: left;
 }
 
 .q-actions {
