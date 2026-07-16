@@ -547,6 +547,25 @@ INSERT INTO `course_knowledge_document` VALUES (30, 1, '题库解析 #40', 'QUES
 INSERT INTO `course_knowledge_document` VALUES (31, 1, 'c++与rust哪个是更好的语言？', 'QA', 1, NULL, 'READY', 1, 45, NULL, 2, '2026-07-14 12:24:40', '2026-07-14 12:24:40', 0);
 
 -- ----------------------------
+-- Table structure for course_knowledge_qa_history
+-- ----------------------------
+DROP TABLE IF EXISTS `course_knowledge_qa_history`;
+CREATE TABLE `course_knowledge_qa_history`  (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `course_id` bigint NOT NULL COMMENT '课程ID',
+  `user_id` bigint NOT NULL COMMENT '提问用户ID',
+  `question` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '提问内容',
+  `answer` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '回答内容',
+  `references_json` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL COMMENT '参考来源JSON',
+  `create_time` datetime NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `is_deleted` tinyint NULL DEFAULT 0 COMMENT '逻辑删除',
+  PRIMARY KEY (`id`) USING BTREE,
+  INDEX `idx_course_id`(`course_id` ASC) USING BTREE,
+  INDEX `idx_user_id`(`user_id` ASC) USING BTREE,
+  INDEX `idx_create_time`(`create_time` ASC) USING BTREE
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '课程知识库问答历史' ROW_FORMAT = Dynamic;
+
+-- ----------------------------
 -- Table structure for course_resource
 -- ----------------------------
 DROP TABLE IF EXISTS `course_resource`;
