@@ -15,6 +15,7 @@ import com.kechang.vo.CourseKnowledgeAskVO;
 import com.kechang.vo.CourseKnowledgeStatsVO;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -24,6 +25,7 @@ import org.springframework.util.StringUtils;
 import java.util.*;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class CourseKnowledgeService {
@@ -43,6 +45,8 @@ public class CourseKnowledgeService {
     private final CourseVectorStore vectorStore;
     private final ObjectMapper objectMapper;
     private final JdbcTemplate jdbcTemplate;
+    private final RebuildTaskManager rebuildTaskManager;
+    private final java.util.concurrent.Executor rebuildExecutor;
 
     public List<CourseKnowledgeStatsVO> listAvailableCourses(Long userId, String role) {
         List<Course> courses;
@@ -54,7 +58,7 @@ public class CourseKnowledgeService {
                     .orderByDesc(Course::getCreateTime));
         } else {
             List<Long> ids = courseStudentMapper.selectList(new LambdaQueryWrapper<CourseStudent>()
-                            .eq(CourseStudent::getStudentId, userId))
+                    .eq(CourseStudent::getStudentId, userId))
                     .stream().map(CourseStudent::getCourseId).toList();
             if (ids.isEmpty()) {
                 return List.of();
@@ -80,7 +84,46 @@ public class CourseKnowledgeService {
         return statsForCourse(course);
     }
 
-    @Transactional
+    public void checkTaggedAll(Long courseId, Long userId, String role) {
+        checkManageable(courseId, userId, role);
+    }
+
+    public void rebuildCourseAsync(Long courseId, Long teacherId, String taskId) {
+        rebuildExecutor.execute(() -> {
+            try {
+                int chunks = 0;
+                int docs = 0;
+                try {
+                    ensureKnowledgeStorageReady();
+                    deleteCourseKnowledge(courseId);
+
+                    List<KnowledgeSource> sources = new ArrayList<>();
+                    sources.addAll(resourceSources(courseId));
+                    sources.addAll(assignmentSources(courseId));
+                    sources.addAll(questionSources(courseId));
+                    sources.addAll(postSources(courseId));
+
+                    for (KnowledgeSource source : sources) {
+                        try {
+                            CourseKnowledgeDocument doc = indexSource(courseId, source, teacherId);
+                            docs++;
+                            chunks += doc.getChunkCount() == null ? 0 : doc.getChunkCount();
+                        } catch (Exception e) {
+                            log.warn("rebuild skip source [{}] {}: {}", source.getSourceType(), source.getTitle(), e.getMessage());
+                        }
+                    }
+                    rebuildTaskManager.markDone(taskId, docs, chunks);
+                } catch (Exception e) {
+                    log.error("async rebuild failed courseId={}", courseId, e);
+                    rebuildTaskManager.markFailed(taskId, e.getMessage());
+                }
+            } catch (Exception e) {
+                log.error("async rebuild unexpected error courseId={}", courseId, e);
+                rebuildTaskManager.markFailed(taskId, e.getMessage());
+            }
+        });
+    }
+
     public Map<String, Object> rebuildCourse(Long courseId, Long teacherId) {
         checkManageable(courseId, teacherId, "ROLE_TEACHER");
         ensureKnowledgeStorageReady();
@@ -95,9 +138,13 @@ public class CourseKnowledgeService {
         int chunks = 0;
         int docs = 0;
         for (KnowledgeSource source : sources) {
-            CourseKnowledgeDocument doc = indexSource(courseId, source, teacherId);
-            docs++;
-            chunks += doc.getChunkCount() == null ? 0 : doc.getChunkCount();
+            try {
+                CourseKnowledgeDocument doc = indexSource(courseId, source, teacherId);
+                docs++;
+                chunks += doc.getChunkCount() == null ? 0 : doc.getChunkCount();
+            } catch (Exception e) {
+                log.warn("rebuild skip source [{}] {}: {}", source.getSourceType(), source.getTitle(), e.getMessage());
+            }
         }
         return Map.of("documents", docs, "chunks", chunks);
     }
@@ -216,36 +263,59 @@ public class CourseKnowledgeService {
         documentMapper.insert(doc);
 
         try {
-            List<KnowledgeChunk> chunks = buildChunks(source);
-            int index = 0;
-            for (KnowledgeChunk knowledgeChunk : chunks) {
-                String text = knowledgeChunk.getContent();
+            List<KnowledgeChunk> knowledgeChunks = buildChunks(source);
+            if (knowledgeChunks.isEmpty()) {
+                doc.setChunkCount(0);
+                doc.setStatus("READY");
+                documentMapper.updateById(doc);
+                return doc;
+            }
+
+            for (int i = 0; i < knowledgeChunks.size(); i++) {
+                KnowledgeChunk kc = knowledgeChunks.get(i);
                 CourseKnowledgeChunk chunk = new CourseKnowledgeChunk();
                 chunk.setDocumentId(doc.getId());
                 chunk.setCourseId(courseId);
-                chunk.setChunkIndex(index);
-                chunk.setContent(text);
+                chunk.setChunkIndex(i);
+                chunk.setContent(kc.getContent());
                 chunk.setSourceTitle(source.getTitle());
                 chunk.setSourceType(source.getSourceType());
                 chunk.setSourceId(source.getSourceId());
                 chunk.setSourceUrl(source.getSourceUrl());
-                chunk.setPageNo(knowledgeChunk.getPageNo());
-                chunk.setStartTime(knowledgeChunk.getStartTime());
-                chunk.setEndTime(knowledgeChunk.getEndTime());
-                chunk.setSectionTitle(knowledgeChunk.getSectionTitle());
-                chunk.setTokenCount(roughTokenCount(text));
-                chunk.setMetadataJson(toJson(mergedMetadata(source, knowledgeChunk)));
+                chunk.setPageNo(kc.getPageNo());
+                chunk.setStartTime(kc.getStartTime());
+                chunk.setEndTime(kc.getEndTime());
+                chunk.setSectionTitle(kc.getSectionTitle());
+                chunk.setTokenCount(roughTokenCount(kc.getContent()));
+                chunk.setMetadataJson(toJson(mergedMetadata(source, kc)));
                 chunkMapper.insert(chunk);
+                kc.setDbId(chunk.getId());
+            }
 
+            List<String> texts = knowledgeChunks.stream()
+                    .map(KnowledgeChunk::getContent)
+                    .toList();
+            List<List<Double>> vectors = bailianApiService.embedTexts(texts);
+
+            List<VectorRecord> records = new ArrayList<>();
+            for (int i = 0; i < knowledgeChunks.size(); i++) {
+                KnowledgeChunk kc = knowledgeChunks.get(i);
+                List<Double> vector = i < vectors.size() ? vectors.get(i) : null;
+                if (vector == null || vector.isEmpty()) {
+                    continue;
+                }
                 VectorRecord record = new VectorRecord();
                 record.setCourseId(courseId);
                 record.setDocumentId(doc.getId());
-                record.setChunkId(chunk.getId());
-                record.setVector(bailianApiService.embedText(text));
-                vectorStore.upsert(record);
-                index++;
+                record.setChunkId(kc.getDbId());
+                record.setVector(vector);
+                records.add(record);
             }
-            doc.setChunkCount(chunks.size());
+            if (!records.isEmpty()) {
+                vectorStore.upsertBatch(records);
+            }
+
+            doc.setChunkCount(knowledgeChunks.size());
             doc.setStatus("READY");
             documentMapper.updateById(doc);
         } catch (Exception e) {
@@ -262,7 +332,7 @@ public class CourseKnowledgeService {
                     String content = fileProcessingService.extractText(resource.getFileUrl(), resource.getResourceName());
                     String ext = extension(resource.getResourceName(), resource.getFileUrl());
                     if (!StringUtils.hasText(content)) {
-                        content = "资源名称：" + resource.getResourceName() + "\n类型：" + resource.getResourceType();
+                        content = "name: " + resource.getResourceName() + "\ntype: " + resource.getResourceType();
                     }
                     KnowledgeSource source = new KnowledgeSource();
                     source.setTitle(resource.getResourceName());
@@ -283,7 +353,7 @@ public class CourseKnowledgeService {
                             metadata.put("pageType", pageType);
                             metadata.put("pageNo", page.getPageNo());
                             prebuilt.addAll(semanticChunks(page.getContent(),
-                                    ("slide".equals(pageType) ? "第 " + page.getPageNo() + " 页幻灯片" : "第 " + page.getPageNo() + " 页"),
+                                    "slide".equals(pageType) ? "Slide " + page.getPageNo() : "Page " + page.getPageNo(),
                                     page.getPageNo(),
                                     metadata));
                         }
@@ -297,10 +367,10 @@ public class CourseKnowledgeService {
         return assignmentMapper.selectList(new LambdaQueryWrapper<Assignment>().eq(Assignment::getCourseId, courseId))
                 .stream().map(item -> {
                     StringBuilder content = new StringBuilder();
-                    content.append("作业标题：").append(item.getTitle()).append("\n");
-                    content.append("作业说明：").append(item.getContent() == null ? "" : item.getContent()).append("\n");
+                    content.append("title: ").append(item.getTitle()).append("\n");
+                    content.append("desc: ").append(item.getContent() == null ? "" : item.getContent()).append("\n");
                     if (StringUtils.hasText(item.getAttachmentUrl())) {
-                        content.append("附件内容：\n")
+                        content.append("attachment:\n")
                                 .append(fileProcessingService.extractText(item.getAttachmentUrl(), item.getTitle()));
                     }
                     KnowledgeSource source = new KnowledgeSource();
@@ -321,17 +391,17 @@ public class CourseKnowledgeService {
     private List<KnowledgeSource> questionSources(Long courseId) {
         return questionMapper.selectList(new LambdaQueryWrapper<Question>().eq(Question::getCourseId, courseId))
                 .stream().map(item -> {
-                    String content = "题目：" + safe(item.getContent())
-                            + "\n选项：" + safe(item.getOptions())
-                            + "\n答案：" + safe(item.getAnswer())
-                            + "\n解析：" + safe(item.getAnalysis())
-                            + "\n知识点：" + safe(item.getKnowledgePoint());
+                    String content = "Q: " + safe(item.getContent())
+                            + "\nOptions: " + safe(item.getOptions())
+                            + "\nAnswer: " + safe(item.getAnswer())
+                            + "\nAnalysis: " + safe(item.getAnalysis())
+                            + "\nKnowledgePoint: " + safe(item.getKnowledgePoint());
                     KnowledgeSource source = new KnowledgeSource();
-                    source.setTitle("题库解析 #" + item.getId());
+                    source.setTitle("Question #" + item.getId());
                     source.setContent(content);
                     source.setSourceType("QUESTION");
                     source.setSourceId(item.getId());
-                    source.setSectionTitle("题目 #" + item.getId());
+                    source.setSectionTitle("Question #" + item.getId());
                     source.setMetadata(Map.of(
                             "questionId", item.getId(),
                             "questionType", safe(item.getQuestionType()),
@@ -346,14 +416,14 @@ public class CourseKnowledgeService {
         List<KnowledgeSource> sources = new ArrayList<>();
         for (QuestionPost post : posts) {
             StringBuilder content = new StringBuilder();
-            content.append("问答标题：").append(post.getTitle()).append("\n");
-            content.append("问题内容：").append(safe(post.getContent())).append("\n");
+            content.append("QA Title: ").append(post.getTitle()).append("\n");
+            content.append("Question: ").append(safe(post.getContent())).append("\n");
             List<Answer> answers = answerMapper.selectList(new LambdaQueryWrapper<Answer>()
                     .eq(Answer::getPostId, post.getId())
                     .orderByDesc(Answer::getIsAccepted)
                     .orderByAsc(Answer::getCreateTime));
             for (Answer answer : answers) {
-                content.append("回复：").append(safe(answer.getContent())).append("\n");
+                content.append("Reply: ").append(safe(answer.getContent())).append("\n");
             }
             KnowledgeSource source = new KnowledgeSource();
             source.setTitle(post.getTitle());
@@ -419,7 +489,7 @@ public class CourseKnowledgeService {
             Map<String, Object> metadata = new LinkedHashMap<>(source.getMetadata());
             metadata.put("pageType", "slide");
             metadata.put("pageNo", i + 1);
-            chunks.addAll(semanticChunks(text, "第 " + (i + 1) + " 页幻灯片", i + 1, metadata));
+            chunks.addAll(semanticChunks(text, "Slide " + (i + 1), i + 1, metadata));
         }
         return chunks;
     }
@@ -624,12 +694,12 @@ public class CourseKnowledgeService {
             parts.add(chunk.getSectionTitle());
         }
         if (chunk.getPageNo() != null) {
-            parts.add("第 " + chunk.getPageNo() + " 页");
+            parts.add("p." + chunk.getPageNo());
         }
         if (chunk.getStartTime() != null || chunk.getEndTime() != null) {
             parts.add(formatSeconds(chunk.getStartTime()) + "-" + formatSeconds(chunk.getEndTime()));
         }
-        return parts.isEmpty() ? "" : "（" + String.join("，", parts) + "）";
+        return parts.isEmpty() ? "" : " (" + String.join(", ", parts) + ")";
     }
 
     private String formatSeconds(Integer seconds) {
@@ -646,10 +716,10 @@ public class CourseKnowledgeService {
             return false;
         }
         String line = text.trim();
-        if (line.length() > 80 || line.contains("。") || line.contains("，")) {
+        if (line.length() > 80 || line.contains(".") && line.contains(" ")) {
             return false;
         }
-        return line.matches("^(第[一二三四五六七八九十百0-9]+[章节节课部分].*)$")
+        return line.matches("^(Chapter|Section|Unit|Part)\\s+.*$")
                 || line.matches("^[0-9]+(\\.[0-9]+)*\\s+.+$")
                 || line.startsWith("#");
     }
@@ -761,6 +831,7 @@ public class CourseKnowledgeService {
 
     @Data
     private static class KnowledgeChunk {
+        private Long dbId;
         private String content;
         private Integer pageNo;
         private Integer startTime;

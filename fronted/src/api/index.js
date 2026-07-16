@@ -239,13 +239,14 @@ export const knowledgeApi = {
   knowledgeStats: () => request.get('/knowledge/stats')
 }
 
-/** 通知 API */
+/** 课程知识库 API */
 export const courseKnowledgeApi = {
   courses: () => request.get('/course-knowledge/courses'),
   stats: (courseId) => request.get(`/course-knowledge/courses/${courseId}/stats`),
   documents: (courseId) => request.get(`/course-knowledge/courses/${courseId}/documents`),
   history: (courseId) => request.get(`/course-knowledge/courses/${courseId}/history`),
   rebuild: (courseId) => request.post(`/course-knowledge/courses/${courseId}/rebuild`),
+  rebuildStatus: (taskId) => request.get(`/course-knowledge/rebuild/${taskId}/status`),
   addManual: (data) => request.post('/course-knowledge/documents', data),
   deleteDocument: (id) => request.delete(`/course-knowledge/documents/${id}`),
   ask: (data) => request.post('/course-knowledge/ask', data)

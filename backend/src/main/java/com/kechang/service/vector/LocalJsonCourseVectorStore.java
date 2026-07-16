@@ -29,12 +29,25 @@ public class LocalJsonCourseVectorStore implements CourseVectorStore {
 
     @Override
     public void upsert(VectorRecord record) {
+        upsertBatch(List.of(record));
+    }
+
+    @Override
+    public void upsertBatch(List<VectorRecord> records) {
+        if (records == null || records.isEmpty()) {
+            return;
+        }
         lock.writeLock().lock();
         try {
-            List<VectorRecord> records = load();
-            records.removeIf(item -> item.getChunkId() != null && item.getChunkId().equals(record.getChunkId()));
-            records.add(record);
-            save(records);
+            List<VectorRecord> existing = load();
+            // 批量移除已存在的 chunk
+            var chunkIds = records.stream()
+                    .map(VectorRecord::getChunkId)
+                    .filter(java.util.Objects::nonNull)
+                    .collect(java.util.stream.Collectors.toSet());
+            existing.removeIf(item -> item.getChunkId() != null && chunkIds.contains(item.getChunkId()));
+            existing.addAll(records);
+            save(existing);
         } finally {
             lock.writeLock().unlock();
         }
@@ -126,10 +139,10 @@ public class LocalJsonCourseVectorStore implements CourseVectorStore {
         double normA = 0.0;
         double normB = 0.0;
         for (int i = 0; i < size; i++) {
-            double va = a.get(i) == null ? 0.0 : a.get(i);
+            double va  = a.get(i) == null ? 0.0 : a.get(i);
             double vb = b.get(i) == null ? 0.0 : b.get(i);
-            dot += va * vb;
-            normA += va * va;
+            dot += va  * vb;
+            normA += va  * va;
             normB += vb * vb;
         }
         if (normA == 0.0 || normB == 0.0) {

@@ -3,9 +3,11 @@ package com.kechang.controller;
 import com.kechang.common.Result;
 import com.kechang.dto.CourseKnowledgeAskDTO;
 import com.kechang.dto.CourseKnowledgeManualDTO;
+import com.kechang.dto.RebuildTaskInfo;
 import com.kechang.entity.CourseKnowledgeDocument;
 import com.kechang.entity.CourseKnowledgeQaHistory;
 import com.kechang.service.CourseKnowledgeService;
+import com.kechang.service.RebuildTaskManager;
 import com.kechang.vo.CourseKnowledgeAskVO;
 import com.kechang.vo.CourseKnowledgeStatsVO;
 import jakarta.validation.Valid;
@@ -24,6 +26,7 @@ import java.util.Map;
 public class CourseKnowledgeController {
 
     private final CourseKnowledgeService courseKnowledgeService;
+    private final RebuildTaskManager rebuildTaskManager;
 
     @GetMapping("/courses")
     @PreAuthorize("hasAnyAuthority('ROLE_STUDENT','ROLE_TEACHER','ROLE_ADMIN')")
@@ -43,10 +46,29 @@ public class CourseKnowledgeController {
         return Result.success(courseKnowledgeService.listDocuments(courseId, uid(), role()));
     }
 
+    /**
+     * 启动异步重建知识库，立即返回 taskId，前端通过 /rebuild/{taskId}/status 轮询进度。
+     */
     @PostMapping("/courses/{courseId}/rebuild")
     @PreAuthorize("hasAuthority('ROLE_TEACHER')")
-    public Result<Map<String, Object>> rebuild(@PathVariable Long courseId) {
-        return Result.success(courseKnowledgeService.rebuildCourse(courseId, uid()));
+    public Result<Map<String, String>> rebuild(@PathVariable Long courseId) {
+        courseKnowledgeService.checkTaggedAll(courseId, uid(), "ROLE_TEACHER");
+        String taskId = rebuildTaskManager.create(courseId, uid());
+        courseKnowledgeService.rebuildCourseAsync(courseId, uid(), taskId);
+        return Result.success(Map.of("taskId", taskId));
+    }
+
+    /**
+     * 查询重建任务状态。
+     */
+    @GetMapping("/rebuild/{taskId}/status")
+    @PreAuthorize("hasAuthority('ROLE_TEACHER')")
+    public Result<RebuildTaskInfo> rebuildStatus(@PathVariable String taskId) {
+        RebuildTaskInfo info = rebuildTaskManager.get(taskId);
+        if (info == null) {
+            return Result.error(404, "任务不存在或已过期");
+        }
+        return Result.success(info);
     }
 
     @PostMapping("/documents")

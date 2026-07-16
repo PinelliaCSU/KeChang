@@ -29,16 +29,37 @@ public class RedisCourseVectorStore implements CourseVectorStore {
 
     @Override
     public void upsert(VectorRecord record) {
-        if (record == null || record.getChunkId() == null || CollectionUtils.isEmpty(record.getVector())) {
+        upsertBatch(List.of(record));
+    }
+
+    @Override
+    public void upsertBatch(List<VectorRecord> records) {
+        if (records == null || records.isEmpty()) {
             return;
         }
-        ensureIndex(record.getVector().size());
-        execute("HSET",
-                bytes(key(record.getChunkId())),
-                bytes("course_id"), bytes(record.getCourseId()),
-                bytes("document_id"), bytes(record.getDocumentId()),
-                bytes("chunk_id"), bytes(record.getChunkId()),
-                bytes("vector"), vectorBytes(record.getVector()));
+        // 用第一个记录的向量维度建索引
+        VectorRecord first = records.stream()
+                .filter(r -> !CollectionUtils.isEmpty(r.getVector()))
+                .findFirst().orElse(null);
+        if (first == null) {
+            return;
+        }
+        ensureIndex(first.getVector().size());
+
+        redisTemplate.executePipelined((RedisConnection connection) -> {
+            for (VectorRecord record : records) {
+                if (record.getChunkId() == null || CollectionUtils.isEmpty(record.getVector())) {
+                    continue;
+                }
+                connection.execute("HSET",
+                        bytes(key(record.getChunkId())),
+                        bytes("course_id"), bytes(record.getCourseId()),
+                        bytes("document_id"), bytes(record.getDocumentId()),
+                        bytes("chunk_id"), bytes(record.getChunkId()),
+                        bytes("vector"), vectorBytes(record.getVector()));
+            }
+            return null;
+        });
     }
 
     @Override

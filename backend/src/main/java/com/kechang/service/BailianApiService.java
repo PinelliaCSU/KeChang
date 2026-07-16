@@ -206,47 +206,108 @@ public class BailianApiService {
         }
     }
 
+    /**
+     * 单文本 Embedding（保留原方法兼容性）
+     */
     public List<Double> embedText(String text) {
         if (text == null || text.isBlank()) {
             return List.of();
         }
+        List<List<Double>> results = embedTexts(List.of(text));
+        return results.isEmpty() ? List.of() : results.get(0);
+    }
+
+    /**
+     * 批量 Embedding — 一次 API 调用处理多个文本，大幅减少串行请求耗时。 返回顺序与输入一致；若某条失败则以 fallback 填充。
+     */
+    public List<List<Double>> embedTexts(List<String> texts) {
+        if (texts == null || texts.isEmpty()) {
+            return List.of();
+        }
         BailianConfig.Embedding embedding = config.getEmbedding();
-        if (embedding == null || !embedding.isEnabled() || config.getApiKey() == null || config.getApiKey().isBlank()) {
-            return fallbackEmbedding(text, embedding != null ? embedding.getFallbackDimension() : 256);
+        boolean useRemote = embedding != null && embedding.isEnabled()
+                && config.getApiKey() != null && !config.getApiKey().isBlank();
+
+        // 分批处理，每批最多 20 条，避免请求体过大
+        int batchSize = 20;
+        List<List<Double>> allResults = new ArrayList<>(texts.size());
+        // 先占位，保持顺序
+        for (int i = 0; i < texts.size(); i++) {
+            allResults.add(null);
         }
 
+        for (int batchStart = 0; batchStart < texts.size(); batchStart += batchSize) {
+            int batchEnd = Math.min(batchStart + batchSize, texts.size());
+            List<String> batch = texts.subList(batchStart, batchEnd);
+
+            if (useRemote) {
+                try {
+                    List<List<Double>> batchVectors = callBatchEmbedding(batch, embedding);
+                    for (int i = 0; i < batchVectors.size(); i++) {
+                        allResults.set(batchStart + i, batchVectors.get(i));
+                    }
+                    continue;
+                } catch (Exception e) {
+                    log.warn("Batch embedding failed for range [{},{}), fallback to local: {}",
+                            batchStart, batchEnd, e.getMessage());
+                }
+            }
+            // 回退：逐条本地 Hash 向量
+            for (int i = 0; i < batch.size(); i++) {
+                String text = batch.get(i);
+                int dim = embedding != null ? embedding.getFallbackDimension() : 256;
+                allResults.set(batchStart + i, fallbackEmbedding(text, dim));
+            }
+        }
+        return allResults;
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<List<Double>> callBatchEmbedding(List<String> texts, BailianConfig.Embedding embedding) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.set("Authorization", "Bearer " + config.getApiKey());
 
+        // 截断过长的文本
+        List<String> truncated = texts.stream()
+                .map(t -> t == null ? "" : (t.length() > 6000 ? t.substring(0, 6000) : t))
+                .toList();
+
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("model", embedding.getModel());
-        body.put("input", text.length() > 6000 ? text.substring(0, 6000) : text);
+        body.put("input", truncated);
 
-        try {
-            ResponseEntity<Map> response = restTemplate.postForEntity(embedding.getEndpoint(), new HttpEntity<>(body, headers), Map.class);
-            if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
-                return fallbackEmbedding(text, embedding.getFallbackDimension());
-            }
-            Object data = response.getBody().get("data");
-            if (data instanceof List<?> list && !list.isEmpty() && list.get(0) instanceof Map<?, ?> first) {
-                Object vector = first.get("embedding");
-                if (vector instanceof List<?> values) {
-                    List<Double> result = new ArrayList<>();
-                    for (Object value : values) {
-                        if (value instanceof Number number) {
-                            result.add(number.doubleValue());
-                        }
-                    }
-                    if (!result.isEmpty()) {
-                        return normalizeVector(result);
+        ResponseEntity<Map> response = restTemplate.postForEntity(
+                embedding.getEndpoint(), new HttpEntity<>(body, headers), Map.class);
+        if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
+            throw new RuntimeException("Embedding API returned " + response.getStatusCode());
+        }
+
+        Object data = response.getBody().get("data");
+        if (!(data instanceof List<?> list)) {
+            throw new RuntimeException("Embedding API returned unexpected data format");
+        }
+
+        // 按 index 排序，保证返回顺序与输入一致
+        List<Map<String, Object>> entries = (List<Map<String, Object>>) (List<?>) list;
+        entries.sort(Comparator.comparingInt(e -> ((Number) e.getOrDefault("index", 0)).intValue()));
+
+        List<List<Double>> results = new ArrayList<>();
+        for (Map<String, Object> entry : entries) {
+            Object vectorObj = entry.get("embedding");
+            if (vectorObj instanceof List<?> values) {
+                List<Double> vector = new ArrayList<>();
+                for (Object value : values) {
+                    if (value instanceof Number number) {
+                        vector.add(number.doubleValue());
                     }
                 }
+                results.add(vector.isEmpty() ? null : normalizeVector(vector));
+            } else {
+                results.add(null);
             }
-        } catch (Exception e) {
-            log.warn("Embedding API unavailable, fallback to local vector: {}", e.getMessage());
         }
-        return fallbackEmbedding(text, embedding.getFallbackDimension());
+        return results;
     }
 
     private List<Double> fallbackEmbedding(String text, int dimension) {

@@ -224,9 +224,33 @@ const rebuild = async () => {
   await ElMessageBox.confirm('将重新抽取课程资源、作业、题库和问答内容，旧向量会被覆盖。继续吗？', '重建知识库', { type: 'warning' })
   rebuilding.value = true
   try {
+    // ① 启动异步重建任务
     const res = await courseKnowledgeApi.rebuild(activeCourseId.value)
-    const data = assertSuccess(res, '重建知识库失败') || {}
-    ElMessage.success(`已重建：${data.documents || 0} 个文档，${data.chunks || 0} 个片段`)
+    const taskData = assertSuccess(res, '启动重建失败') || {}
+    const taskId = taskData.taskId
+    if (!taskId) throw new Error('未获取到任务 ID')
+
+    // ② 轮询任务状态（最多 10 分钟）
+    const maxRetries = 300
+    for (let i = 0; i < maxRetries; i++) {
+      await new Promise(r => setTimeout(r, 2000))
+      try {
+        const statusRes = await courseKnowledgeApi.rebuildStatus(taskId)
+        const status = statusRes.data
+        if (!status || status.code !== 200) continue
+        const info = status.data
+        if (!info) continue
+        if (info.status === 'DONE') {
+          ElMessage.success(`已重建：${info.documents || 0} 个文档，${info.chunks || 0} 个片段`)
+          break
+        }
+        if (info.status === 'FAILED') {
+          throw new Error(info.error || '重建知识库失败')
+        }
+      } catch (e) {
+        if (e.message && !e.message.includes('任务不存在')) throw e
+      }
+    }
     await Promise.all([loadCourses(), loadDocuments(), loadStats()])
   } catch (e) {
     if (e !== 'cancel') ElMessage.error(e.message || '重建知识库失败')
