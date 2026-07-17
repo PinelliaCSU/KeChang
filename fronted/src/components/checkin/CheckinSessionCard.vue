@@ -59,7 +59,7 @@
 import { computed } from 'vue'
 import {
     Clock, Timer, CircleCheckFilled, CircleCloseFilled,
-    PictureFilled, Iphone, Location
+    Iphone, Location
 } from '@element-plus/icons-vue'
 
 const props = defineProps({
@@ -74,7 +74,6 @@ const isActive = computed(() => props.session.status === 'ACTIVE')
 
 const typeConfig = computed(() => {
     const map = {
-        QR_CODE: { icon: PictureFilled, label: '二维码签到', tag: 'success' },
         NUMERIC_CODE: { icon: Iphone, label: '数字码签到', tag: '' },
         LOCATION: { icon: Location, label: '位置签到', tag: 'warning' }
     }

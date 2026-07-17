@@ -23,18 +23,10 @@
                 </div>
             </div>
 
-            <template v-if="session?.checkinType === 'QR_CODE'">
-                <div class="qr-wrapper">
-                    <canvas ref="qrCanvas" class="qr-canvas"></canvas>
-                </div>
-                <p class="code-hint">请使用手机扫描二维码签到</p>
-            </template>
-
             <div v-if="session?.checkinType !== 'LOCATION'" class="code-box">
                 <span v-for="(ch, i) in codeChars" :key="i" class="code-char">{{ ch }}</span>
             </div>
             <p v-if="session?.checkinType === 'NUMERIC_CODE'" class="code-hint">请在手机端输入上方数字码完成签到</p>
-            <p v-if="session?.checkinType === 'QR_CODE'" class="code-hint">也可以输入上方数字码完成签到</p>
 
             <div v-if="session?.checkinType === 'LOCATION'" class="loc-info">
                 <el-icon :size="28">
@@ -77,7 +69,6 @@
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { Close, Location, SwitchButton } from '@element-plus/icons-vue'
-import QRCode from 'qrcode'
 
 const props = defineProps({
     session: { type: Object, default: null },
@@ -88,7 +79,6 @@ const props = defineProps({
 
 defineEmits(['close', 'closeCheckin'])
 
-const qrCanvas = ref(null)
 const now = ref(new Date())
 let timer = null
 
@@ -138,23 +128,6 @@ watch(() => props.session?.status, (status, oldStatus) => {
 
 const dashOffset = computed(() => circumference * (1 - countdown.value.progress))
 
-const generateQR = async () => {
-    if (!props.session?.code || !qrCanvas.value) return
-    const url = `${window.location.origin}/student/checkin?code=${props.session.code}`
-    try {
-        await QRCode.toCanvas(qrCanvas.value, url, {
-            width: 200,
-            margin: 1,
-            color: { dark: '#1f2937', light: '#ffffff' }
-        })
-    } catch { /* ignore */ }
-}
-
-watch(() => props.session?.code, generateQR)
-watch(() => props.session?.checkinType, (type) => {
-    if (type === 'QR_CODE') setTimeout(generateQR, 100)
-})
-
 onMounted(() => {
     // 仅当签到仍活跃时才启动倒计时
     if (props.session?.status === 'ACTIVE') {
@@ -162,7 +135,6 @@ onMounted(() => {
     } else {
         frozenNow.value = new Date()
     }
-    if (props.session?.checkinType === 'QR_CODE') setTimeout(generateQR, 100)
 })
 
 onUnmounted(() => { if (timer) clearInterval(timer) })
@@ -258,18 +230,6 @@ onUnmounted(() => { if (timer) clearInterval(timer) })
 .time-sep {
     color: rgba(255, 255, 255, .7);
     font-size: 24px;
-}
-
-.qr-wrapper {
-    background: #fff;
-    padding: 12px;
-    border-radius: 0;
-}
-
-.qr-canvas {
-    display: block;
-    width: 200px;
-    height: 200px;
 }
 
 .code-box {

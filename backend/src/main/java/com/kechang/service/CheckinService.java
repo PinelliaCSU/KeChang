@@ -56,7 +56,7 @@ public class CheckinService {
         }
 
         String type = StringUtils.hasText(dto.getCheckinType()) ? dto.getCheckinType() : "NUMERIC_CODE";
-        if (!Set.of("QR_CODE", "NUMERIC_CODE", "LOCATION").contains(type)) {
+        if (!Set.of("NUMERIC_CODE", "LOCATION").contains(type)) {
             throw BusinessException.badRequest("不支持的签到方式: " + type);
         }
 
@@ -248,8 +248,8 @@ public class CheckinService {
 
         // 根据签到方式校验
         String checkinMethod = session.getCheckinType();
-        if ("NUMERIC_CODE".equals(checkinMethod) || "QR_CODE".equals(checkinMethod)) {
-            // 数字码/二维码校验
+        if ("NUMERIC_CODE".equals(checkinMethod)) {
+            // 数字码校验
             if (!StringUtils.hasText(dto.getCode())) {
                 throw BusinessException.badRequest("请输入签到码");
             }

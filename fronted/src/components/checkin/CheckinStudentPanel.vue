@@ -37,30 +37,6 @@
                 </div>
             </div>
 
-            <!-- 二维码签到：仅扫码，不允许手动输入 -->
-            <div v-if="session?.checkinType === 'QR_CODE'" class="qr-section">
-                <div v-if="prefilledCode" class="qr-scanned">
-                    <el-icon :size="40" color="#20c4cc">
-                        <PictureFilled />
-                    </el-icon>
-                    <p class="qr-code-display">{{ code }}</p>
-                    <p class="qr-hint">已识别签到码，请确认签到</p>
-                    <el-button type="primary" size="large" :loading="submitting" @click="handleCheckin">
-                        <el-icon>
-                            <CircleCheck />
-                        </el-icon>确认签到
-                    </el-button>
-                </div>
-                <div v-else class="qr-waiting">
-                    <el-icon :size="48" color="#20c4cc">
-                        <PictureFilled />
-                    </el-icon>
-                    <p>二维码签到</p>
-                    <p class="qr-hint">请扫描教师屏幕上的二维码完成签到</p>
-                    <p class="qr-hint-sub">扫描后本页面将自动填入签到码</p>
-                </div>
-            </div>
-
             <!-- 地理位置签到 -->
             <div v-if="session?.checkinType === 'LOCATION'" class="loc-section">
                 <div class="loc-status" :class="{ located: studentLat != null }">
@@ -92,7 +68,7 @@
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { Timer, CircleCheckFilled, CircleCheck, Iphone, Location, PictureFilled } from '@element-plus/icons-vue'
+import { Timer, CircleCheckFilled, CircleCheck, Iphone, Location } from '@element-plus/icons-vue'
 import { checkinApi } from '@/api'
 import { useRoute } from 'vue-router'
 
@@ -123,8 +99,6 @@ watch(() => urlCode.value, (val) => {
         code.value = val
     }
 }, { immediate: true })
-
-const prefilledCode = computed(() => !!urlCode.value && code.value === urlCode.value)
 
 const isLateWindow = computed(() => props.session?.isLateWindow || false)
 
@@ -187,15 +161,11 @@ const handleCheckin = async () => {
         errorMsg.value = '请输入6位签到码'
         return
     }
-    if (props.session?.checkinType === 'QR_CODE' && code.value.length !== 6) {
-        errorMsg.value = '请先扫描教师屏幕上的二维码'
-        return
-    }
 
     submitting.value = true
     try {
         const data = {}
-        if (props.session?.checkinType === 'NUMERIC_CODE' || props.session?.checkinType === 'QR_CODE') {
+        if (props.session?.checkinType === 'NUMERIC_CODE') {
             data.code = code.value
         } else if (props.session?.checkinType === 'LOCATION') {
             data.latitude = studentLat.value

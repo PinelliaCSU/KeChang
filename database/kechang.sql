@@ -184,7 +184,7 @@ CREATE TABLE `checkin_record`  (
 -- Records of checkin_record
 -- ----------------------------
 INSERT INTO `checkin_record` VALUES (1, 1, 3, '2026-07-10 17:40:22', 'NUMERIC_CODE', NULL, NULL, 'SUCCESS', NULL, 0);
-INSERT INTO `checkin_record` VALUES (2, 2, 3, '2026-07-10 17:41:50', 'QR_CODE', NULL, NULL, 'SUCCESS', NULL, 0);
+INSERT INTO `checkin_record` VALUES (2, 2, 3, '2026-07-10 17:41:50', 'NUMERIC_CODE', NULL, NULL, 'SUCCESS', NULL, 0);
 INSERT INTO `checkin_record` VALUES (3, 3, 3, '2026-07-10 17:42:34', 'LOCATION', 30.7921714, 103.8364115, 'SUCCESS', NULL, 0);
 INSERT INTO `checkin_record` VALUES (4, 4, 3, '2026-07-10 18:29:39', NULL, NULL, NULL, 'ABSENT', NULL, 0);
 INSERT INTO `checkin_record` VALUES (5, 5, 3, '2026-07-13 13:23:47', 'NUMERIC_CODE', NULL, NULL, 'SUCCESS', '2026-07-13 13:23:47', 0);
@@ -199,8 +199,8 @@ CREATE TABLE `checkin_session`  (
   `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键ID',
   `course_id` bigint NOT NULL COMMENT '课程ID',
   `title` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT '课堂签到' COMMENT '签到标题',
-  `checkin_type` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'NUMERIC_CODE' COMMENT '签到方式：QR_CODE / NUMERIC_CODE / LOCATION',
-  `code` varchar(10) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '6位数字签到码（NUMERIC_CODE和QR_CODE共用）',
+  `checkin_type` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'NUMERIC_CODE' COMMENT '签到方式：NUMERIC_CODE / LOCATION',
+  `code` varchar(10) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '6位数字签到码',
   `latitude` decimal(10, 7) NULL DEFAULT NULL COMMENT '地理位置签到纬度（LOCATION方式）',
   `longitude` decimal(10, 7) NULL DEFAULT NULL COMMENT '地理位置签到经度（LOCATION方式）',
   `location_radius` int NULL DEFAULT 100 COMMENT '有效半径（米），默认100',
@@ -223,9 +223,9 @@ CREATE TABLE `checkin_session`  (
 -- Records of checkin_session
 -- ----------------------------
 INSERT INTO `checkin_session` VALUES (1, 1, '测试签到', 'NUMERIC_CODE', '950736', NULL, NULL, 100, '2026-07-10 17:40:01', '2026-07-10 17:41:01', 'ENDED', 2, NULL, NULL, 0);
-INSERT INTO `checkin_session` VALUES (2, 1, '测试二维码签到', 'QR_CODE', '656257', NULL, NULL, 100, '2026-07-10 17:41:23', '2026-07-10 17:44:23', 'ENDED', 2, NULL, NULL, 0);
+INSERT INTO `checkin_session` VALUES (2, 1, '测试数字码签到', 'NUMERIC_CODE', '656257', NULL, NULL, 100, '2026-07-10 17:41:23', '2026-07-10 17:44:23', 'ENDED', 2, NULL, NULL, 0);
 INSERT INTO `checkin_session` VALUES (3, 1, '测试位置签到', 'LOCATION', '486708', 30.7921714, 103.8364115, 100, '2026-07-10 17:42:24', '2026-07-10 17:47:24', 'ENDED', 2, NULL, NULL, 0);
-INSERT INTO `checkin_session` VALUES (4, 1, '二维码测试', 'QR_CODE', '409861', NULL, NULL, 100, '2026-07-10 18:24:39', '2026-07-10 18:29:39', 'ENDED', 2, NULL, NULL, 0);
+INSERT INTO `checkin_session` VALUES (4, 1, '数字码测试', 'NUMERIC_CODE', '409861', NULL, NULL, 100, '2026-07-10 18:24:39', '2026-07-10 18:29:39', 'ENDED', 2, NULL, NULL, 0);
 INSERT INTO `checkin_session` VALUES (5, 2, '数据库签到', 'NUMERIC_CODE', '575528', NULL, NULL, 100, '2026-07-13 13:23:31', '2026-07-13 13:26:31', 'ENDED', 2, '2026-07-13 13:23:31', '2026-07-13 13:23:31', 0);
 INSERT INTO `checkin_session` VALUES (6, 2, '时间签到', 'NUMERIC_CODE', '496340', NULL, NULL, 100, '2026-07-13 13:31:00', '2026-07-13 13:34:00', 'ENDED', 2, '2026-07-13 13:31:00', '2026-07-13 13:31:00', 0);
 INSERT INTO `checkin_session` VALUES (7, 2, '测试Ui', 'NUMERIC_CODE', '954379', NULL, NULL, 100, '2026-07-13 13:38:03', '2026-07-13 13:41:03', 'ENDED', 2, '2026-07-13 13:38:03', '2026-07-13 13:38:03', 0);

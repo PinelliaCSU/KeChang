@@ -171,7 +171,7 @@ const onKeywordChange = () => {
     loadSessions()
 }
 
-const typeLabel = (t) => ({ QR_CODE: '二维码', NUMERIC_CODE: '数字码', LOCATION: '位置签到' })[t] || t
+const typeLabel = (t) => ({ NUMERIC_CODE: '数字码', LOCATION: '位置签到' })[t] || t
 const formatShort = (t) => {
     if (!t) return ''
     const d = new Date(t)

@@ -18,7 +18,7 @@ public class CheckinSession {
 
     private Long courseId;
     private String title;
-    private String checkinType;   // QR_CODE / NUMERIC_CODE / LOCATION
+    private String checkinType;   // NUMERIC_CODE / LOCATION
     private String code;           // 6位数字签到码
     private BigDecimal latitude;   // 地理位置纬度
     private BigDecimal longitude;  // 地理位置经度

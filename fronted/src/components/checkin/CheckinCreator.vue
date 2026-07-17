@@ -68,7 +68,7 @@
 <script setup>
 import { ref, reactive, computed, watch } from 'vue'
 import { ElMessage } from 'element-plus'
-import { PictureFilled, Iphone, Location } from '@element-plus/icons-vue'
+import { Iphone, Location } from '@element-plus/icons-vue'
 import { checkinApi, courseApi } from '@/api'
 
 const emit = defineEmits(['created'])
@@ -98,7 +98,6 @@ const rules = {
 
 const typeOptions = [
     { value: 'NUMERIC_CODE', label: '数字码签到', icon: Iphone },
-    { value: 'QR_CODE', label: '二维码签到', icon: PictureFilled },
     { value: 'LOCATION', label: '位置签到', icon: Location }
 ]
 
